@@ -22,19 +22,24 @@ See [Authority Boundaries](docs/AUTHORITY_BOUNDARIES.md) and [Architecture](docs
 | `canonical.hash_json` | READ_ONLY | Produce a deterministic SHA-256 digest for JSON-compatible data |
 | `schema.validate` | READ_ONLY | Validate an instance with JSON Schema Draft 2020-12 |
 
-Every result is wrapped in an execution receipt with provenance, `authority_transfer: false`, and explicit external-effect reporting.
+Every result is wrapped in an execution receipt with requester identity, authority context, registry and policy versions, provenance, `authority_transfer: false`, and explicit external-effect reporting.
+
+## Executable governance
+
+The runtime loads its tool metadata from `registry/tools.v0.1.json` and its global safety posture from `policies/execution-policy.v0.1.json`. It validates governed requests against `contracts/tool-request.v0.1.schema.json` before execution and fails closed when configuration is missing, malformed, or inconsistent with handler bindings.
 
 ## Components
 
-- `src/aios_tools/runner.py` — fail-closed execution routing
-- `src/aios_tools/tools.py` — registered tool implementations
+- `src/aios_tools/config.py` — validated registry, policy, and request-contract loading
+- `src/aios_tools/runner.py` — fail-closed request validation, eligibility, execution, and receipt routing
+- `src/aios_tools/tools.py` — registered tool handler implementations
 - `src/aios_tools/envelope.py` — execution result and receipt envelope
 - `src/aios_tools/cli.py` — JSON CLI adapter
 - `src/aios_tools/mcp_server.py` — MCP Streamable HTTP and stdio adapter
-- `registry/` — tool registry facts
+- `registry/` — executable tool registry facts
 - `contracts/` — request and result schemas
 - `policies/` — executable eligibility policy
-- `tests/` — shared-core verification
+- `tests/` — shared-core and negative-path verification
 
 ## Install and run
 
