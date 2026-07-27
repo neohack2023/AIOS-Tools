@@ -29,13 +29,14 @@ def _node_sort_key(node: dict[str, Any]) -> tuple[str, str, str]:
     return (str(node.get("node_type", "")), str(node.get("label", "")).casefold(), node["node_id"])
 
 
-def compile_render_scene(snapshot: dict[str, Any], compiled_view: dict[str, Any]) -> dict[str, Any]:
-    """Compile stable coordinates and draw primitives from validated Graph IR.
-
-    The algorithm is intentionally simple and deterministic: nodes are grouped by
-    node type, lanes are sorted lexicographically, and nodes inside each lane use a
-    stable label/id ordering. No source data is mutated and no random seed exists.
-    """
+def compile_render_scene(
+    snapshot: dict[str, Any],
+    compiled_view: dict[str, Any],
+    *,
+    identity_resolution: dict[str, Any] | None = None,
+    drift_report: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Compile stable draw primitives from validated Graph IR and governed evidence."""
     errors = validate_graph_ir(snapshot)
     if errors:
         raise ValueError("Refusing to render invalid Graph IR")
@@ -56,6 +57,13 @@ def compile_render_scene(snapshot: dict[str, Any], compiled_view: dict[str, Any]
     lane_rows: dict[str, int] = {lane: 0 for lane in lanes}
     scene_nodes: list[dict[str, Any]] = []
     positions: dict[str, tuple[int, int]] = {}
+    drift_by_source: dict[str, str] = {}
+    for comparison in (drift_report or {}).get("comparisons", []):
+        state = str(comparison.get("state", "UNKNOWN"))
+        for key in ("notion_source_object_id", "drive_source_object_id"):
+            source_id = comparison.get(key)
+            if source_id:
+                drift_by_source[str(source_id)] = state
 
     for node in nodes:
         lane = str(node.get("node_type", "unknown"))
@@ -71,7 +79,9 @@ def compile_render_scene(snapshot: dict[str, Any], compiled_view: dict[str, Any]
             "node_type": lane,
             "authority_role": str(node.get("authority_role", "UNSPECIFIED")),
             "source_system": str(node.get("source_system", "unknown")),
+            "source_object_id": str(node.get("source_object_id", "")),
             "source_pointer": str(node.get("source_pointer", "")),
+            "drift_state": drift_by_source.get(str(node.get("source_object_id", "")), "NOT_COMPARED"),
             "x": x,
             "y": y,
             "width": NODE_WIDTH,
@@ -90,24 +100,30 @@ def compile_render_scene(snapshot: dict[str, Any], compiled_view: dict[str, Any]
         x1, y1 = sx + NODE_WIDTH, sy + NODE_HEIGHT // 2
         x2, y2 = tx, ty + NODE_HEIGHT // 2
         mid_x = (x1 + x2) // 2
-        points = [[x1, y1], [mid_x, y1], [mid_x, y2], [x2, y2]]
         scene_edges.append({
             "edge_id": edge["edge_id"],
             "relation_type": str(edge.get("relation_type", "related_to")),
             "source_node_id": edge["source_node_id"],
             "target_node_id": edge["target_node_id"],
             "evidence_state": str(edge.get("evidence_state", "UNKNOWN")),
-            "points": points,
+            "points": [[x1, y1], [mid_x, y1], [mid_x, y2], [x2, y2]],
         })
 
     max_rows = max(lane_rows.values(), default=1)
     width = max(720, MARGIN * 2 + max(1, len(lanes)) * NODE_WIDTH + max(0, len(lanes) - 1) * GAP_X)
     height = max(420, MARGIN * 2 + 52 + max_rows * NODE_HEIGHT + max(0, max_rows - 1) * GAP_Y)
+    resolved = sorted((identity_resolution or {}).get("resolved", []), key=lambda item: str(item.get("entity_id", "")))
+    unresolved = sorted((identity_resolution or {}).get("unresolved", []), key=canonical_json)
     scene = {
         "renderer_contract": "aios.cartography.scene.v0.1",
         "source_snapshot_id": snapshot["snapshot_id"],
         "source_snapshot_digest": snapshot["snapshot_digest"],
         "view_id": compiled_view["view_id"],
+        "identity_summary": {"resolved_count": len(resolved), "unresolved_count": len(unresolved), "resolved": resolved, "unresolved": unresolved},
+        "drift_summary": {
+            "drift_count": int((drift_report or {}).get("drift_count", 0)),
+            "comparison_count": len((drift_report or {}).get("comparisons", [])),
+        },
         "width": width,
         "height": height,
         "lanes": [{"name": lane, "x": MARGIN + lane_index[lane] * (NODE_WIDTH + GAP_X)} for lane in lanes],
@@ -122,13 +138,15 @@ def render_svg(scene: dict[str, Any], *, title: str = "AIOS Cartography") -> str
     """Render a deterministic standalone SVG document from a compiled scene."""
     width = int(scene["width"])
     height = int(scene["height"])
+    subtitle = f'identity {scene.get("identity_summary", {}).get("resolved_count", 0)} · drift {scene.get("drift_summary", {}).get("drift_count", 0)}'
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img">',
         f'<title>{escape(title)}</title>',
         '<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#657b91"/></marker></defs>',
         '<rect width="100%" height="100%" fill="#071018"/>',
-        f'<text x="{MARGIN}" y="38" fill="#e8f2f8" font-family="ui-monospace,monospace" font-size="22" font-weight="700">{escape(title)}</text>',
+        f'<text x="{MARGIN}" y="30" fill="#e8f2f8" font-family="ui-monospace,monospace" font-size="22" font-weight="700">{escape(title)}</text>',
+        f'<text x="{MARGIN}" y="48" fill="#7f9aad" font-family="ui-monospace,monospace" font-size="10">{escape(subtitle)}</text>',
     ]
     for lane in scene.get("lanes", []):
         parts.append(f'<text x="{lane["x"]}" y="{MARGIN + 24}" fill="#6f879b" font-family="ui-monospace,monospace" font-size="12">{escape(lane["name"])}</text>')
@@ -143,7 +161,7 @@ def render_svg(scene: dict[str, Any], *, title: str = "AIOS Cartography") -> str
         meta = escape(f'{node["source_system"]} · {node["authority_role"]}')
         pointer = escape(node["source_pointer"])
         parts.extend([
-            f'<g data-node-id="{escape(node["node_id"])}">',
+            f'<g data-node-id="{escape(node["node_id"])}" data-drift-state="{escape(node["drift_state"])}">',
             f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="#0d1a25" stroke="{accent}" stroke-width="2"><title>{pointer}</title></rect>',
             f'<rect x="{x}" y="{y}" width="6" height="{h}" rx="3" fill="{accent}"/>',
             f'<text x="{x + 18}" y="{y + 30}" fill="#edf6fb" font-family="ui-sans-serif,system-ui" font-size="14" font-weight="650">{label[:34]}</text>',
