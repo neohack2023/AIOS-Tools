@@ -1,4 +1,4 @@
-"""Deterministic non-rendered View Spec compilation for Cartography Slice 2."""
+"""Deterministic non-rendered View Spec compilation for Cartography."""
 
 from __future__ import annotations
 
@@ -22,6 +22,16 @@ WORKFLOW_CONTROL_PLANE_VIEW = {
     "include_node_types": ["workflow", "capability", "registry", "governance_system", "observatory", "cartography_engine"],
     "exclude_node_types": ["repository_code_object"],
     "include_relations": ["invokes", "routes_to", "reads_from", "writes_to", "validates", "depends_on", "implemented_by"],
+}
+
+NOTION_AUTHORITY_CHAIN_VIEW = {
+    "view_id": "notion-authority-chain-v0.1",
+    "title": "Notion Authority Chain",
+    "root_selector": {"source_system": "notion"},
+    "lod": [0, 1, 2],
+    "include_node_types": ["knowledge_object"],
+    "exclude_node_types": [],
+    "include_relations": ["contains"],
 }
 
 
