@@ -59,7 +59,7 @@ function StatusRail({
     { label: snapshot.coverage_state, tone: snapshot.coverage_state === 'PARTIAL' ? 'warning' : 'healthy' },
   ];
   return (
-    <div className="status-rail" aria-label="Workbench status">
+    <div className="status-rail" aria-label="Workbench status" data-runtime-state={notice.state} data-renderer-backend={backend}>
       {notices.map((item) => (
         <span className={`status-chip status-${item.tone}`} key={item.label}>{item.label}</span>
       ))}
@@ -185,7 +185,7 @@ export default function App() {
 
   const selectedNode = snapshot.nodes.find((node) => node.node_id === workspace.selected);
   const rootNode = snapshot.nodes.find((node) => node.node_id === workspace.root) ?? snapshot.nodes[0];
-  const activeFilters = new Set(workspace.filters);
+  const activeFilters = useMemo(() => new Set(workspace.filters), [workspace.filters]);
 
   const filteredSnapshot = useMemo<GraphSnapshot>(() => {
     const nodes = snapshot.nodes.filter(
