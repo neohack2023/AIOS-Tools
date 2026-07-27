@@ -83,4 +83,4 @@ Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [Developmen
 
 ## Current status
 
-Bootstrap implementation is under governed review. Hosted deployment, authentication, direct Notion/Drive adapters, Tier 1 control-envelope migration, and write-capable tools remain deferred.
+Slice 0 implementation and executable-governance repair are under governed review. Hosted deployment, authentication, direct Notion/Drive adapters, Tier 1 control-envelope migration, and write-capable tools remain deferred.
