@@ -21,6 +21,7 @@ dev = [
 [project.scripts]
 aios-tools = "aios_tools.cli:main"
 aios-tools-mcp = "aios_tools.mcp_server:main"
+aios-cartography-render = "aios_tools.cartography.render_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aios_tools"]
