@@ -23,7 +23,7 @@ interface LayoutWorkerResponse {
   error?: string;
 }
 
-const AUTHORITY_FILTERS = ['AUTHORITATIVE', 'DRIVE_SHADOW'];
+const AUTHORITY_FILTERS = ['AUTHORITATIVE', 'DRIVE_SHADOW', 'IMPLEMENTATION'];
 const VIEW_LABELS: Record<ViewMode, string> = {
   mindmap: 'Mind Map',
   lineage: 'Lineage',
@@ -65,6 +65,26 @@ function StatusRail({
       ))}
       {notice.detail ? <span className="status-detail" title={notice.detail}>{notice.detail}</span> : null}
     </div>
+  );
+}
+
+function CoverageSummary({ snapshot }: { snapshot: GraphSnapshot }) {
+  const report = snapshot.coverage_report;
+  return (
+    <section className="coverage-summary" aria-label="System graph coverage">
+      <div>
+        <span className="panel-kicker">Coverage</span>
+        <strong>{report.resolved_domains.length}/{report.declared_domains.length} domains</strong>
+      </div>
+      <div>
+        <strong>{report.resolved_node_count}</strong>
+        <span>resolved objects</span>
+      </div>
+      <div>
+        <strong>{report.unresolved.length}</strong>
+        <span>explicit gaps</span>
+      </div>
+    </section>
   );
 }
 
@@ -141,7 +161,7 @@ function Inspector({
       <aside className="inspector" aria-label="Node inspector">
         <div className="empty-panel">
           <strong>No node selected</strong>
-          <p>Select a node to inspect its authority, source pointer, type, freshness, and path.</p>
+          <p>Select a node to inspect its authority, source pointer, type, freshness, domain, and path.</p>
         </div>
       </aside>
     );
@@ -162,6 +182,8 @@ function Inspector({
         <div><dt>Authority</dt><dd>{node.authority_role}</dd></div>
         <div><dt>Source</dt><dd>{node.source_system}</dd></div>
         <div><dt>Freshness</dt><dd>{node.freshness_state ?? 'UNKNOWN'}</dd></div>
+        <div><dt>Domain</dt><dd>{String(node.attributes?.domain ?? 'UNKNOWN')}</dd></div>
+        <div><dt>Coverage</dt><dd>{String(node.attributes?.coverage_status ?? 'UNKNOWN')}</dd></div>
         <div className="wide"><dt>Source object</dt><dd><code>{node.source_object_id}</code></dd></div>
       </dl>
       <div className="inspector-actions">
@@ -202,7 +224,11 @@ export default function App() {
   const searchResults = useMemo(() => {
     if (!deferredSearch) return [];
     return snapshot.nodes
-      .filter((node) => `${node.label} ${node.node_type} ${node.source_system}`.toLocaleLowerCase().includes(deferredSearch))
+      .filter((node) =>
+        `${node.label} ${node.node_type} ${node.source_system} ${String(node.attributes?.domain ?? '')}`
+          .toLocaleLowerCase()
+          .includes(deferredSearch),
+      )
       .slice(0, 12);
   }, [deferredSearch, snapshot.nodes]);
 
@@ -291,13 +317,14 @@ export default function App() {
             </div>
             <span className="node-count">{filteredSnapshot.nodes.length} nodes</span>
           </div>
+          <CoverageSummary snapshot={snapshot} />
           <label className="search-box">
             <span>Search graph</span>
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Name, type, or source"
+              placeholder="Name, type, source, or domain"
             />
           </label>
           {searchResults.length ? (

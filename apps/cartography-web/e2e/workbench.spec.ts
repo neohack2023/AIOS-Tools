@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
-const SNAPSHOT = 'cartography-workbench-source-backed-2026-07-27';
-const DESKTOP_SCREENSHOT_DIGEST = 'd5dedb125c56d1a1c28943e44e8bf4af1449393ff429b38efa79f37593f41be8';
-const MOBILE_SCREENSHOT_DIGEST = 'c1fada42629ba38da833315cdc555aded4411d70bff437a96abc345221d657d4';
+const SNAPSHOT = 'cartography-system-graph-source-backed-2026-07-27';
+const DESKTOP_SCREENSHOT_DIGEST = '71c29a0685d1b4d4b37059324531c4d92f75ce1e1e91144ff6ec9db4978bd628';
+const MOBILE_SCREENSHOT_DIGEST = '902b465b5f9ba567f5e5b62642cf7a9fb34697288fe2e66bc8434024baa96eef';
 
 function workbenchUrl(
   view: 'mindmap' | 'lineage' | 'outline' = 'mindmap',
@@ -46,6 +46,19 @@ test('keeps Mind Map, Lineage, and Outline inside one URL-backed shell', async (
   await expect(page).toHaveURL(/view=outline/);
 });
 
+test('shows resolved cross-source coverage without rendering gap placeholders', async ({ page }) => {
+  await page.goto(workbenchUrl('outline'));
+  const coverage = page.getByLabel('System graph coverage');
+  await expect(coverage).toContainText('8/8 domains');
+  await expect(coverage).toContainText('41');
+  await expect(coverage).toContainText('3');
+  await expect(page.getByText('IMPLEMENTATION', { exact: true })).toBeVisible();
+  await expect(
+    page.getByTestId('outline-view').getByText('neohack2023/AIOS-Tools', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('Registry row-level graph expansion', { exact: true })).toHaveCount(0);
+});
+
 test('search, selection, inspector, root focus, and history restore workspace state', async ({ page }) => {
   await page.goto(workbenchUrl('outline'));
   const search = page.getByRole('searchbox', { name: 'Search graph' });
@@ -58,6 +71,11 @@ test('search, selection, inspector, root focus, and history restore workspace st
   await expect(page).toHaveURL(/root=notion-capability-registry/);
   await page.goBack();
   await expect(page).toHaveURL(/root=notion-global-working-memory/);
+
+  await search.fill('apps/cartography-web');
+  await page.getByRole('button', { name: /apps\/cartography-web/ }).first().click();
+  await expect(page.getByRole('heading', { name: 'apps/cartography-web/' })).toBeVisible();
+  await expect(page.getByText('implementation', { exact: true })).toBeVisible();
 });
 
 test('surfaces graphics context loss instead of leaving a blank viewport', async ({ page }) => {

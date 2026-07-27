@@ -9,6 +9,31 @@ export type RuntimeState =
   | 'context-lost'
   | 'error';
 
+export type CoverageDomain =
+  | 'governance'
+  | 'registries'
+  | 'project-branches'
+  | 'retrieval'
+  | 'workflows'
+  | 'stone-mason'
+  | 'observability'
+  | 'implementation';
+
+export interface CoverageGap {
+  gap_id: string;
+  label: string;
+  domain: CoverageDomain;
+  reason: string;
+  expected_source_system?: string;
+}
+
+export interface CoverageReport {
+  declared_domains: CoverageDomain[];
+  resolved_domains: CoverageDomain[];
+  resolved_node_count: number;
+  unresolved: CoverageGap[];
+}
+
 export interface GraphNode {
   node_id: string;
   label: string;
@@ -37,6 +62,7 @@ export interface GraphSnapshot {
   observed_at: string;
   coverage_state: 'COMPLETE' | 'PARTIAL';
   freshness_state: 'CURRENT' | 'STALE';
+  coverage_report: CoverageReport;
   nodes: GraphNode[];
   edges: GraphEdge[];
 }

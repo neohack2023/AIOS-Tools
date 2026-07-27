@@ -1,0 +1,43 @@
+.coverage-summary {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 7px;
+}
+
+.coverage-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #091721;
+}
+
+.coverage-summary strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+  font: 700 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.coverage-summary span:not(.panel-kicker) {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.authority-implementation {
+  background: var(--purple);
+}
+
+@media (max-width: 1120px) {
+  .coverage-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .coverage-summary > div:first-child {
+    grid-column: 1 / -1;
+  }
+}
