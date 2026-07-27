@@ -1,0 +1,36 @@
+{
+  "view_id": "aios-system-mind-map-v0.1",
+  "title": "AIOS System Mind Map",
+  "purpose": "Central-root semantic orientation map with authority, knowledge-flow, implementation, and evidence relationships projected from validated Graph IR.",
+  "layout_contract": {
+    "type": "radial-semantic",
+    "root_selection": "explicit_node_id",
+    "deterministic": true,
+    "max_depth": 4,
+    "branch_order": "stable_label_then_node_id",
+    "node_label_wrap": {"max_characters_per_line": 30, "max_lines": 3},
+    "edge_geometry": "cubic_bezier",
+    "mobile_fit": "contain"
+  },
+  "relationship_styles": {
+    "contains": "hierarchy",
+    "belongs_to_scope": "scope",
+    "mirrored_by": "cross_source_binding",
+    "evidenced_by": "evidence",
+    "implemented_by": "implementation"
+  },
+  "interaction_contract": {
+    "pan": true,
+    "zoom": true,
+    "inspect_node": true,
+    "collapse_by_depth": true,
+    "source_mutation": false
+  },
+  "non_goals": [
+    "force-directed layout",
+    "renderer-authored knowledge",
+    "fuzzy identity matching",
+    "automatic drift reconciliation",
+    "source writes"
+  ]
+}
