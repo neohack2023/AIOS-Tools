@@ -1,0 +1,46 @@
+{
+  "evidence_id": "notion-cartography-chain-2026-07-27",
+  "observed_at": "2026-07-27T12:29:23.384Z",
+  "source_system": "notion",
+  "root_page_id": "3aa43bd4-ae4a-8106-8a1b-ca3941de69ca",
+  "scope_key": "global-working-memory",
+  "records": [
+    {
+      "id": "3aa43bd4-ae4a-8106-8a1b-ca3941de69ca",
+      "type": "page",
+      "title": "AIOS_CARTOGRAPHY_SLICE_1_IMPLEMENTATION_SPEC.md",
+      "url": "https://app.notion.com/p/3aa43bd4ae4a81068a1bca3941de69ca",
+      "parent_id": "3a943bd4-ae4a-81b0-ac3a-fa918812e811",
+      "authority_role": "AUTHORITATIVE"
+    },
+    {
+      "id": "3a943bd4-ae4a-81b0-ac3a-fa918812e811",
+      "type": "page",
+      "title": "AIOS_SYSTEM_CARTOGRAPHY_ENGINE_CONTRACT.md",
+      "url": "https://app.notion.com/p/3a943bd4ae4a81b0ac3afa918812e811",
+      "parent_id": "39e43bd4-ae4a-81c9-a650-f99e2bf6f09e",
+      "authority_role": "AUTHORITATIVE"
+    },
+    {
+      "id": "39e43bd4-ae4a-81c9-a650-f99e2bf6f09e",
+      "type": "page",
+      "title": "02_MEMORY_SYSTEM_GOVERNANCE",
+      "url": "https://app.notion.com/p/39e43bd4ae4a81c9a650f99e2bf6f09e",
+      "parent_id": "39a43bd4-ae4a-8140-947f-d77dca982dda",
+      "authority_role": "AUTHORITATIVE"
+    },
+    {
+      "id": "39a43bd4-ae4a-8140-947f-d77dca982dda",
+      "type": "database",
+      "title": "Global Working Memory Layer",
+      "url": "https://app.notion.com/p/39a43bd4ae4a8140947fd77dca982dda",
+      "authority_role": "AUTHORITATIVE"
+    }
+  ],
+  "provenance": {
+    "retrieval_mode": "READ_ONLY",
+    "connector_action": "Notion.fetch",
+    "source_pointer": "https://app.notion.com/p/3aa43bd4ae4a81068a1bca3941de69ca",
+    "writes_performed": 0
+  }
+}
