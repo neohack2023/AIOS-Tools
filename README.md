@@ -2,15 +2,17 @@
 
 Independent capability and execution layer for AIOS.
 
-AIOS-Tools exposes bounded, versioned tools that can be invoked by LLMs, Notion/Drive workflows, CI, local developers, and other systems. It is independent of the AIOS portable build.
+AIOS-Tools exposes bounded, versioned tools that can be invoked by LLMs, Notion/Drive workflows, CI, local developers, and external systems. It is independent of the portable AIOS build.
 
-## Authority
+## Authority boundary
 
-- Notion remains architecture and governance authority.
-- Google Drive remains the evidence, source-artifact, and shadow layer.
-- AIOS-Tools is executable infrastructure.
-- Passing a tool or validation does not transfer authority.
-- Durable writes require a separately authorized STONE → MASON path.
+- **Notion** owns architecture and governance authority.
+- **Google Drive** owns evidence, source-artifact, execution-package, and shadow surfaces according to the registered authority model.
+- **This repository** owns live executable implementation and tool-version facts.
+- A passing tool, test, or validation never transfers architectural or memory authority.
+- Durable external writes require a separately authorized STONE → MASON path.
+
+See [Authority Boundaries](docs/AUTHORITY_BOUNDARIES.md) and [Architecture](docs/ARCHITECTURE.md).
 
 ## Bootstrap capabilities
 
@@ -20,9 +22,21 @@ AIOS-Tools exposes bounded, versioned tools that can be invoked by LLMs, Notion/
 | `canonical.hash_json` | READ_ONLY | Produce a deterministic SHA-256 digest for JSON-compatible data |
 | `schema.validate` | READ_ONLY | Validate an instance with JSON Schema Draft 2020-12 |
 
-Every result is wrapped in an execution receipt with provenance, authority-transfer denial, and explicit external-effect reporting.
+Every result is wrapped in an execution receipt with provenance, `authority_transfer: false`, and explicit external-effect reporting.
 
-## Run
+## Components
+
+- `src/aios_tools/runner.py` — fail-closed execution routing
+- `src/aios_tools/tools.py` — registered tool implementations
+- `src/aios_tools/envelope.py` — execution result and receipt envelope
+- `src/aios_tools/cli.py` — JSON CLI adapter
+- `src/aios_tools/mcp_server.py` — MCP Streamable HTTP and stdio adapter
+- `registry/` — tool registry facts
+- `contracts/` — request and result schemas
+- `policies/` — executable eligibility policy
+- `tests/` — shared-core verification
+
+## Install and run
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -35,20 +49,33 @@ aios-tools invoke canonical.hash_json --input '{"value":{"b":2,"a":1}}'
 
 ```bash
 aios-tools-mcp
-```
-
-The server uses MCP Streamable HTTP at `/mcp` by default. It can also run over stdio:
-
-```bash
 aios-tools-mcp --transport stdio
 ```
 
-## Test
+Streamable HTTP is served at `/mcp` by default.
+
+## Validation
 
 ```bash
 pytest
+aios-tools list
+aios-tools invoke system.health --input '{}'
+aios-tools-mcp --help
 ```
 
-## Repository role
+GitHub Actions runs the same shared-core, CLI, and MCP smoke checks. See [Validation](docs/VALIDATION.md).
 
-This repository may validate or operate on Notion records, Drive artifacts, repositories, or supplied payloads. It does not require the AIOS portable repository and must not silently redefine governed contracts.
+## Development workflow
+
+1. Start from a recorded base commit.
+2. Use one branch and pull request for one coherent concern.
+3. Link the approved plan or governing contract.
+4. Run the documented validation commands.
+5. Record actual results, risks, authority impact, and receipt links in the pull request.
+6. Human review decides whether the change merges.
+
+Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [Development](docs/DEVELOPMENT.md) before changing implementation.
+
+## Current status
+
+Bootstrap implementation is under governed review. Hosted deployment, authentication, direct Notion/Drive adapters, Tier 1 control-envelope migration, and write-capable tools remain deferred.
