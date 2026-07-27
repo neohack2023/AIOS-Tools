@@ -1,4 +1,4 @@
-"""Renderer-neutral Cartography primitives for AIOS."""
+"""Cartography adapters, Graph IR, identity, drift, views, and renderers for AIOS."""
 
 from .canonical import canonical_json, canonical_payload, snapshot_digest
 from .drift import compare_cross_source_drift
@@ -26,12 +26,15 @@ from .identity import (
 )
 from .notion_read_adapter import NotionPageChainAdapter, NotionReadClient, NotionReadResult
 from .pipeline import build_drive_snapshot, build_notion_snapshot, compile_source_backed_view
+from .png import render_png
+from .render import compile_render_scene, render_svg
 from .views import (
     NOTION_AUTHORITY_CHAIN_VIEW,
     SYSTEM_OVERVIEW_VIEW,
     WORKFLOW_CONTROL_PLANE_VIEW,
     compile_view,
 )
+from .webgpu import render_webgpu_html
 
 __all__ = [
     "ADAPTER_VERSIONS",
@@ -58,11 +61,15 @@ __all__ = [
     "canonical_json",
     "canonical_payload",
     "compare_cross_source_drift",
+    "compile_render_scene",
     "compile_source_backed_view",
     "compile_view",
     "cross_source_entity_id",
     "edge_id_for",
     "node_id_for",
+    "render_png",
+    "render_svg",
+    "render_webgpu_html",
     "resolve_exact_identities",
     "snapshot_digest",
     "validate_graph_ir",
