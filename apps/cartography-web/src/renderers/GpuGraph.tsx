@@ -19,8 +19,15 @@ interface GpuGraphProps {
 const ROLE_COLORS: Record<string, number> = {
   AUTHORITATIVE: 0x1eaeff,
   DRIVE_SHADOW: 0xffaa00,
-  IMPLEMENTATION: 0x40d692,
-  DERIVED_VIEW: 0xad69ff,
+  IMPLEMENTATION: 0xad69ff,
+  DERIVED_VIEW: 0x40d692,
+};
+
+const RELATION_COLORS: Record<string, number> = {
+  mirrored_by: 0xad69ff,
+  implemented_by: 0x40d692,
+  enforced_by: 0x40d692,
+  backed_by: 0xffaa00,
 };
 
 function cubicPoint(
@@ -113,7 +120,7 @@ export function GpuGraph({
       for (const edge of layout.edges) {
         const points = Array.from({ length: 25 }, (_, index) => cubicPoint(index / 24, edge.points));
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const color = edge.relation_type === 'mirrored_by' ? 0xad69ff : 0x4f7389;
+        const color = RELATION_COLORS[edge.relation_type] ?? 0x4f7389;
         const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 });
         const line = new THREE.Line(geometry, material);
         line.position.z = 0;
