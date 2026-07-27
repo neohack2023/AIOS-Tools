@@ -1,0 +1,10 @@
+{
+  "registry_version": "0.1.0",
+  "default_mode": "READ_ONLY",
+  "portable_repo_required": false,
+  "tools": [
+    {"name": "system.health", "version": "0.1.0", "mode": "READ_ONLY", "reversibility": "FULL", "blast_radius": "NONE", "authority_transfer": false},
+    {"name": "canonical.hash_json", "version": "0.1.0", "mode": "READ_ONLY", "reversibility": "FULL", "blast_radius": "NONE", "authority_transfer": false},
+    {"name": "schema.validate", "version": "0.1.0", "mode": "READ_ONLY", "reversibility": "FULL", "blast_radius": "NONE", "authority_transfer": false}
+  ]
+}

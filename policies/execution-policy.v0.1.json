@@ -1,0 +1,10 @@
+{
+  "policy_version": "0.1.0",
+  "default_mode": "READ_ONLY",
+  "allowed_modes": ["READ_ONLY"],
+  "durable_writes_enabled": false,
+  "external_network_effects_enabled": false,
+  "authority_transfer_allowed": false,
+  "approval_required_for": ["WRITE", "DELETE", "EXTERNAL_EFFECT", "AUTHORITY_CHANGE"],
+  "law": "An agent is only as safe as its least reversible action."
+}

@@ -1,0 +1,45 @@
+name: Repository Governance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required repository surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            README.md
+            AGENTS.md
+            CONTRIBUTING.md
+            SECURITY.md
+            SPEC.md
+            docs/ARCHITECTURE.md
+            docs/AUTHORITY_BOUNDARIES.md
+            docs/DEVELOPMENT.md
+            docs/VALIDATION.md
+            .github/pull_request_template.md
+          )
+          for path in "${required[@]}"; do
+            test -s "$path" || { echo "Missing or empty required file: $path"; exit 1; }
+          done
+      - name: Verify authority boundary markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "Notion" docs/AUTHORITY_BOUNDARIES.md
+          grep -q "Google Drive" docs/AUTHORITY_BOUNDARIES.md
+          grep -q "live source code" docs/AUTHORITY_BOUNDARIES.md
+          grep -q "authority_transfer" README.md
+      - name: Compile Python sources
+        run: python -m compileall -q src tests

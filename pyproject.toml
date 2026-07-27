@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aios-tools"
+version = "0.1.0"
+description = "Independent governed capability and execution layer for AIOS"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "jsonschema>=4.23,<5",
+  "mcp>=1.27,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+]
+
+[project.scripts]
+aios-tools = "aios_tools.cli:main"
+aios-tools-mcp = "aios_tools.mcp_server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aios_tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

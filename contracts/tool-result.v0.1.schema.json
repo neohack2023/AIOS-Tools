@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/tool-result.v0.1.schema.json",
+  "title": "AIOS Tool Execution Receipt v0.1",
+  "type": "object",
+  "required": ["receipt_id", "request_id", "tool", "tool_version", "scope", "mode", "status", "started_at", "completed_at", "registry_version", "policy_version", "requested_by", "authority_context", "output", "errors", "provenance", "external_effects", "authority_transfer"],
+  "properties": {
+    "receipt_id": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "minLength": 1},
+    "tool": {"type": "string", "minLength": 1},
+    "tool_version": {"type": "string", "minLength": 1},
+    "scope": {"type": "string", "minLength": 1},
+    "mode": {"type": "string", "minLength": 1},
+    "status": {"enum": ["COMPLETED", "FAILED", "BLOCKED"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "registry_version": {"type": "string", "minLength": 1},
+    "policy_version": {"type": "string", "minLength": 1},
+    "requested_by": {"type": "object"},
+    "authority_context": {"type": "object"},
+    "output": {"type": "object"},
+    "errors": {"type": "array", "items": {"type": "object"}},
+    "provenance": {"type": "array", "items": {"type": "object"}},
+    "external_effects": {"type": "array", "maxItems": 0},
+    "authority_transfer": {"const": false}
+  },
+  "unevaluatedProperties": false
+}
