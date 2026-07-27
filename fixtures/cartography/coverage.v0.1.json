@@ -1,0 +1,5 @@
+{
+  "version": "0.1",
+  "coverage_states": ["COMPLETE", "PARTIAL", "UNAVAILABLE", "PERMISSION_BLOCKED", "UNSUPPORTED"],
+  "rule": "Fixture adapters must disclose omitted objects, unsupported fields, warnings, errors, and permission state."
+}
