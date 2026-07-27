@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
 const SNAPSHOT = 'cartography-workbench-source-backed-2026-07-27';
+const DESKTOP_SCREENSHOT_DIGEST = 'd5dedb125c56d1a1c28943e44e8bf4af1449393ff429b38efa79f37593f41be8';
+const MOBILE_SCREENSHOT_DIGEST = 'c1fada42629ba38da833315cdc555aded4411d70bff437a96abc345221d657d4';
 
 function workbenchUrl(
   view: 'mindmap' | 'lineage' | 'outline' = 'mindmap',
@@ -67,18 +69,18 @@ test('surfaces graphics context loss instead of leaving a blank viewport', async
     canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true })),
   );
   await expect(status).toHaveAttribute('data-runtime-state', 'context-lost');
-  await expect(page.getByText('CONTEXT LOST')).toBeVisible();
+  await expect(page.getByText('CONTEXT LOST', { exact: true })).toBeVisible();
 });
 
 test('desktop application shell screenshot remains stable', async ({ page }) => {
   await page.goto(workbenchUrl('outline', { selected: 'notion-cartography-contract' }));
   await expect(page.getByTestId('outline-view')).toBeVisible();
-  await expectScreenshotDigest(page, 'workbench-outline-desktop.png', 'PENDING_DESKTOP_DIGEST');
+  await expectScreenshotDigest(page, 'workbench-outline-desktop.png', DESKTOP_SCREENSHOT_DIGEST);
 });
 
 test('mobile portrait focus mode screenshot remains stable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(workbenchUrl('outline', { selected: 'notion-cartography-contract' }));
   await expect(page.getByText('AIOS System Cartography Engine Contract', { exact: true }).last()).toBeVisible();
-  await expectScreenshotDigest(page, 'workbench-mobile-focus.png', 'PENDING_MOBILE_DIGEST');
+  await expectScreenshotDigest(page, 'workbench-mobile-focus.png', MOBILE_SCREENSHOT_DIGEST);
 });
