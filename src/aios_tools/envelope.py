@@ -27,6 +27,10 @@ class ExecutionReceipt:
     status: str
     started_at: str
     completed_at: str
+    registry_version: str = "UNKNOWN"
+    policy_version: str = "UNKNOWN"
+    requested_by: dict[str, Any] = field(default_factory=dict)
+    authority_context: dict[str, Any] = field(default_factory=dict)
     output: dict[str, Any] = field(default_factory=dict)
     errors: list[ToolError] = field(default_factory=list)
     provenance: list[dict[str, Any]] = field(default_factory=list)
