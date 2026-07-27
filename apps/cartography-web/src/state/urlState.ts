@@ -7,7 +7,7 @@ export const DEFAULT_WORKSPACE_STATE: WorkspaceState = {
   depth: 4,
   selected: '',
   filters: [],
-  snapshot: 'cartography-workbench-source-backed-2026-07-27',
+  snapshot: 'cartography-system-graph-source-backed-2026-07-27',
 };
 
 const VIEWS = new Set<ViewMode>(['mindmap', 'lineage', 'outline']);
