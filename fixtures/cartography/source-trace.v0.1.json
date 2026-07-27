@@ -1,0 +1,12 @@
+{
+  "version": "0.1",
+  "required_fields": [
+    "adapter_id",
+    "adapter_version",
+    "fixture_id",
+    "source_pointer",
+    "source_object_id",
+    "node_id"
+  ],
+  "rule": "Every fixture node must trace to the exact source pointer and fixture adapter that produced it."
+}
