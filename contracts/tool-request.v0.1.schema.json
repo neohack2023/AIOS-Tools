@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/tool-request.v0.1.schema.json",
+  "title": "AIOS Tool Request v0.1",
+  "type": "object",
+  "required": ["request_id", "tool", "scope", "mode", "input"],
+  "properties": {
+    "request_id": {"type": "string", "minLength": 1},
+    "tool": {"type": "string", "minLength": 1},
+    "tool_version": {"type": "string"},
+    "scope": {"type": "string", "minLength": 1},
+    "mode": {"const": "READ_ONLY"},
+    "requested_by": {"type": "object", "required": ["type", "id"], "properties": {"type": {"enum": ["LLM", "HUMAN", "CI", "SERVICE"]}, "id": {"type": "string", "minLength": 1}}, "unevaluatedProperties": false},
+    "input": {"type": "object"},
+    "authority_context": {"type": "object"},
+    "provenance": {"type": "array", "items": {"type": "object"}}
+  },
+  "unevaluatedProperties": false
+}
