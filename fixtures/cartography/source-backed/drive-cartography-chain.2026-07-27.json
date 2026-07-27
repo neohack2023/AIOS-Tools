@@ -1,0 +1,68 @@
+{
+  "evidence_id": "drive-cartography-contract-chain-2026-07-27",
+  "observed_at": "2026-07-27T12:58:00Z",
+  "scope_key": "global-working-memory",
+  "root_file_id": "1RIoHFpX4ZlBBLZpJ_dedFFxzp8366a6VPi6ODs8ERgY",
+  "provenance": {
+    "source_system": "google_drive",
+    "source_pointer": "https://docs.google.com/document/d/1RIoHFpX4ZlBBLZpJ_dedFFxzp8366a6VPi6ODs8ERgY",
+    "authority_role": "DRIVE_SHADOW",
+    "capture_method": "files.get metadata through connected Google Drive read tool",
+    "bounded_root": "AI_MEMORY_OS"
+  },
+  "records": [
+    {
+      "id": "1RIoHFpX4ZlBBLZpJ_dedFFxzp8366a6VPi6ODs8ERgY",
+      "title": "AIOS_SYSTEM_CARTOGRAPHY_ENGINE_CONTRACT — v0.1 — drive_shadow",
+      "mime_type": "application/vnd.google-apps.document",
+      "url": "https://docs.google.com/document/d/1RIoHFpX4ZlBBLZpJ_dedFFxzp8366a6VPi6ODs8ERgY/edit?usp=drivesdk",
+      "file_or_folder": "file",
+      "modified_time": "2026-07-26T23:45:37.609Z",
+      "parent_ids": ["1mZtqsQaPPbQOONZK6mdjd0N6GWNax8ce"]
+    },
+    {
+      "id": "1mZtqsQaPPbQOONZK6mdjd0N6GWNax8ce",
+      "title": "00_CONTRACTS",
+      "mime_type": "application/vnd.google-apps.folder",
+      "url": "https://drive.google.com/drive/folders/1mZtqsQaPPbQOONZK6mdjd0N6GWNax8ce",
+      "file_or_folder": "folder",
+      "modified_time": "2026-07-17T22:52:31.463Z",
+      "parent_ids": ["1Yg51AyEndQV05cKkMQmBsv0StJZx625q"]
+    },
+    {
+      "id": "1Yg51AyEndQV05cKkMQmBsv0StJZx625q",
+      "title": "MASON",
+      "mime_type": "application/vnd.google-apps.folder",
+      "url": "https://drive.google.com/drive/folders/1Yg51AyEndQV05cKkMQmBsv0StJZx625q",
+      "file_or_folder": "folder",
+      "modified_time": "2026-07-17T22:52:00.150Z",
+      "parent_ids": ["1Bnkp1F0zCjiJyQWK3l9afvBQK2cCbpzO"]
+    },
+    {
+      "id": "1Bnkp1F0zCjiJyQWK3l9afvBQK2cCbpzO",
+      "title": "02_MEMORY_SYSTEM_GOVERNANCE",
+      "mime_type": "application/vnd.google-apps.folder",
+      "url": "https://drive.google.com/drive/folders/1Bnkp1F0zCjiJyQWK3l9afvBQK2cCbpzO",
+      "file_or_folder": "folder",
+      "modified_time": "2026-07-17T22:49:18.929Z",
+      "parent_ids": ["1vgysdrkoJDJe1qKbT5SAUe5p3bJFqQjh"]
+    },
+    {
+      "id": "1vgysdrkoJDJe1qKbT5SAUe5p3bJFqQjh",
+      "title": "AI_MEMORY_OS",
+      "mime_type": "application/vnd.google-apps.folder",
+      "url": "https://drive.google.com/drive/folders/1vgysdrkoJDJe1qKbT5SAUe5p3bJFqQjh",
+      "file_or_folder": "folder",
+      "modified_time": "2026-07-17T22:48:53.099Z",
+      "parent_ids": []
+    }
+  ],
+  "exact_bindings": [
+    {
+      "binding_key": "cartography-engine-contract-v0.1",
+      "notion_source_object_id": "3a943bd4-ae4a-81b0-ac3a-fa918812e811",
+      "drive_source_object_id": "1RIoHFpX4ZlBBLZpJ_dedFFxzp8366a6VPi6ODs8ERgY",
+      "evidence_pointer": "registered Notion authority ↔ Drive shadow contract pair"
+    }
+  ]
+}
