@@ -96,6 +96,8 @@ export function GpuGraph({
     const canvas = canvasRef.current;
     const shell = shellRef.current;
     if (!canvas || !shell) return;
+    const canvasElement: HTMLCanvasElement = canvas;
+    const shellElement: HTMLDivElement = shell;
 
     let disposed = false;
     let renderer: any;
@@ -149,8 +151,8 @@ export function GpuGraph({
 
     const sizeRenderer = () => {
       if (!renderer || disposed) return;
-      const width = Math.max(1, shell.clientWidth);
-      const height = Math.max(1, shell.clientHeight);
+      const width = Math.max(1, shellElement.clientWidth);
+      const height = Math.max(1, shellElement.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height, false);
       camera3d.left = 0;
@@ -172,7 +174,7 @@ export function GpuGraph({
       if (gpuAvailable) {
         try {
           const module = await import('three/webgpu');
-          renderer = new module.WebGPURenderer({ canvas, antialias: true, alpha: false });
+          renderer = new module.WebGPURenderer({ canvas: canvasElement, antialias: true, alpha: false });
           await renderer.init();
           backend = 'webgpu';
           const device = renderer.backend?.device;
@@ -189,7 +191,7 @@ export function GpuGraph({
       }
 
       if (!renderer) {
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+        renderer = new THREE.WebGLRenderer({ canvas: canvasElement, antialias: true, alpha: false, powerPreference: 'high-performance' });
         backend = 'webgl2';
       }
       if (disposed) {
@@ -203,7 +205,7 @@ export function GpuGraph({
       onRuntimeState(backend === 'webgl2' && fallbackDetail ? 'fallback' : 'ready', fallbackDetail || undefined);
       sizeRenderer();
       resizeObserver = new ResizeObserver(sizeRenderer);
-      resizeObserver.observe(shell);
+      resizeObserver.observe(shellElement);
     }
 
     const handleContextLost = (event: Event) => {
@@ -211,8 +213,8 @@ export function GpuGraph({
       onRuntimeState('context-lost', 'WebGL context lost');
     };
     const handleContextRestored = () => onRuntimeState('loading', 'Graphics context restored; rebuilding view');
-    canvas.addEventListener('webglcontextlost', handleContextLost);
-    canvas.addEventListener('webglcontextrestored', handleContextRestored);
+    canvasElement.addEventListener('webglcontextlost', handleContextLost);
+    canvasElement.addEventListener('webglcontextrestored', handleContextRestored);
 
     void initialize().catch((error) => {
       onBackend('dom');
@@ -222,8 +224,8 @@ export function GpuGraph({
     return () => {
       disposed = true;
       resizeObserver?.disconnect();
-      canvas.removeEventListener('webglcontextlost', handleContextLost);
-      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+      canvasElement.removeEventListener('webglcontextlost', handleContextLost);
+      canvasElement.removeEventListener('webglcontextrestored', handleContextRestored);
       renderRef.current = null;
       contentRef.current = null;
       disposeObject(scene);
