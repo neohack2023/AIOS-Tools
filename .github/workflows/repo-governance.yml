@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           grep -q "Notion" docs/AUTHORITY_BOUNDARIES.md
           grep -q "Google Drive" docs/AUTHORITY_BOUNDARIES.md
-          grep -q "live implementation" docs/AUTHORITY_BOUNDARIES.md
+          grep -q "live source code" docs/AUTHORITY_BOUNDARIES.md
           grep -q "authority_transfer" README.md
       - name: Compile Python sources
         run: python -m compileall -q src tests
