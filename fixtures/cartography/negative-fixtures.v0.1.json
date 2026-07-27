@@ -1,0 +1,15 @@
+{
+  "version": "0.1",
+  "families": [
+    "duplicate_source_object_id",
+    "ambiguous_label_reference",
+    "missing_source_pointer",
+    "illegal_scope_binding",
+    "forbidden_relation_type",
+    "parent_hierarchy_cycle",
+    "inferred_similarity_as_direct",
+    "partial_listing_as_complete",
+    "renderer_state_in_graph_ir",
+    "digest_before_canonical_sort"
+  ]
+}

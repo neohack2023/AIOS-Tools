@@ -1,0 +1,19 @@
+{
+  "version": "0.1",
+  "views": [
+    {
+      "view_id": "system-overview-v0.1",
+      "title": "AIOS System Overview",
+      "lod": [0, 1],
+      "root_selector": {"scope_key": "global-working-memory"},
+      "purpose": "orientation and scope navigation"
+    },
+    {
+      "view_id": "workflow-control-plane-v0.1",
+      "title": "AIOS Workflow Control Plane",
+      "lod": [1, 2],
+      "root_selector": {"labels": ["AI_MEMORY_OS Observatory", "Cartography Engine"]},
+      "purpose": "inspect workflow and capability relationships"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": "0.1",
+  "algorithm": "sha256-canonical-json-v1",
+  "canonicalization": {
+    "sort_nodes_by": "node_id",
+    "sort_edges_by": "edge_id",
+    "exclude_self_field": "snapshot_digest",
+    "reject": ["non_finite_numbers", "negative_zero"]
+  }
+}

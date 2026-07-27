@@ -1,0 +1,16 @@
+{
+  "version": "0.1",
+  "mode": "READ_ONLY",
+  "adapters": [
+    {"adapter_id": "notion.page_tree", "adapter_version": "0.1.0"},
+    {"adapter_id": "drive.file_tree", "adapter_version": "0.1.0"},
+    {"adapter_id": "registry.project_scope", "adapter_version": "0.1.0"},
+    {"adapter_id": "registry.capability", "adapter_version": "0.1.0"}
+  ],
+  "laws": [
+    "labels never define identity",
+    "unresolved targets never create phantom nodes",
+    "source order never changes canonical digest",
+    "fixture execution never mutates sources"
+  ]
+}
