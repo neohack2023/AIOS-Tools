@@ -197,6 +197,20 @@ def invoke(
 
     try:
         output = handler(payload)
+        if tool == "system.health":
+            output = {
+                **output,
+                "registry_version": registry_version,
+                "policy_version": policy_version,
+                "tools": registry,
+                "policy": {
+                    "default_mode": policy["default_mode"],
+                    "allowed_modes": policy["allowed_modes"],
+                    "durable_writes_enabled": policy["durable_writes_enabled"],
+                    "external_network_effects_enabled": policy["external_network_effects_enabled"],
+                    "authority_transfer_allowed": policy["authority_transfer_allowed"],
+                },
+            }
         status = "COMPLETED"
         errors: list[ToolError] = []
     except (TypeError, ValueError) as exc:
