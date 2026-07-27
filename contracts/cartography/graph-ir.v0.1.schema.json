@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/cartography/graph-ir.v0.1.schema.json",
+  "title": "AIOS Cartography Graph IR v0.1",
+  "type": "object",
+  "required": [
+    "graph_ir_version",
+    "snapshot_id",
+    "snapshot_digest",
+    "created_at",
+    "scope_key",
+    "source_coverage",
+    "adapter_versions",
+    "nodes",
+    "edges",
+    "unresolved_references",
+    "validation_summary"
+  ],
+  "properties": {
+    "graph_ir_version": {"const": "0.1"},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "snapshot_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "scope_key": {"type": "string", "minLength": 1},
+    "source_coverage": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/sourceCoverage"}
+    },
+    "adapter_versions": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "nodes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/node"}
+    },
+    "edges": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/edge"}
+    },
+    "unresolved_references": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/unresolvedReference"}
+    },
+    "validation_summary": {
+      "type": "object",
+      "required": ["structural", "semantic", "errors"],
+      "properties": {
+        "structural": {"enum": ["PASSED", "FAILED"]},
+        "semantic": {"enum": ["PASSED", "FAILED"]},
+        "errors": {"type": "array", "items": {"type": "string"}}
+      },
+      "unevaluatedProperties": false
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "authorityRole": {
+      "enum": ["AUTHORITATIVE", "DRIVE_SHADOW", "EXECUTION_TRUTH", "RUNTIME_EVIDENCE", "RESEARCH_EVIDENCE", "DERIVED_VIEW", "UNKNOWN"]
+    },
+    "lifecycleState": {
+      "enum": ["ACTIVE", "REVIEW", "CANDIDATE", "SUPERSEDED", "ARCHIVED", "BLOCKED", "UNKNOWN"]
+    },
+    "verificationState": {
+      "enum": ["PASSED", "FAILED", "PENDING", "PARTIAL", "UNVERIFIED", "UNKNOWN"]
+    },
+    "freshnessState": {
+      "enum": ["CURRENT", "STALE", "UNAVAILABLE", "PARTIAL", "UNKNOWN"]
+    },
+    "evidenceState": {
+      "enum": ["DIRECT_SOURCE", "REGISTERED_BINDING", "DERIVED_RULE", "INFERRED_ANALYSIS", "UNRESOLVED"]
+    },
+    "relationType": {
+      "enum": ["contains", "belongs_to_scope", "reads_from", "writes_to", "invokes", "routes_to", "authorizes", "blocks", "validates", "supersedes", "derived_from", "evidenced_by", "mirrored_by", "implemented_by", "emits", "consumes", "depends_on", "conflicts_with", "similar_to"]
+    },
+    "node": {
+      "type": "object",
+      "required": ["node_id", "node_type", "label", "scope_key", "source_system", "source_object_type", "source_object_id", "source_pointer", "authority_role", "lifecycle_state", "verification_state", "freshness_state", "attributes"],
+      "properties": {
+        "node_id": {"type": "string", "format": "uuid"},
+        "node_type": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "scope_key": {"type": "string", "minLength": 1},
+        "parent_node_id": {"type": "string", "format": "uuid"},
+        "source_system": {"type": "string", "minLength": 1},
+        "source_object_type": {"type": "string", "minLength": 1},
+        "source_object_id": {"type": "string", "minLength": 1},
+        "source_pointer": {"type": "string", "minLength": 1},
+        "authority_role": {"$ref": "#/$defs/authorityRole"},
+        "lifecycle_state": {"$ref": "#/$defs/lifecycleState"},
+        "verification_state": {"$ref": "#/$defs/verificationState"},
+        "freshness_state": {"$ref": "#/$defs/freshnessState"},
+        "valid_from": {"type": "string", "format": "date-time"},
+        "valid_to": {"type": "string", "format": "date-time"},
+        "attributes": {"type": "object"}
+      },
+      "unevaluatedProperties": false
+    },
+    "edge": {
+      "type": "object",
+      "required": ["edge_id", "relation_type", "source_node_id", "target_node_id", "directionality", "scope_key", "source_pointer", "authority_role", "evidence_state", "explanation", "attributes"],
+      "properties": {
+        "edge_id": {"type": "string", "format": "uuid"},
+        "relation_type": {"$ref": "#/$defs/relationType"},
+        "source_node_id": {"type": "string", "format": "uuid"},
+        "target_node_id": {"type": "string", "format": "uuid"},
+        "directionality": {"enum": ["DIRECTED", "UNDIRECTED"]},
+        "scope_key": {"type": "string", "minLength": 1},
+        "source_pointer": {"type": "string", "minLength": 1},
+        "authority_role": {"$ref": "#/$defs/authorityRole"},
+        "evidence_state": {"$ref": "#/$defs/evidenceState"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "valid_from": {"type": "string", "format": "date-time"},
+        "valid_to": {"type": "string", "format": "date-time"},
+        "explanation": {"type": "string", "minLength": 1},
+        "attributes": {"type": "object"}
+      },
+      "unevaluatedProperties": false
+    },
+    "sourceCoverage": {
+      "type": "object",
+      "required": ["adapter_id", "adapter_version", "source_system", "source_pointer", "permission_state", "coverage_state", "observed_objects", "omitted_objects", "unsupported_fields", "warnings", "errors"],
+      "properties": {
+        "adapter_id": {"type": "string", "minLength": 1},
+        "adapter_version": {"type": "string", "minLength": 1},
+        "source_system": {"type": "string", "minLength": 1},
+        "source_pointer": {"type": "string", "minLength": 1},
+        "source_modification_marker": {"type": ["string", "null"]},
+        "permission_state": {"enum": ["FULL", "PARTIAL", "DENIED", "UNKNOWN"]},
+        "coverage_state": {"enum": ["COMPLETE", "PARTIAL", "UNAVAILABLE", "PERMISSION_BLOCKED", "UNSUPPORTED"]},
+        "observed_objects": {"type": "integer", "minimum": 0},
+        "omitted_objects": {"type": "integer", "minimum": 0},
+        "unsupported_fields": {"type": "array", "items": {"type": "string"}},
+        "warnings": {"type": "array", "items": {"type": "string"}},
+        "errors": {"type": "array", "items": {"type": "string"}}
+      },
+      "unevaluatedProperties": false
+    },
+    "unresolvedReference": {
+      "type": "object",
+      "required": ["raw_value", "expected_relation", "target_selector", "reason", "evidence_state", "source_pointer"],
+      "properties": {
+        "raw_value": {"type": "string"},
+        "expected_relation": {"$ref": "#/$defs/relationType"},
+        "source_node_id": {"type": "string", "format": "uuid"},
+        "target_selector": {"type": "object"},
+        "reason": {"type": "string", "minLength": 1},
+        "evidence_state": {"const": "UNRESOLVED"},
+        "source_pointer": {"type": "string", "minLength": 1}
+      },
+      "unevaluatedProperties": false
+    }
+  }
+}
