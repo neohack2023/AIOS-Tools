@@ -45,7 +45,9 @@ jobs:
       - name: Unit tests
         run: npm run test
       - name: Production build
-        run: npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee build.log
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Interaction and screenshot regressions
@@ -56,6 +58,7 @@ jobs:
         with:
           name: cartography-web-browser-evidence
           path: |
+            apps/cartography-web/build.log
             apps/cartography-web/playwright-report
             apps/cartography-web/test-results
           if-no-files-found: ignore
