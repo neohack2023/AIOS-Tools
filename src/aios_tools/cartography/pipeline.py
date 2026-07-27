@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
 from .canonical import snapshot_digest
@@ -18,13 +17,14 @@ def build_notion_snapshot(
     snapshot_id: str,
     source_pointer: str,
     source_modification_marker: str,
+    created_at: str,
 ) -> dict[str, Any]:
     """Build and validate a deterministic Graph IR snapshot from a real read result."""
     snapshot: dict[str, Any] = {
         "graph_ir_version": "0.1",
         "snapshot_id": snapshot_id,
         "snapshot_digest": "0" * 64,
-        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "created_at": created_at,
         "scope_key": scope_key,
         "source_coverage": [{
             "adapter_id": "notion.page_chain.read_only",
@@ -44,12 +44,11 @@ def build_notion_snapshot(
         "nodes": list(result.nodes),
         "edges": list(result.edges),
         "unresolved_references": list(result.unresolved_references),
-        "validation_summary": {"structural": "PENDING", "semantic": "PENDING", "errors": []},
+        "validation_summary": {"structural": "PASSED", "semantic": "PASSED", "errors": []},
     }
     errors = validate_graph_ir(snapshot)
     if errors:
         raise ValueError("Graph IR validation failed: " + "; ".join(error.code for error in errors))
-    snapshot["validation_summary"] = {"structural": "PASSED", "semantic": "PASSED", "errors": []}
     snapshot["snapshot_digest"] = snapshot_digest(snapshot)
     return snapshot
 
