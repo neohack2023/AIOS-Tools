@@ -1,10 +1,10 @@
 """Deterministic, renderer-neutral scene compilation and SVG export."""
 from __future__ import annotations
 
+import json
 from html import escape
 from typing import Any
 
-from .canonical import canonical_json
 from .graph_ir import validate_graph_ir
 
 NODE_WIDTH = 240
@@ -19,6 +19,10 @@ _PALETTE = {
     "DERIVED_VIEW": (173, 105, 255),
     "IMPLEMENTATION": (64, 214, 146),
 }
+
+
+def _stable_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))
 
 
 def _color(role: str) -> tuple[int, int, int]:
@@ -113,7 +117,7 @@ def compile_render_scene(
     width = max(720, MARGIN * 2 + max(1, len(lanes)) * NODE_WIDTH + max(0, len(lanes) - 1) * GAP_X)
     height = max(420, MARGIN * 2 + 52 + max_rows * NODE_HEIGHT + max(0, max_rows - 1) * GAP_Y)
     resolved = sorted((identity_resolution or {}).get("resolved", []), key=lambda item: str(item.get("entity_id", "")))
-    unresolved = sorted((identity_resolution or {}).get("unresolved", []), key=canonical_json)
+    unresolved = sorted((identity_resolution or {}).get("unresolved", []), key=_stable_json)
     scene = {
         "renderer_contract": "aios.cartography.scene.v0.1",
         "source_snapshot_id": snapshot["snapshot_id"],
@@ -130,7 +134,7 @@ def compile_render_scene(
         "nodes": scene_nodes,
         "edges": scene_edges,
     }
-    scene["scene_digest_material"] = canonical_json(scene)
+    scene["scene_digest_material"] = _stable_json(scene)
     return scene
 
 
