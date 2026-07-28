@@ -1,0 +1,7 @@
+description = "Validate JSON against a JSON Schema through AIOS-Tools."
+prompt = """
+Treat `{{args}}` as a JSON object with two properties: `schema` and `instance`.
+Invoke the AIOS-Tools MCP capability `schema.validate` using those values.
+
+Report whether validation passed, any bounded validation errors returned by the tool, and the execution receipt identifier. Do not repair the schema or instance unless the user separately asks for a proposed patch.
+"""
