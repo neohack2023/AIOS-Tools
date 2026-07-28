@@ -20,6 +20,13 @@ EVENT_TYPES = {
     "context.packet_composed",
     "answer.generated",
     "outcome.observed",
+    "execution.requested",
+    "execution.eligibility_evaluated",
+    "tool.invoked",
+    "tool.completed",
+    "tool.failed",
+    "tool.blocked",
+    "receipt.created",
 }
 
 
@@ -42,14 +49,7 @@ class CognitionReceiptBuilder:
     started_at: str
     events: list[dict[str, Any]] = field(default_factory=list)
 
-    def append(
-        self,
-        event_type: str,
-        occurred_at: str,
-        actor: str,
-        payload: dict[str, Any],
-        evidence: list[dict[str, Any]] | None = None,
-    ) -> dict[str, Any]:
+    def append(self, event_type: str, occurred_at: str, actor: str, payload: dict[str, Any], evidence: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         event = {
             "sequence": len(self.events),
             "event_type": event_type,
@@ -63,13 +63,7 @@ class CognitionReceiptBuilder:
         self.events.append(event)
         return event
 
-    def finalize(
-        self,
-        *,
-        completed_at: str,
-        status: str,
-        provenance: list[dict[str, Any]] | None = None,
-    ) -> dict[str, Any]:
+    def finalize(self, *, completed_at: str, status: str, provenance: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         receipt = {
             "receipt_version": "0.1",
             "trace_id": self.trace_id,
@@ -107,6 +101,7 @@ def validate_cognition_receipt(receipt: dict[str, Any]) -> None:
     considered_packets: set[str] = set()
     selected_packets: set[str] = set()
     composed_packet_ids: set[str] = set()
+    invoked_tools: set[str] = set()
 
     for index, event in enumerate(events):
         if event.get("sequence") != index:
@@ -152,8 +147,16 @@ def validate_cognition_receipt(receipt: dict[str, Any]) -> None:
         elif event_type == "answer.generated":
             if payload.get("context_packet_id") not in composed_packet_ids:
                 raise ValueError("answer requires a composed context packet")
+        elif event_type == "tool.invoked":
+            invoked_tools.add(payload.get("tool", ""))
+        elif event_type in {"tool.completed", "tool.failed"}:
+            if payload.get("tool") not in invoked_tools:
+                raise ValueError("completed or failed tool must have been invoked")
 
     if "intent.received" not in seen_types:
         raise ValueError("receipt requires intent.received")
     if "answer.generated" in seen_types and "context.packet_composed" not in seen_types:
         raise ValueError("answer generation requires packet composition")
+    terminal_events = [event for event in seen_types if event in {"tool.completed", "tool.failed", "tool.blocked"}]
+    if terminal_events and len(terminal_events) != 1:
+        raise ValueError("runtime cognition receipt requires one terminal tool event")
