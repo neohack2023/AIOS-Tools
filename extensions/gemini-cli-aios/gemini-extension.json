@@ -1,0 +1,19 @@
+{
+  "name": "aios-tools",
+  "version": "0.1.0",
+  "description": "Governed Gemini CLI client for the AIOS-Tools MCP server.",
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "aios-tools": {
+      "command": "aios-tools-mcp",
+      "args": ["--transport", "stdio"],
+      "timeout": 30000,
+      "trust": false,
+      "includeTools": [
+        "system.health",
+        "canonical.hash_json",
+        "schema.validate"
+      ]
+    }
+  }
+}
