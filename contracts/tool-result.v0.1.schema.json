@@ -21,7 +21,7 @@
     "output": {"type": "object"},
     "errors": {"type": "array", "items": {"type": "object"}},
     "provenance": {"type": "array", "items": {"type": "object"}},
-    "cognition_receipt": {"$ref": "cognition-receipt.v0.1.schema.json"},
+    "cognition_receipt": {"type": "object"},
     "external_effects": {"type": "array", "maxItems": 0},
     "authority_transfer": {"const": false}
   },
