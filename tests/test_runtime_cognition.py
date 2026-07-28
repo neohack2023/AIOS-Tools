@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from math import nan
+
 from aios_tools.cognition_receipt import validate_cognition_receipt
 from aios_tools.runner import invoke
 
@@ -36,8 +38,8 @@ def test_blocked_execution_does_not_claim_handler_invocation() -> None:
 
 def test_failed_handler_execution_records_invocation_and_failure() -> None:
     receipt = invoke(
-        "schema.validate",
-        {"schema": {"type": "object"}, "instance": object()},
+        "canonical.hash_json",
+        {"value": {"not_finite": nan}},
         request_id="request-cognition-failed",
     )
     cognition = receipt["cognition_receipt"]
@@ -59,4 +61,4 @@ def test_runtime_trace_omits_raw_payload_and_output() -> None:
 
     assert secret_marker not in cognition_text
     assert "output" not in cognition_text
-    assert "payload" in cognition_text  # event envelope field, not request content
+    assert "payload" in cognition_text
