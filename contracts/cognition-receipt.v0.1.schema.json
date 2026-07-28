@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/cognition-receipt.v0.1.schema.json",
+  "title": "AIOS Cognition Receipt v0.1",
+  "type": "object",
+  "required": ["receipt_id", "receipt_version", "trace_id", "request_id", "scope_key", "mode", "started_at", "completed_at", "status", "events", "provenance", "external_effects", "authority_transfer"],
+  "properties": {
+    "receipt_id": {"type": "string", "pattern": "^cr_[0-9a-f]{64}$"},
+    "receipt_version": {"const": "0.1"},
+    "trace_id": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "minLength": 1},
+    "scope_key": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["READ_ONLY", "SIMULATION", "REPLAY"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["COMPLETED", "FAILED", "BLOCKED"]},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event_id", "sequence", "event_type", "occurred_at", "actor", "scope_key", "payload", "evidence"],
+        "properties": {
+          "event_id": {"type": "string", "pattern": "^ce_[0-9a-f]{64}$"},
+          "sequence": {"type": "integer", "minimum": 0},
+          "event_type": {"enum": ["intent.received", "intent.classified", "scope.candidate_considered", "scope.resolved", "authority.candidate_considered", "authority.selected", "retrieval.packet_considered", "retrieval.packet_selected", "retrieval.packet_rejected", "conflict.detected", "conflict.resolution_proposed", "context.packet_composed", "answer.generated", "outcome.observed"]},
+          "occurred_at": {"type": "string", "format": "date-time"},
+          "actor": {"type": "string", "minLength": 1},
+          "scope_key": {"type": "string", "minLength": 1},
+          "payload": {"type": "object"},
+          "evidence": {"type": "array", "items": {"type": "object"}}
+        },
+        "unevaluatedProperties": false
+      }
+    },
+    "provenance": {"type": "array", "items": {"type": "object"}},
+    "external_effects": {"type": "array", "maxItems": 0},
+    "authority_transfer": {"const": false}
+  },
+  "unevaluatedProperties": false
+}
