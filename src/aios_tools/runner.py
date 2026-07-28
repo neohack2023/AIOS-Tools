@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from .config import ConfigurationError, load_policy, load_registry, validate_request
 from .envelope import ExecutionReceipt, ToolError, utc_now
+from .runtime_cognition import build_execution_cognition_receipt
 from .tools import HANDLERS
 
 
@@ -24,7 +25,27 @@ def _receipt(
     output: dict[str, Any] | None = None,
     errors: list[ToolError] | None = None,
     provenance: list[dict[str, Any]] | None = None,
+    handler_invoked: bool = False,
 ) -> dict[str, Any]:
+    completed_at = utc_now()
+    requested_by = requested_by or {}
+    authority_context = authority_context or {}
+    provenance = provenance or []
+    errors = errors or []
+    cognition_receipt = build_execution_cognition_receipt(
+        request_id=request_id,
+        tool=tool,
+        scope=scope,
+        mode=mode,
+        status=status,
+        started_at=started_at,
+        completed_at=completed_at,
+        requested_by=requested_by,
+        authority_context=authority_context,
+        provenance=provenance,
+        handler_invoked=handler_invoked,
+        error_codes=[error.code for error in errors],
+    )
     return ExecutionReceipt(
         request_id=request_id,
         tool=tool,
@@ -33,14 +54,15 @@ def _receipt(
         mode=mode,
         status=status,
         started_at=started_at,
-        completed_at=utc_now(),
+        completed_at=completed_at,
         registry_version=registry_version,
         policy_version=policy_version,
-        requested_by=requested_by or {},
-        authority_context=authority_context or {},
+        requested_by=requested_by,
+        authority_context=authority_context,
         output=output or {},
-        errors=errors or [],
-        provenance=provenance or [],
+        errors=errors,
+        provenance=provenance,
+        cognition_receipt=cognition_receipt,
     ).to_dict()
 
 
@@ -237,4 +259,5 @@ def invoke(
         output=output,
         errors=errors,
         provenance=provenance,
+        handler_invoked=True,
     )
