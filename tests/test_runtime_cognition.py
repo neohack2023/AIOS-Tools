@@ -36,6 +36,25 @@ def test_blocked_execution_does_not_claim_handler_invocation() -> None:
     assert "tool.blocked" in _event_types(receipt)
 
 
+def test_blocked_execution_preserves_rejected_mode_without_authorizing_it() -> None:
+    receipt = invoke(
+        "system.health",
+        {},
+        mode="WRITE",
+        request_id="request-cognition-rejected-mode",
+    )
+    cognition = receipt["cognition_receipt"]
+
+    validate_cognition_receipt(cognition)
+    assert receipt["status"] == cognition["status"] == "BLOCKED"
+    assert receipt["mode"] == cognition["mode"] == "WRITE"
+    assert receipt["errors"][0]["code"] == "MODE_GLOBALLY_BLOCKED"
+    assert "tool.invoked" not in _event_types(receipt)
+    assert "tool.blocked" in _event_types(receipt)
+    assert cognition["external_effects"] == []
+    assert cognition["authority_transfer"] is False
+
+
 def test_failed_handler_execution_records_invocation_and_failure() -> None:
     receipt = invoke(
         "canonical.hash_json",
