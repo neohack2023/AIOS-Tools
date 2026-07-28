@@ -5,7 +5,6 @@ import os
 import sys
 from typing import Any
 
-import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -82,8 +81,9 @@ async def _exercise_stdio_boundary() -> None:
             malformed = await session.call_tool("canonical_hash_json", arguments={})
             assert malformed.isError is True
 
-            with pytest.raises(Exception):
-                await session.call_tool("tool_that_does_not_exist", arguments={})
+            unknown = await session.call_tool("tool_that_does_not_exist", arguments={})
+            assert unknown.isError is True
+            assert unknown.content
 
 
 def test_mcp_stdio_black_box_contract() -> None:
