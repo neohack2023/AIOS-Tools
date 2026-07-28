@@ -29,6 +29,8 @@ EVENT_TYPES = {
     "receipt.created",
 }
 
+ALLOWED_EXECUTION_MODES = {"READ_ONLY", "SIMULATION", "REPLAY"}
+
 
 def _event_id(event: dict[str, Any]) -> str:
     payload = {key: value for key, value in event.items() if key != "event_id"}
@@ -84,10 +86,14 @@ class CognitionReceiptBuilder:
 
 
 def validate_cognition_receipt(receipt: dict[str, Any]) -> None:
-    if receipt.get("mode") not in {"READ_ONLY", "SIMULATION", "REPLAY"}:
-        raise ValueError("unsupported cognition receipt mode")
-    if receipt.get("status") not in {"COMPLETED", "FAILED", "BLOCKED"}:
+    mode = receipt.get("mode")
+    status = receipt.get("status")
+    if not isinstance(mode, str) or not mode:
+        raise ValueError("cognition receipt mode must be a non-empty string")
+    if status not in {"COMPLETED", "FAILED", "BLOCKED"}:
         raise ValueError("unsupported cognition receipt status")
+    if status != "BLOCKED" and mode not in ALLOWED_EXECUTION_MODES:
+        raise ValueError("non-blocked cognition receipt uses unsupported execution mode")
     if receipt.get("external_effects"):
         raise ValueError("cognition receipt slice is read-only")
     if receipt.get("authority_transfer") is not False:
