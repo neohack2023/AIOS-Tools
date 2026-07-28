@@ -59,7 +59,7 @@ async def _exercise_stdio_boundary() -> None:
                 )
             )
             _assert_governed_receipt(digest, "canonical.hash_json")
-            assert isinstance(digest["output"].get("sha256"), str)
+            assert isinstance(digest["output"].get("digest"), str)
 
             validation = _structured(
                 await session.call_tool(
