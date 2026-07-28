@@ -3,7 +3,7 @@
   "$id": "https://aios.local/contracts/tool-result.v0.1.schema.json",
   "title": "AIOS Tool Execution Receipt v0.1",
   "type": "object",
-  "required": ["receipt_id", "request_id", "tool", "tool_version", "scope", "mode", "status", "started_at", "completed_at", "registry_version", "policy_version", "requested_by", "authority_context", "output", "errors", "provenance", "external_effects", "authority_transfer"],
+  "required": ["receipt_id", "request_id", "tool", "tool_version", "scope", "mode", "status", "started_at", "completed_at", "registry_version", "policy_version", "requested_by", "authority_context", "output", "errors", "provenance", "cognition_receipt", "external_effects", "authority_transfer"],
   "properties": {
     "receipt_id": {"type": "string", "minLength": 1},
     "request_id": {"type": "string", "minLength": 1},
@@ -21,6 +21,7 @@
     "output": {"type": "object"},
     "errors": {"type": "array", "items": {"type": "object"}},
     "provenance": {"type": "array", "items": {"type": "object"}},
+    "cognition_receipt": {"$ref": "cognition-receipt.v0.1.schema.json"},
     "external_effects": {"type": "array", "maxItems": 0},
     "authority_transfer": {"const": false}
   },
