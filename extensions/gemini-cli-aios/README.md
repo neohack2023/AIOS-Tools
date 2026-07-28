@@ -11,11 +11,13 @@ This extension does not implement a second AIOS kernel. It supplies Gemini CLI w
 - namespaced convenience commands
 - an explicit read-only tool allowlist
 
-Slice 1 exposes only:
+Slice 2 exposes the MCP tool names:
 
-- `system.health`
-- `canonical.hash_json`
-- `schema.validate`
+- `system_health`
+- `canonical_hash_json`
+- `validate_json_schema`
+
+These map to the internal AIOS registry capabilities `system.health`, `canonical.hash_json`, and `schema.validate`. Gemini sees the MCP names; execution receipts retain the registry capability names.
 
 ## Prerequisites
 
@@ -64,12 +66,28 @@ Run the health probe:
 /aios:health
 ```
 
-The response must retain the execution receipt, authority context, `authority_transfer: false`, and external-effect reporting.
+The response must retain the execution receipt, authority context, `authority_transfer: false`, cognition receipt, and empty external-effect reporting.
+
+## Black-box protocol verification
+
+The repository test suite launches `aios_tools.mcp_server` as a separate stdio subprocess and communicates only through an MCP `ClientSession`. It proves:
+
+- protocol initialization succeeds
+- exactly the three read-only tools are discovered
+- all three tools execute through the governed runner
+- execution and cognition receipts survive transport
+- malformed arguments and unknown tools fail closed
+
+Run:
+
+```bash
+pytest tests/test_gemini_cli_extension.py tests/test_gemini_cli_mcp_black_box.py
+```
 
 ## Security posture
 
-- The extension sets `trust: false` for the MCP server.
-- The manifest allowlists only the three Slice 0 read-only capabilities.
+- Gemini CLI extensions do not support the `trust` field in extension MCP configuration, so it is intentionally omitted.
+- The manifest allowlists only the three read-only MCP tool names.
 - Gemini may request a capability, but AIOS-Tools performs request validation, eligibility checks, execution, and receipt generation.
 - No direct Notion, Drive, GitHub, memory-promotion, or other durable write path is introduced.
 - Untrusted Gemini workspaces do not load extensions, commands, or MCP servers.
@@ -78,11 +96,4 @@ The response must retain the execution receipt, authority context, `authority_tr
 
 If `aios-tools-mcp` is not found, confirm the Python environment containing AIOS-Tools is active and that its scripts directory is on `PATH`.
 
-After changing the extension, use Gemini CLI reload commands or restart the session:
-
-```text
-/extensions reload
-/mcp reload
-/commands reload
-/memory reload
-```
+After changing the extension, restart Gemini CLI. Extension management changes are loaded at startup; local reload commands may vary by Gemini CLI release.
