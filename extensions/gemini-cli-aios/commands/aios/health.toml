@@ -1,0 +1,14 @@
+description = "Check the governed AIOS-Tools runtime and summarize its receipt."
+prompt = """
+Use the connected AIOS-Tools MCP server to invoke `system.health` with an empty input object.
+
+Report:
+- runtime status
+- registry and policy state
+- execution status
+- receipt identifier
+- authority context
+- external effects
+
+Do not infer capabilities that are not present in the returned registry or receipt.
+"""

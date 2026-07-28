@@ -1,0 +1,6 @@
+description = "Create a deterministic governed digest for JSON input."
+prompt = """
+Parse `{{args}}` as JSON and invoke the AIOS-Tools MCP capability `canonical.hash_json` with that value.
+
+Return the deterministic digest and the execution receipt identifier. Preserve the receipt's authority and external-effect fields. If the argument is not valid JSON, stop and explain the validation failure without guessing a corrected value.
+"""
