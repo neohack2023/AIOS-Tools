@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/retrieval-trajectory.v0.1.schema.json",
+  "title": "AIOS Retrieval Trajectory v0.1",
+  "type": "object",
+  "required": ["trajectory_id", "trajectory_version", "scope_key", "query_ref", "candidates", "context_packet", "events", "external_effects", "authority_transfer"],
+  "properties": {
+    "trajectory_id": {"type": "string", "pattern": "^rt_[0-9a-f]{64}$"},
+    "trajectory_version": {"const": "0.1"},
+    "scope_key": {"type": "string", "minLength": 1},
+    "query_ref": {"type": "string", "minLength": 1},
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["packet_id", "source_system", "source_ref", "authority_role", "rank", "score", "disposition", "reason_code"],
+        "properties": {
+          "packet_id": {"type": "string", "pattern": "^rp_[0-9a-f]{64}$"},
+          "source_system": {"type": "string", "minLength": 1},
+          "source_ref": {"type": "string", "minLength": 1},
+          "authority_role": {"enum": ["AUTHORITATIVE", "DRIVE_SHADOW", "IMPLEMENTATION", "EVIDENCE", "UNRESOLVED"]},
+          "rank": {"type": "integer", "minimum": 0},
+          "score": {"type": ["number", "null"]},
+          "disposition": {"enum": ["SELECTED", "REJECTED"]},
+          "reason_code": {"type": "string", "minLength": 1}
+        },
+        "unevaluatedProperties": false
+      }
+    },
+    "context_packet": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["context_packet_id", "packet_ids", "token_count"],
+          "properties": {
+            "context_packet_id": {"type": "string", "minLength": 1},
+            "packet_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^rp_[0-9a-f]{64}$"}},
+            "token_count": {"type": "integer", "minimum": 0}
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "events": {"type": "array", "items": {"type": "object"}},
+    "external_effects": {"type": "array", "maxItems": 0},
+    "authority_transfer": {"const": false}
+  },
+  "unevaluatedProperties": false
+}
