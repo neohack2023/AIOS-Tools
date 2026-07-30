@@ -4,9 +4,9 @@ from pathlib import Path
 
 EXTENSION_ROOT = Path(__file__).parents[1] / "extensions" / "gemini-cli-aios"
 EXPECTED_TOOLS = {
-    "system.health",
-    "canonical.hash_json",
-    "schema.validate",
+    "system_health",
+    "canonical_hash_json",
+    "validate_json_schema",
 }
 
 
@@ -14,12 +14,13 @@ def test_manifest_exposes_only_slice_zero_read_only_tools() -> None:
     manifest = json.loads((EXTENSION_ROOT / "gemini-extension.json").read_text())
 
     assert manifest["name"] == "aios-tools"
+    assert manifest["version"] == "0.2.0"
     assert manifest["contextFileName"] == "GEMINI.md"
 
     server = manifest["mcpServers"]["aios-tools"]
     assert server["command"] == "aios-tools-mcp"
     assert server["args"] == ["--transport", "stdio"]
-    assert server["trust"] is False
+    assert "trust" not in server
     assert set(server["includeTools"]) == EXPECTED_TOOLS
 
 
