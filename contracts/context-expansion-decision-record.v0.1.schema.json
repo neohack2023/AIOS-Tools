@@ -107,11 +107,7 @@
     },
     "retrieval_path_pointer": {
       "type": "object",
-      "required": [
-        "trajectory_id",
-        "query_ref",
-        "sufficiency_assessment_id"
-      ],
+      "required": ["trajectory_id", "query_ref"],
       "properties": {
         "trajectory_id": {
           "type": "string",
@@ -136,7 +132,8 @@
       "minLength": 1
     },
     "lifecycle_state": {
-      "enum": ["CANDIDATE", "ACTIVE", "SUPERSEDED", "REJECTED"]
+      "type": "string",
+      "minLength": 1
     }
   },
   "$defs": {
