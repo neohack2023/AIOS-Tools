@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/observatory-context-expansion-projection.v0.1.schema.json",
+  "title": "AIOS Context Expansion Observatory Projection v0.1",
+  "type": "object",
+  "required": [
+    "projection_id",
+    "projection_version",
+    "projection_kind",
+    "observed_at",
+    "scope_key",
+    "workflow",
+    "identities",
+    "context_expansion",
+    "evidence_links",
+    "privacy",
+    "external_effects",
+    "authority_transfer"
+  ],
+  "properties": {
+    "projection_id": {"type": "string", "pattern": "^op_[0-9a-f]{64}$"},
+    "projection_version": {"const": "0.1"},
+    "projection_kind": {"const": "CONTEXT_EXPANSION_OBSERVATORY"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "scope_key": {"type": "string", "minLength": 1},
+    "workflow": {
+      "type": "object",
+      "required": ["workflow_id", "workflow_version", "status", "mode", "started_at", "completed_at", "event_count"],
+      "properties": {
+        "workflow_id": {"const": "context-expansion.packet-read-only"},
+        "workflow_version": {"const": "0.1"},
+        "status": {"const": "COMPLETED"},
+        "mode": {"const": "READ_ONLY"},
+        "started_at": {"type": "string", "format": "date-time"},
+        "completed_at": {"type": "string", "format": "date-time"},
+        "event_count": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "identities": {
+      "type": "object",
+      "required": ["request_id", "trace_id", "receipt_id", "execution_id", "trajectory_id", "context_packet_id", "expansion_record_id"],
+      "properties": {
+        "request_id": {"type": "string", "minLength": 1},
+        "trace_id": {"type": "string", "minLength": 1},
+        "receipt_id": {"type": "string", "pattern": "^cr_[0-9a-f]{64}$"},
+        "execution_id": {"type": ["string", "null"], "minLength": 1},
+        "trajectory_id": {"type": "string", "pattern": "^rt_[0-9a-f]{64}$"},
+        "context_packet_id": {"type": "string", "minLength": 1},
+        "expansion_record_id": {"type": "string", "pattern": "^cedr_[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "context_expansion": {
+      "type": "object",
+      "required": ["current_tier", "requested_tier", "tier_movement", "sufficiency_verdict", "expansion_trigger", "decision_result", "budget_state", "lifecycle_state"],
+      "properties": {
+        "current_tier": {"enum": ["L0", "L1", "L2"]},
+        "requested_tier": {"enum": ["L0", "L1", "L2"]},
+        "tier_movement": {"type": "string", "pattern": "^L[0-2]->L[0-2]$"},
+        "sufficiency_verdict": {"enum": ["SUFFICIENT", "INSUFFICIENT", "UNKNOWN", "BLOCKED"]},
+        "expansion_trigger": {"enum": ["SUFFICIENCY_FAILED", "AUTHORITY_AMBIGUITY", "CONFLICT_DETECTED", "EVIDENCE_GAP", "USER_REQUEST", "BUDGET_REALLOCATION", "RECOVERY", "COMPACTION_RESET"]},
+        "decision_result": {"enum": ["EXPANDED", "DENIED", "BLOCKED", "NO_OP"]},
+        "budget_state": {"enum": ["WITHIN_BUDGET", "APPROVED_INCREASE"]},
+        "lifecycle_state": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "evidence_links": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["evidence_type", "evidence_id", "schema_version", "scope_key", "lifecycle_state", "authority_transfer", "referenced_by_event_types"],
+        "properties": {
+          "evidence_type": {"const": "CONTEXT_EXPANSION_DECISION_RECORD"},
+          "evidence_id": {"type": "string", "pattern": "^cedr_[0-9a-f]{64}$"},
+          "schema_version": {"const": "0.1"},
+          "scope_key": {"type": "string", "minLength": 1},
+          "lifecycle_state": {"type": "string", "minLength": 1},
+          "authority_transfer": {"const": false},
+          "referenced_by_event_types": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "required": ["source_content_included", "event_payloads_included", "raw_receipt_included", "raw_cedr_included"],
+      "properties": {
+        "source_content_included": {"const": false},
+        "event_payloads_included": {"const": false},
+        "raw_receipt_included": {"const": false},
+        "raw_cedr_included": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "external_effects": {"type": "array", "maxItems": 0},
+    "authority_transfer": {"const": false}
+  },
+  "additionalProperties": false
+}
