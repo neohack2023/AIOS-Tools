@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/context-expansion-decision-record.v0.1.schema.json",
+  "title": "AIOS Context Expansion Decision Record v0.1",
+  "type": "object",
+  "required": [
+    "expansion_record_id",
+    "schema_version",
+    "packet_id",
+    "scope_key",
+    "created_at",
+    "current_tier",
+    "requested_tier",
+    "expansion_trigger",
+    "sufficiency_before",
+    "authority_sources_considered",
+    "opened_items",
+    "rejected_items",
+    "omitted_items",
+    "token_budget_before",
+    "token_budget_after",
+    "budget_state",
+    "retrieval_path_pointer",
+    "decision_result",
+    "decision_reason",
+    "lifecycle_state"
+  ],
+  "properties": {
+    "expansion_record_id": {
+      "type": "string",
+      "pattern": "^cedr_[0-9a-f]{64}$"
+    },
+    "schema_version": {
+      "const": "0.1"
+    },
+    "packet_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "current_tier": {
+      "enum": ["L0", "L1", "L2"]
+    },
+    "requested_tier": {
+      "enum": ["L0", "L1", "L2"]
+    },
+    "expansion_trigger": {
+      "enum": [
+        "SUFFICIENCY_FAILED",
+        "AUTHORITY_AMBIGUITY",
+        "CONFLICT_DETECTED",
+        "EVIDENCE_GAP",
+        "USER_REQUEST",
+        "BUDGET_REALLOCATION",
+        "RECOVERY",
+        "COMPACTION_RESET"
+      ]
+    },
+    "sufficiency_before": {
+      "enum": ["SUFFICIENT", "INSUFFICIENT", "UNKNOWN", "BLOCKED"]
+    },
+    "authority_sources_considered": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourcePointer"
+      }
+    },
+    "opened_items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/contextItem"
+      }
+    },
+    "rejected_items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/contextItem"
+      }
+    },
+    "omitted_items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/contextItem"
+      }
+    },
+    "token_budget_before": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "token_budget_after": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "budget_state": {
+      "type": "string",
+      "minLength": 1
+    },
+    "budget_approval_pointer": {
+      "$ref": "#/$defs/genericPointer"
+    },
+    "retrieval_path_pointer": {
+      "type": "object",
+      "required": ["trajectory_id", "query_ref"],
+      "properties": {
+        "trajectory_id": {
+          "type": "string",
+          "pattern": "^rt_[0-9a-f]{64}$"
+        },
+        "query_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sufficiency_assessment_id": {
+          "type": "string",
+          "pattern": "^sa_[0-9a-f]{64}$"
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "decision_result": {
+      "enum": ["EXPANDED", "DENIED", "BLOCKED", "NO_OP"]
+    },
+    "decision_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lifecycle_state": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "sourcePointer": {
+      "type": "object",
+      "required": [
+        "source_system",
+        "source_object_id",
+        "source_url",
+        "authority_role",
+        "coverage_state"
+      ],
+      "properties": {
+        "source_system": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_object_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_url": {
+          "type": ["string", "null"],
+          "format": "uri"
+        },
+        "authority_role": {
+          "enum": [
+            "A0_ROUTING",
+            "A1_READ",
+            "A2_DRAFT",
+            "A3_GOVERNED_WRITE",
+            "SOURCE_AUTHORITY",
+            "IMPLEMENTATION_TRUTH",
+            "EVIDENCE_ONLY",
+            null
+          ]
+        },
+        "coverage_state": {
+          "enum": ["RESOLVED", "UNRESOLVED", "PARTIAL", "INACCESSIBLE"]
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "contextItem": {
+      "type": "object",
+      "required": ["source_pointer", "reason"],
+      "properties": {
+        "source_pointer": {
+          "$ref": "#/$defs/sourcePointer"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "genericPointer": {
+      "type": "object",
+      "minProperties": 1
+    }
+  },
+  "unevaluatedProperties": false
+}
