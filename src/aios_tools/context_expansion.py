@@ -19,7 +19,6 @@ TRIGGERS = {
 }
 SUFFICIENCY_VERDICTS = {"SUFFICIENT", "INSUFFICIENT", "UNKNOWN", "BLOCKED"}
 DECISION_RESULTS = {"EXPANDED", "DENIED", "BLOCKED", "NO_OP"}
-LIFECYCLE_STATES = {"CANDIDATE", "ACTIVE", "SUPERSEDED", "REJECTED"}
 SOURCE_AUTHORITY_MAP = {
     "AUTHORITATIVE": "SOURCE_AUTHORITY",
     "DRIVE_SHADOW": "A1_READ",
@@ -212,8 +211,8 @@ def validate_context_expansion_decision(record: dict[str, Any]) -> None:
         raise ValueError("unsupported sufficiency verdict")
     if record["decision_result"] not in DECISION_RESULTS:
         raise ValueError("unsupported expansion decision")
-    if record["lifecycle_state"] not in LIFECYCLE_STATES:
-        raise ValueError("unsupported lifecycle state")
+    if not isinstance(record["lifecycle_state"], str) or not record["lifecycle_state"].strip():
+        raise ValueError("lifecycle_state must be non-empty")
     if not isinstance(record["decision_reason"], str) or not record["decision_reason"].strip():
         raise ValueError("decision_reason must be non-empty")
     if not isinstance(record["token_budget_before"], int) or record["token_budget_before"] < 0:
