@@ -1,0 +1,43 @@
+name: Benchmark Registry
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - "src/aios_tools/benchmarks/**"
+      - "tests/test_benchmark_registry.py"
+      - "docs/BENCHMARK_ENVIRONMENT.md"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install AIOS-Tools
+        run: python -m pip install -e ".[dev]"
+      - name: Run registry tests
+        run: pytest tests/test_benchmark_registry.py
+      - name: List registered benchmarks
+        run: aios-bench list
+      - name: Verify official runs remain blocked until immutable pins exist
+        run: |
+          set +e
+          aios-bench doctor > benchmark-doctor.json
+          status=$?
+          cat benchmark-doctor.json
+          test "$status" -eq 1
+      - name: Upload readiness evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-registry-readiness
+          path: benchmark-doctor.json
