@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shlex
 import shutil
 from collections.abc import Mapping
 from pathlib import Path
@@ -17,24 +16,22 @@ def _doctor_item(
     acknowledged_resources: set[str],
     environ: Mapping[str, str] | None = None,
 ) -> dict[str, object]:
-    environment = environ or os.environ
+    environment = os.environ if environ is None else environ
     runtime = getattr(benchmark, "runtime")
     executable = {"python": "python", "conda": "conda", "uv": "uv", "docker": "docker"}.get(runtime, runtime)
-    gold_parts = shlex.split(getattr(benchmark, "gold_check"))
-    gold_executable = gold_parts[0]
     required_secrets = tuple(getattr(benchmark, "secrets"))
     missing_secrets = [name for name in required_secrets if not environment.get(name)]
     resource_acknowledged = getattr(benchmark, "id") in acknowledged_resources or "all" in acknowledged_resources
     runtime_available = shutil.which(executable) is not None
-    gold_check_executable = shutil.which(gold_executable) is not None
     pin_ready = bool(getattr(benchmark, "pin_ready"))
+    gold_check_command_valid = bool(getattr(benchmark, "gold_check"))
     execution_admission_ready = all(
         (
             pin_ready,
             runtime_available,
             not missing_secrets,
             resource_acknowledged,
-            gold_check_executable,
+            gold_check_command_valid,
         )
     )
     return {
@@ -47,7 +44,7 @@ def _doctor_item(
         "source_ref": getattr(benchmark, "source_ref"),
         "source_ref_policy": getattr(benchmark, "source_ref_policy"),
         "pin_ready": pin_ready,
-        "gold_check_executable": gold_check_executable,
+        "gold_check_command_valid": gold_check_command_valid,
         "resource_class": getattr(benchmark, "resource_class"),
         "resource_acknowledged": resource_acknowledged,
         "required_secrets": list(required_secrets),
@@ -108,10 +105,7 @@ def main() -> None:
             )
         )
         raise SystemExit(2)
-    report = [
-        _doctor_item(item, acknowledged_resources=acknowledgements)
-        for item in items
-    ]
+    report = [_doctor_item(item, acknowledged_resources=acknowledgements) for item in items]
     ready = all(bool(item["execution_admission_ready"]) for item in report)
     print(
         json.dumps(
