@@ -5,6 +5,7 @@
     {
       "id": "longmemeval-v2",
       "name": "LongMemEval-V2",
+      "classification": "OFFICIAL_FULL_RUN",
       "capabilities": ["context_retrieval", "memory_retrieval", "project_continuation", "prompt_compilation"],
       "source_url": "https://github.com/xiaowu0162/LongMemEval-V2",
       "source_ref": "6f020ac2fc3275e46c706d3406e02c3ed79b7be2",
@@ -20,6 +21,7 @@
     {
       "id": "bfcl-v4",
       "name": "Berkeley Function Calling Leaderboard V4",
+      "classification": "OFFICIAL_FULL_RUN",
       "capabilities": ["tool_routing", "workflow_orchestration"],
       "source_url": "https://github.com/ShishirPatil/gorilla",
       "source_ref": "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8",
@@ -35,6 +37,7 @@
     {
       "id": "tau2-bench",
       "name": "tau2-bench",
+      "classification": "OFFICIAL_FULL_RUN",
       "capabilities": ["authority_resolution", "human_approval_workflow", "workflow_orchestration"],
       "source_url": "https://github.com/sierra-research/tau2-bench",
       "source_ref": "363133ada1936491fb5bcec33cd62c3518a99f65",
@@ -50,6 +53,7 @@
     {
       "id": "agentdojo",
       "name": "AgentDojo",
+      "classification": "OFFICIAL_FULL_RUN",
       "capabilities": ["execution_safety", "tool_routing"],
       "source_url": "https://github.com/ethz-spylab/agentdojo",
       "source_ref": "089ed468cf3ed0322acc66b0211f26d9d90dbf60",
@@ -65,6 +69,7 @@
     {
       "id": "swe-bench-verified",
       "name": "SWE-bench Verified",
+      "classification": "OFFICIAL_FULL_RUN",
       "capabilities": ["ai_assisted_software_development", "repository_analysis"],
       "source_url": "https://github.com/SWE-bench/SWE-bench",
       "source_ref": "f7bbbb2ccdf479001d6467c9e34af59e44a840f9",
@@ -80,14 +85,15 @@
     {
       "id": "json-schema-2020-12",
       "name": "JSON Schema Test Suite Draft 2020-12",
+      "classification": "STANDARDS_CONFORMANCE",
       "capabilities": ["knowledge_migration", "canon_validation"],
       "source_url": "https://github.com/json-schema-org/JSON-Schema-Test-Suite",
       "source_ref": "0c7b65dc16dd8eaa7bd83e21099c76610c3b246a",
       "source_ref_policy": "IMMUTABLE_COMMIT",
       "runtime": "python",
       "python": "3.11+",
-      "prepare": ["clone official suite", "run AIOS schema.validate adapter over tests/draft2020-12"],
-      "gold_check": "run one required draft2020-12 type.json case through the AIOS adapter",
+      "prepare": ["python -c \"from pathlib import Path; assert Path('tests/draft2020-12/type.json').is_file()\""],
+      "gold_check": "python -m aios_tools.benchmarks.json_schema_adapter --suite-root . --file tests/draft2020-12/type.json --case-index 0",
       "official_result_glob": "benchmark-results/json-schema-2020-12.json",
       "secrets": [],
       "resource_class": "CPU"
