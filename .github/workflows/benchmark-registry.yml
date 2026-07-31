@@ -7,7 +7,9 @@ on:
       - "src/aios_tools/benchmarks/**"
       - "tests/test_benchmark_registry.py"
       - "tests/test_benchmark_plans.py"
+      - "tests/test_benchmark_subjects.py"
       - "docs/BENCHMARK_ENVIRONMENT.md"
+      - "docs/plans/bfcl-aios-ab-benchmark.md"
       - "pyproject.toml"
   workflow_dispatch:
 
@@ -26,11 +28,13 @@ jobs:
           cache: pip
       - name: Install AIOS-Tools
         run: python -m pip install -e ".[dev]"
-      - name: Run benchmark registry and admission tests
-        run: pytest tests/test_benchmark_registry.py tests/test_benchmark_plans.py
-      - name: List registered benchmarks
-        run: aios-bench list
-      - name: Verify execution remains blocked without secrets and resource acknowledgement
+      - name: Run benchmark registry, plan, and subject tests
+        run: pytest tests/test_benchmark_registry.py tests/test_benchmark_plans.py tests/test_benchmark_subjects.py
+      - name: List registered benchmarks and subjects
+        run: |
+          aios-bench list
+          aios-bench subjects
+      - name: Verify benchmark execution remains blocked without secrets and resource acknowledgement
         run: |
           set +e
           aios-bench doctor > benchmark-doctor.json
@@ -48,8 +52,34 @@ jobs:
           assert any(item["missing_secrets"] for item in report["benchmarks"])
           assert all(not item["resource_acknowledged"] for item in report["benchmarks"])
           PY
+      - name: Build non-executing BFCL A/B evidence package
+        run: |
+          aios-bench package-bfcl --output-dir benchmark-package > bfcl-package-status.json
+          cat bfcl-package-status.json
+          bash -n benchmark-package/run-bfcl-pair.sh
+          python -m py_compile \
+            benchmark-package/select_case_shard.py \
+            benchmark-package/overlay/aios_bfcl_handler.py \
+            benchmark-package/overlay/sitecustomize.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("bfcl-package-status.json").read_text())
+          manifest = json.loads(Path(report["manifest"]).read_text())
+          assert report["status"] == "BLOCKED"
+          assert report["score_status"] == "NOT_EXECUTED"
+          assert report["case_shard_status"] == "UNRESOLVED"
+          assert manifest["execution_status"] == "BLOCKED"
+          assert manifest["score_status"] == "NOT_EXECUTED"
+          assert manifest["profile_sha256"] == "65a864cc8851945fb19d6051d84f19ca5057cdfea5d2f3a2269acb63507f7e7a"
+          assert "BLOCKED: resolve the BFCL case shard first." in Path(report["commands"]).read_text()
+          PY
       - name: Upload readiness evidence
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-registry-readiness
-          path: benchmark-doctor.json
+          path: |
+            benchmark-doctor.json
+            bfcl-package-status.json
+            benchmark-package/
