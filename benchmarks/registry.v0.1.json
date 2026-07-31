@@ -1,0 +1,90 @@
+{
+  "registry_version": "0.1.0",
+  "classification_values": ["OFFICIAL_FULL_RUN", "PROTOCOL_SMOKE", "STANDARDS_CONFORMANCE", "HUMAN_REVIEW"],
+  "benchmarks": [
+    {
+      "id": "longmemeval-v2",
+      "name": "LongMemEval-V2",
+      "capabilities": ["context_retrieval", "memory_retrieval", "project_continuation", "prompt_compilation"],
+      "source_url": "https://github.com/xiaowu0162/LongMemEval-V2",
+      "source_ref": "main",
+      "source_ref_policy": "RESOLVE_TO_COMMIT_BEFORE_RUN",
+      "runtime": "conda",
+      "python": "3.11",
+      "prepare": ["conda env create -f environment.yml", "pip install -e .", "python data/download_data.py --data-root data/longmemeval-v2", "python data/validate_data.py --data-root data/longmemeval-v2 --tier small"],
+      "official_result_glob": "runs/**/aggregated_metrics.json",
+      "secrets": ["OPENAI_API_KEY"],
+      "resource_class": "GPU_OPTIONAL_HIGH_STORAGE"
+    },
+    {
+      "id": "bfcl-v4",
+      "name": "Berkeley Function Calling Leaderboard V4",
+      "capabilities": ["tool_routing", "workflow_orchestration"],
+      "source_url": "https://github.com/ShishirPatil/gorilla",
+      "source_ref": "main",
+      "source_ref_policy": "RESOLVE_TO_COMMIT_BEFORE_RUN",
+      "runtime": "python",
+      "python": "3.10+",
+      "prepare": ["clone official repository", "install berkeley-function-call-leaderboard dependencies"],
+      "official_result_glob": "berkeley-function-call-leaderboard/result/**/*",
+      "secrets": ["OPENAI_API_KEY"],
+      "resource_class": "CPU_OR_REMOTE_MODEL"
+    },
+    {
+      "id": "tau2-bench",
+      "name": "tau2-bench",
+      "capabilities": ["authority_resolution", "human_approval_workflow", "workflow_orchestration"],
+      "source_url": "https://github.com/sierra-research/tau2-bench",
+      "source_ref": "main",
+      "source_ref_policy": "RESOLVE_TO_COMMIT_BEFORE_RUN",
+      "runtime": "uv",
+      "python": "3.12",
+      "prepare": ["uv sync", "uv run tau2 check-data"],
+      "official_result_glob": "data/simulations/**/*",
+      "secrets": ["OPENAI_API_KEY"],
+      "resource_class": "CPU_REMOTE_MODEL"
+    },
+    {
+      "id": "agentdojo",
+      "name": "AgentDojo",
+      "capabilities": ["execution_safety", "tool_routing"],
+      "source_url": "https://github.com/ethz-spylab/agentdojo",
+      "source_ref": "main",
+      "source_ref_policy": "RESOLVE_TO_COMMIT_BEFORE_RUN",
+      "runtime": "uv",
+      "python": "3.11+",
+      "prepare": ["uv sync --dev"],
+      "official_result_glob": "runs/**/*",
+      "secrets": ["OPENAI_API_KEY"],
+      "resource_class": "CPU_REMOTE_MODEL"
+    },
+    {
+      "id": "swe-bench-verified",
+      "name": "SWE-bench Verified",
+      "capabilities": ["ai_assisted_software_development", "repository_analysis"],
+      "source_url": "https://github.com/SWE-bench/SWE-bench",
+      "source_ref": "main",
+      "source_ref_policy": "RESOLVE_TO_COMMIT_BEFORE_RUN",
+      "runtime": "docker",
+      "python": "3.11+",
+      "prepare": ["pip install -e .", "docker info", "run gold validation instance"],
+      "official_result_glob": "evaluation_results/**/*",
+      "secrets": [],
+      "resource_class": "X86_64_120GB_16GB_RAM"
+    },
+    {
+      "id": "json-schema-2020-12",
+      "name": "JSON Schema Test Suite Draft 2020-12",
+      "capabilities": ["knowledge_migration", "canon_validation"],
+      "source_url": "https://github.com/json-schema-org/JSON-Schema-Test-Suite",
+      "source_ref": "main",
+      "source_ref_policy": "RESOLVE_TO_COMMIT_BEFORE_RUN",
+      "runtime": "python",
+      "python": "3.11+",
+      "prepare": ["clone official suite", "run AIOS schema.validate adapter over tests/draft2020-12"],
+      "official_result_glob": "benchmark-results/json-schema-2020-12.json",
+      "secrets": [],
+      "resource_class": "CPU"
+    }
+  ]
+}
