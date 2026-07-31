@@ -20,6 +20,7 @@ class BenchmarkDefinition:
     runtime: str
     capabilities: tuple[str, ...]
     prepare: tuple[str, ...]
+    gold_check: str
     official_result_glob: str
     secrets: tuple[str, ...]
     resource_class: str
@@ -28,6 +29,10 @@ class BenchmarkDefinition:
     def is_immutably_pinned(self) -> bool:
         ref = self.source_ref.lower()
         return len(ref) == 40 and all(char in "0123456789abcdef" for char in ref)
+
+    @property
+    def official_ready(self) -> bool:
+        return self.source_ref_policy == "IMMUTABLE_COMMIT" and self.is_immutably_pinned
 
 
 @dataclass(frozen=True)
@@ -82,19 +87,21 @@ def load_benchmark_registry(path: Path | None = None) -> BenchmarkRegistry:
         source_url = _require_text(item, "source_url")
         if not source_url.startswith("https://github.com/"):
             raise BenchmarkRegistryError(f"benchmark {benchmark_id} must use an official GitHub source URL")
-        definitions.append(
-            BenchmarkDefinition(
-                id=benchmark_id,
-                name=_require_text(item, "name"),
-                source_url=source_url,
-                source_ref=_require_text(item, "source_ref"),
-                source_ref_policy=_require_text(item, "source_ref_policy"),
-                runtime=_require_text(item, "runtime"),
-                capabilities=_require_text_list(item, "capabilities"),
-                prepare=_require_text_list(item, "prepare"),
-                official_result_glob=_require_text(item, "official_result_glob"),
-                secrets=_require_text_list(item, "secrets"),
-                resource_class=_require_text(item, "resource_class"),
-            )
+        definition = BenchmarkDefinition(
+            id=benchmark_id,
+            name=_require_text(item, "name"),
+            source_url=source_url,
+            source_ref=_require_text(item, "source_ref"),
+            source_ref_policy=_require_text(item, "source_ref_policy"),
+            runtime=_require_text(item, "runtime"),
+            capabilities=_require_text_list(item, "capabilities"),
+            prepare=_require_text_list(item, "prepare"),
+            gold_check=_require_text(item, "gold_check"),
+            official_result_glob=_require_text(item, "official_result_glob"),
+            secrets=_require_text_list(item, "secrets"),
+            resource_class=_require_text(item, "resource_class"),
         )
+        if definition.source_ref_policy == "IMMUTABLE_COMMIT" and not definition.is_immutably_pinned:
+            raise BenchmarkRegistryError(f"benchmark {benchmark_id} declares IMMUTABLE_COMMIT without a 40-character SHA")
+        definitions.append(definition)
     return BenchmarkRegistry(version, classifications, tuple(definitions))
