@@ -33,8 +33,12 @@ describe('Observatory projection fixture', () => {
         value: 'INSUFFICIENT',
       }),
     ]);
-    expect(rows.some((row) => row.path.includes('events'))).toBe(false);
-    expect(rows.some((row) => row.path.includes('source_content'))).toBe(false);
+    expect(rows.some((row) => row.path.split('.').at(-1) === 'events')).toBe(false);
+    expect(rows.some((row) => row.path.split('.').at(-1) === 'source_content')).toBe(false);
+    expect(rows).toContainEqual(expect.objectContaining({
+      path: 'privacy.source_content_included',
+      value: 'false',
+    }));
   });
 
   it('fails closed when raw receipt fields are injected', () => {
