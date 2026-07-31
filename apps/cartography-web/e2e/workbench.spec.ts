@@ -97,7 +97,7 @@ test('inspects the checked-in Observatory projection without exposing raw runtim
   await panel.getByRole('searchbox', { name: 'Filter metadata' }).fill('receipt');
   await panel.getByRole('button', { name: /Receipt Id/ }).click();
   await expect(panel.getByText('identities.receipt_id', { exact: true })).toBeVisible();
-  await expect(panel.getByText(/^cr_[0-9a-f]{64}$/)).toBeVisible();
+  await expect(panel.getByText(/^cr_[0-9a-f]{64}$/).last()).toBeVisible();
   await expect(panel.getByText('context_expansion_decision', { exact: true })).toHaveCount(0);
   await expect(panel.getByText('cognition_receipt', { exact: true })).toHaveCount(0);
 
