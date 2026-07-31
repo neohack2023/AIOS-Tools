@@ -1,0 +1,58 @@
+{
+  "projection_id": "op_e5a4e374d7deee2cb97d5455c715da4ef2a76fde24de14ce52f44a5588a9d079",
+  "projection_version": "0.1",
+  "projection_kind": "CONTEXT_EXPANSION_OBSERVATORY",
+  "observed_at": "2026-07-30T19:33:01-04:00",
+  "scope_key": "global-working-memory",
+  "workflow": {
+    "workflow_id": "context-expansion.packet-read-only",
+    "workflow_version": "0.1",
+    "status": "COMPLETED",
+    "mode": "READ_ONLY",
+    "started_at": "2026-07-30T19:33:00-04:00",
+    "completed_at": "2026-07-30T19:33:01-04:00",
+    "event_count": 12
+  },
+  "identities": {
+    "request_id": "request-tier1-observatory-001",
+    "trace_id": "trace-request-tier1-observatory-001",
+    "receipt_id": "cr_1111111111111111111111111111111111111111111111111111111111111111",
+    "execution_id": null,
+    "trajectory_id": "rt_2222222222222222222222222222222222222222222222222222222222222222",
+    "context_packet_id": "cp_tier1_observatory_l0",
+    "expansion_record_id": "cedr_3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "context_expansion": {
+    "current_tier": "L0",
+    "requested_tier": "L1",
+    "tier_movement": "L0->L1",
+    "sufficiency_verdict": "INSUFFICIENT",
+    "expansion_trigger": "SUFFICIENCY_FAILED",
+    "decision_result": "EXPANDED",
+    "budget_state": "WITHIN_BUDGET",
+    "lifecycle_state": "CANDIDATE"
+  },
+  "evidence_links": [
+    {
+      "evidence_type": "CONTEXT_EXPANSION_DECISION_RECORD",
+      "evidence_id": "cedr_3333333333333333333333333333333333333333333333333333333333333333",
+      "schema_version": "0.1",
+      "scope_key": "global-working-memory",
+      "lifecycle_state": "CANDIDATE",
+      "authority_transfer": false,
+      "referenced_by_event_types": [
+        "context.packet_composed",
+        "outcome.observed",
+        "receipt.created"
+      ]
+    }
+  ],
+  "privacy": {
+    "source_content_included": false,
+    "event_payloads_included": false,
+    "raw_receipt_included": false,
+    "raw_cedr_included": false
+  },
+  "external_effects": [],
+  "authority_transfer": false
+}
