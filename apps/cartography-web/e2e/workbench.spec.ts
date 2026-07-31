@@ -26,6 +26,11 @@ async function expectScreenshotDigest(page: Page, name: string, expectedDigest: 
   expect(digest, `${name} SHA-256 screenshot regression`).toBe(expectedDigest);
 }
 
+async function attachEvidenceScreenshot(page: Page, name: string): Promise<void> {
+  const image = await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' });
+  await test.info().attach(name, { body: image, contentType: 'image/png' });
+}
+
 test('keeps Mind Map, Lineage, and Outline inside one URL-backed shell', async ({ page }) => {
   await page.goto(workbenchUrl());
   await expect(page.getByText('AIOS Cartography')).toBeVisible();
@@ -76,6 +81,38 @@ test('search, selection, inspector, root focus, and history restore workspace st
   await page.getByRole('button', { name: /apps\/cartography-web/ }).first().click();
   await expect(page.getByRole('heading', { name: 'apps/cartography-web/' })).toBeVisible();
   await expect(page.getByText('implementation', { exact: true })).toBeVisible();
+});
+
+test('inspects the checked-in Observatory projection without exposing raw runtime data', async ({ page }) => {
+  await page.goto(workbenchUrl('outline', { selected: 'notion-observability-index' }));
+  const panel = page.getByTestId('observatory-panel');
+
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText('CHECKED-IN FIXTURE', { exact: true })).toBeVisible();
+  await expect(panel.getByText('READ ONLY', { exact: true })).toBeVisible();
+  await expect(panel.getByText('INSUFFICIENT', { exact: true }).first()).toBeVisible();
+  await expect(panel.getByText('L0->L1', { exact: true }).first()).toBeVisible();
+
+  await panel.getByLabel('Section').selectOption('identities');
+  await panel.getByRole('searchbox', { name: 'Filter metadata' }).fill('receipt');
+  await panel.getByRole('button', { name: /Receipt Id/ }).click();
+  await expect(panel.getByText('identities.receipt_id', { exact: true })).toBeVisible();
+  await expect(panel.getByText(/^cr_[0-9a-f]{64}$/)).toBeVisible();
+  await expect(panel.getByText('context_expansion_decision', { exact: true })).toHaveCount(0);
+  await expect(panel.getByText('cognition_receipt', { exact: true })).toHaveCount(0);
+
+  await attachEvidenceScreenshot(page, 'observatory-panel-desktop.png');
+});
+
+test('keeps the Observatory fixture inspectable in mobile portrait focus mode', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(workbenchUrl('outline', { selected: 'notion-observability-index' }));
+  const panel = page.getByTestId('observatory-panel');
+
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole('searchbox', { name: 'Filter metadata' })).toBeVisible();
+  await expect(panel.getByText('Source content, raw events, raw receipts', { exact: false })).toBeVisible();
+  await attachEvidenceScreenshot(page, 'observatory-panel-mobile.png');
 });
 
 test('surfaces graphics context loss instead of leaving a blank viewport', async ({ page }) => {
