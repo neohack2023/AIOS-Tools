@@ -4,6 +4,7 @@ import {
   flattenObservatoryProjection,
   type ObservatoryProjection,
 } from './projection';
+import './observatory.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All metadata',
