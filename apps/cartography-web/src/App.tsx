@@ -1,5 +1,8 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import rawObservatoryProjection from './data/observatoryProjectionFixture.json';
 import { SOURCE_BACKED_FIXTURE } from './data/sourceBackedFixture';
+import { ObservatoryPanel } from './observatory/ObservatoryPanel';
+import { parseObservatoryProjection, type ObservatoryProjection } from './observatory/projection';
 import { GpuGraph } from './renderers/GpuGraph';
 import { useUrlWorkspaceState } from './state/urlState';
 import type {
@@ -29,6 +32,7 @@ const VIEW_LABELS: Record<ViewMode, string> = {
   lineage: 'Lineage',
   outline: 'Outline',
 };
+const OBSERVATORY_PROJECTION = parseObservatoryProjection(rawObservatoryProjection);
 
 function getBreadcrumbs(snapshot: GraphSnapshot, nodeId: string): GraphNode[] {
   const byId = new Map(snapshot.nodes.map((node) => [node.node_id, node]));
@@ -149,12 +153,14 @@ function Inspector({
   onSelect,
   onSetRoot,
   onClose,
+  observatoryProjection,
 }: {
   node?: GraphNode;
   breadcrumbs: GraphNode[];
   onSelect: (id: string) => void;
   onSetRoot: (id: string) => void;
   onClose: () => void;
+  observatoryProjection: ObservatoryProjection;
 }) {
   if (!node) {
     return (
@@ -166,6 +172,8 @@ function Inspector({
       </aside>
     );
   }
+
+  const isObservabilityNode = node.attributes?.domain === 'observability';
 
   return (
     <aside className="inspector" aria-label="Node inspector">
@@ -190,6 +198,7 @@ function Inspector({
         <button type="button" onClick={() => onSetRoot(node.node_id)}>Focus as root</button>
         <a href={node.source_pointer} target="_blank" rel="noreferrer">Open source</a>
       </div>
+      {isObservabilityNode ? <ObservatoryPanel projection={observatoryProjection} /> : null}
     </aside>
   );
 }
@@ -400,6 +409,7 @@ export default function App() {
           onSelect={selectNode}
           onSetRoot={(root) => updateWorkspace({ root, selected: root })}
           onClose={() => updateWorkspace({ selected: '' })}
+          observatoryProjection={OBSERVATORY_PROJECTION}
         />
       </section>
 
