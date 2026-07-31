@@ -2,7 +2,7 @@
 
 ## State
 
-`CANDIDATE_IMPLEMENTED / CI_PENDING / REVIEW_PENDING / NO_RUNTIME_ACTIVATION / NO_ACTIVE_PROMOTION`
+`CANDIDATE_IMPLEMENTED / CI_PASS / REVIEW_REQUESTED / NO_RUNTIME_ACTIVATION / NO_ACTIVE_PROMOTION`
 
 ## Date
 
@@ -32,6 +32,8 @@ The remaining work was bounded presentation plumbing.
 
 Branch: `agent/cartography-observatory-panel`
 
+Validated application head: `2e9bc552a7de632562fb1121cf00a3dbbab91cd8`
+
 Implemented:
 
 - checked-in Observatory projection fixture
@@ -59,11 +61,16 @@ Implemented:
 
 ## Verification
 
-Repository CI and Repository Governance are pending on the final branch head. No local repository-wide pass is claimed because this runtime does not hold a local checkout of the private repository.
+- AIOS-Tools CI run `30595040068`: `SUCCESS` on application head `2e9bc552a7de632562fb1121cf00a3dbbab91cd8`.
+- Repository Governance run `30595040070`: `SUCCESS` on the same head.
+- Python shared-core tests, CLI smoke testing, MCP smoke testing, 15 Cartography unit tests, TypeScript production build, eight Playwright interaction and regression tests, dedicated desktop and mobile Observatory evidence, and the existing desktop and mobile screenshot digests all passed.
+- Two earlier application runs exposed assertion-only defects. One confused the safe `privacy.source_content_included=false` flag with raw content. The other used an ambiguous locator for a receipt ID intentionally rendered in both the row and selected-field detail. Both assertions were narrowed without changing application behavior, the fixture, or privacy boundaries.
+- No local repository-wide pass is claimed because this runtime does not hold a local checkout of the private repository.
 
 ## MASON disposition
 
-- implementation: `candidate_ci_pending`
+- implementation: `candidate_with_ci_pass`
+- human review: `requested`
 - runtime activation: `not_authorized`
 - authority change: none
 - canon promotion: none
