@@ -6,10 +6,10 @@ AIOS-Tools owns the executable benchmark harness. Notion remains architecture an
 
 Every run must be labeled as exactly one of:
 
-- `OFFICIAL_FULL_RUN` — upstream evaluator executed against an immutable upstream commit with native result artifacts captured.
-- `PROTOCOL_SMOKE` — a bounded local test inspired by a public benchmark.
-- `STANDARDS_CONFORMANCE` — deterministic validation against a specification or test suite.
-- `HUMAN_REVIEW` — rubric-based evidence review with no claim of automated benchmark parity.
+- `OFFICIAL_FULL_RUN`: upstream evaluator executed against an immutable upstream commit with native result artifacts captured.
+- `PROTOCOL_SMOKE`: a bounded local test inspired by a public benchmark.
+- `STANDARDS_CONFORMANCE`: deterministic validation against a specification or test suite.
+- `HUMAN_REVIEW`: rubric-based evidence review with no claim of automated benchmark parity.
 
 A run may not be promoted from one class to another by renaming a file or changing a spreadsheet cell.
 
@@ -26,36 +26,38 @@ An `OFFICIAL_FULL_RUN` is blocked unless all gates pass:
 7. Native result artifacts and logs are retained.
 8. The AIOS normalized receipt links to the upstream commit, command, environment, raw result artifact, and scorer version.
 
-## Commands
+## Slice 2: immutable pins and execution plans
+
+The six first-wave benchmarks are pinned to exact upstream commits. The registry loader rejects malformed immutable pins. Each entry now declares a gold check, and the execution-plan layer produces deterministic clone, detached-checkout, preparation, gold-check, and result-capture instructions.
 
 ```bash
 python -m pip install -e ".[dev]"
 aios-bench list
 aios-bench doctor
-aios-bench doctor longmemeval-v2
 ```
 
-The first slice provides registry validation and environment readiness checks. It deliberately blocks official readiness while registry entries still point at moving branches such as `main`.
+The execution plan is data, not shell improvisation. External benchmark execution remains an explicit human-authorized step because several suites require model credentials, large datasets, Docker, or substantial compute.
 
-## Registered first-wave benchmarks
+## First-wave pins
 
-- LongMemEval-V2
-- Berkeley Function Calling Leaderboard V4
-- tau2-bench
-- AgentDojo
-- SWE-bench Verified
-- JSON Schema Test Suite Draft 2020-12
+- LongMemEval-V2: `6f020ac2fc3275e46c706d3406e02c3ed79b7be2`
+- Berkeley Function Calling Leaderboard V4: `6ea57973c7a6097fd7c5915698c54c17c5b1b6c8`
+- tau2-bench: `363133ada1936491fb5bcec33cd62c3518a99f65`
+- AgentDojo: `089ed468cf3ed0322acc66b0211f26d9d90dbf60`
+- SWE-bench Verified: `f7bbbb2ccdf479001d6467c9e34af59e44a840f9`
+- JSON Schema Test Suite Draft 2020-12: `0c7b65dc16dd8eaa7bd83e21099c76610c3b246a`
 
-Visual and audio benchmark environments remain artifact-gated follow-up slices because their official evaluators require model checkpoints, generated image/audio sets, and heavier runtime dependencies.
+Updating a pin is a benchmark registry change and must produce a fresh evidence receipt.
 
 ## Result structure
 
-Each executed benchmark should eventually produce:
+Each executed benchmark writes:
 
 ```text
 benchmark-results/<run_id>/
   run-manifest.json
   environment.json
+  execution-plan.json
   stdout.log
   stderr.log
   raw/
@@ -63,7 +65,7 @@ benchmark-results/<run_id>/
   execution-receipt.json
 ```
 
-The normalized result is a projection. The upstream raw result remains the scoring authority for an official run.
+The normalized result is a projection. The untouched upstream raw result remains the scoring authority for an official run.
 
 ## Security and authority
 
