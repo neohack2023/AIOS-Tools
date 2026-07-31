@@ -6,6 +6,7 @@ on:
       - "benchmarks/**"
       - "src/aios_tools/benchmarks/**"
       - "tests/test_benchmark_registry.py"
+      - "tests/test_benchmark_plans.py"
       - "docs/BENCHMARK_ENVIRONMENT.md"
       - "pyproject.toml"
   workflow_dispatch:
@@ -25,17 +26,28 @@ jobs:
           cache: pip
       - name: Install AIOS-Tools
         run: python -m pip install -e ".[dev]"
-      - name: Run registry tests
-        run: pytest tests/test_benchmark_registry.py
+      - name: Run benchmark registry and admission tests
+        run: pytest tests/test_benchmark_registry.py tests/test_benchmark_plans.py
       - name: List registered benchmarks
         run: aios-bench list
-      - name: Verify official runs remain blocked until immutable pins exist
+      - name: Verify execution remains blocked without secrets and resource acknowledgement
         run: |
           set +e
           aios-bench doctor > benchmark-doctor.json
           status=$?
           cat benchmark-doctor.json
           test "$status" -eq 1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("benchmark-doctor.json").read_text())
+          assert report["status"] == "BLOCKED"
+          assert report["score_status"] == "NOT_EXECUTED"
+          assert all(item["pin_ready"] for item in report["benchmarks"])
+          assert any(item["missing_secrets"] for item in report["benchmarks"])
+          assert all(not item["resource_acknowledged"] for item in report["benchmarks"])
+          PY
       - name: Upload readiness evidence
         uses: actions/upload-artifact@v4
         with:
