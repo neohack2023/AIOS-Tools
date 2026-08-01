@@ -70,13 +70,25 @@ class BenchmarkSubject:
         environ: Mapping[str, str],
         resource_acknowledged: bool,
         case_shard_resolved: bool,
+        model_validation: Mapping[str, object] | None = None,
     ) -> dict[str, object]:
         model_value = environ.get(self.model_env, "").strip()
         credential_present = bool(environ.get(self.credential_env))
         profile = self.verify_profile(repository_root)
+        validation = dict(model_validation or {})
+        model_supported = bool(validation.get("model_supported"))
+        model_handler_supported = bool(validation.get("model_handler_supported"))
+        checkout_present = bool(validation.get("checkout_present"))
+        pin_valid = bool(validation.get("pin_valid"))
+        worktree_clean = bool(validation.get("worktree_clean"))
         ready = all(
             (
                 bool(model_value),
+                model_supported,
+                model_handler_supported,
+                checkout_present,
+                pin_valid,
+                worktree_clean,
                 credential_present,
                 resource_acknowledged,
                 case_shard_resolved,
@@ -88,10 +100,16 @@ class BenchmarkSubject:
             "treatment": self.treatment,
             "model_env": self.model_env,
             "model_resolved": bool(model_value),
+            "model_supported": model_supported,
+            "model_handler_supported": model_handler_supported,
             "credential_env": self.credential_env,
             "credential_present": credential_present,
             "resource_acknowledged": resource_acknowledged,
             "case_shard_resolved": case_shard_resolved,
+            "checkout_present": checkout_present,
+            "pin_valid": pin_valid,
+            "worktree_clean": worktree_clean,
+            "model_validation_error": validation.get("validation_error"),
             **profile,
             "execution_admission_ready": ready,
             "score_status": "NOT_EXECUTED",
