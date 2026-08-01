@@ -62,6 +62,7 @@ jobs:
             benchmark-package/overlay/aios_bfcl_handler.py \
             benchmark-package/overlay/sitecustomize.py
           python - <<'PY'
+          import hashlib
           import json
           from pathlib import Path
 
@@ -72,8 +73,19 @@ jobs:
           assert report["case_shard_status"] == "UNRESOLVED"
           assert manifest["execution_status"] == "BLOCKED"
           assert manifest["score_status"] == "NOT_EXECUTED"
+          assert manifest["run_classification"] == "PROTOCOL_ADAPTED_SMOKE_RUN"
+          assert manifest["evaluation_scope"] == "OFFICIAL_PARTIAL_EVALUATION"
+          assert manifest["official_score_claim_allowed"] is False
           assert manifest["profile_sha256"] == "65a864cc8851945fb19d6051d84f19ca5057cdfea5d2f3a2269acb63507f7e7a"
-          assert "BLOCKED: resolve the BFCL case shard first." in Path(report["commands"]).read_text()
+          assert manifest["package_file_digests"]
+          package_root = Path(report["output_dir"])
+          for relative, expected in manifest["package_file_digests"].items():
+              observed = hashlib.sha256((package_root / relative).read_bytes()).hexdigest()
+              assert observed == expected
+          commands = Path(report["commands"]).read_text()
+          assert "BLOCKED: resolve the BFCL case shard first." in commands
+          assert "status --porcelain=v1 --untracked-files=all" in commands
+          assert "verify_package_integrity" in commands
           PY
       - name: Upload readiness evidence
         uses: actions/upload-artifact@v4
