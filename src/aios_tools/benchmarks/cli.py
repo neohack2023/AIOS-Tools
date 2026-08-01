@@ -8,10 +8,12 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from .bfcl_package import (
-    BFCL_PIN,
     DEFAULT_CATEGORIES,
     BFCLPackageError,
     create_bfcl_ab_package,
+    ensure_categories,
+    inspect_bfcl_checkout,
+    load_case_map,
 )
 from .compare import ScoreComparisonError, compare_score_artifacts
 from .registry import BenchmarkRegistryError, load_benchmark_registry
@@ -109,15 +111,34 @@ def _handle_subject_commands(args: argparse.Namespace) -> None:
         )
         return
     if args.command == "subject-doctor":
-        case_shard_resolved = bool(
-            args.case_map and Path(args.case_map).is_file()
+        categories = ensure_categories(args.category or list(DEFAULT_CATEGORIES))
+        try:
+            _, case_shard_status = load_case_map(args.case_map, categories)
+        except BFCLPackageError as exc:
+            print(
+                json.dumps(
+                    {
+                        "status": "BLOCKED",
+                        "error": str(exc),
+                        "score_status": "NOT_EXECUTED",
+                    },
+                    indent=2,
+                )
+            )
+            raise SystemExit(1) from exc
+        model_key = os.environ.get("AIOS_BENCH_BFCL_MODEL", "").strip() or None
+        bfcl_root_value = os.environ.get("BFCL_ROOT", "").strip()
+        model_validation = inspect_bfcl_checkout(
+            bfcl_root=Path(bfcl_root_value) if bfcl_root_value else None,
+            model_key=model_key,
         )
         report = [
             item.admission(
                 repository_root=registry.repository_root,
                 environ=os.environ,
                 resource_acknowledged=args.ack_resource,
-                case_shard_resolved=case_shard_resolved,
+                case_shard_resolved=case_shard_status == "RESOLVED",
+                model_validation=model_validation,
             )
             for item in registry.subjects
         ]
@@ -128,6 +149,9 @@ def _handle_subject_commands(args: argparse.Namespace) -> None:
             json.dumps(
                 {
                     "status": "READY_TO_EXECUTE" if ready else "BLOCKED",
+                    "categories": list(categories),
+                    "case_shard_status": case_shard_status,
+                    "model_validation": model_validation,
                     "subjects": report,
                     "score_status": "NOT_EXECUTED",
                 },
@@ -161,6 +185,8 @@ def _handle_subject_commands(args: argparse.Namespace) -> None:
                     "output_dir": str(package.output_dir),
                     "manifest": str(package.manifest_path),
                     "commands": str(package.commands_path),
+                    "direct_run_manifest": str(package.direct_manifest_path),
+                    "aios_run_manifest": str(package.aios_manifest_path),
                     "direct_model_key": package.direct_model_key,
                     "aios_model_key": package.aios_model_key,
                     "profile_sha256": package.profile_sha256,
@@ -172,14 +198,12 @@ def _handle_subject_commands(args: argparse.Namespace) -> None:
         )
         return
     if args.command == "compare-bfcl":
-        _, aios = registry.pair_for("bfcl-v4")
-        assert aios.profile_sha256 is not None
         try:
             comparison = compare_score_artifacts(
                 direct_path=args.direct,
                 aios_path=args.aios,
-                benchmark_source_ref=BFCL_PIN,
-                profile_sha256=aios.profile_sha256,
+                direct_manifest_path=args.direct_manifest,
+                aios_manifest_path=args.aios_manifest,
             )
         except ScoreComparisonError as exc:
             print(
@@ -226,6 +250,7 @@ def main() -> None:
     subparsers.add_parser("subjects")
     subject_doctor = subparsers.add_parser("subject-doctor")
     subject_doctor.add_argument("--case-map", type=Path)
+    subject_doctor.add_argument("--category", action="append", default=[])
     subject_doctor.add_argument("--ack-resource", action="store_true")
 
     package = subparsers.add_parser("package-bfcl")
@@ -238,6 +263,8 @@ def main() -> None:
     compare = subparsers.add_parser("compare-bfcl")
     compare.add_argument("--direct", type=Path, required=True)
     compare.add_argument("--aios", type=Path, required=True)
+    compare.add_argument("--direct-manifest", type=Path, required=True)
+    compare.add_argument("--aios-manifest", type=Path, required=True)
     compare.add_argument("--output", type=Path)
 
     args = parser.parse_args()
