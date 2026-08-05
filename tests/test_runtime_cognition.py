@@ -48,7 +48,7 @@ def test_blocked_execution_preserves_rejected_mode_without_authorizing_it() -> N
     validate_cognition_receipt(cognition)
     assert receipt["status"] == cognition["status"] == "BLOCKED"
     assert receipt["mode"] == cognition["mode"] == "WRITE"
-    assert receipt["errors"][0]["code"] == "MODE_GLOBALLY_BLOCKED"
+    assert receipt["errors"][0]["code"] == "MODE_NOT_ALLOWED"
     assert "tool.invoked" not in _event_types(receipt)
     assert "tool.blocked" in _event_types(receipt)
     assert cognition["external_effects"] == []
