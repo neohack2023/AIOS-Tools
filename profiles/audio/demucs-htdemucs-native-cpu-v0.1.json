@@ -5,6 +5,12 @@
   "package_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",
   "entrypoint": ["python", "-m", "demucs"],
   "model": "htdemucs",
+  "model_artifact": {
+    "filename": "955717e8-8726e21a.th",
+    "sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",
+    "byte_size": 84141911,
+    "upstream_url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th"
+  },
   "device": "cpu",
   "jobs": 1,
   "split": true,
