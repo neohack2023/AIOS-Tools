@@ -5,7 +5,6 @@ import json
 import struct
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +51,7 @@ def test_runtime_review_fails_closed_when_audio_tool_is_absent(tmp_path: Path):
 
 
 def test_float32_wav_writer_records_ieee_float_format(tmp_path: Path):
+    np = pytest.importorskip("numpy")
     audio = np.zeros((2, 64), dtype=np.float32)
     path = tmp_path / "fixture.wav"
     module.write_float32_wav(path, audio, 44100)
