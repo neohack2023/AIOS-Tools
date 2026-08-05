@@ -1,0 +1,23 @@
+{
+  "schema_version": "0.1.0",
+  "profile_id": "demucs-htdemucs-native-cpu-v0.1",
+  "package": "demucs==4.1.0",
+  "package_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",
+  "entrypoint": ["python", "-m", "demucs"],
+  "model": "htdemucs",
+  "device": "cpu",
+  "jobs": 1,
+  "split": true,
+  "segment_seconds": 7.8,
+  "overlap": 0.10,
+  "shifts": 0,
+  "output_format": "wav",
+  "float32": true,
+  "targets": ["drums", "bass", "other", "vocals"],
+  "timeout_seconds": 1200,
+  "source_sha256": "3a1573821ed5ef792014bd5945cf4ca298c8f11b71a9088c65e207834ee5ae7e",
+  "network_during_analysis": false,
+  "runtime_admission": false,
+  "pilot_authorized": false,
+  "authority_transfer": false
+}
