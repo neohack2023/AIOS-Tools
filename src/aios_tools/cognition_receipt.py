@@ -96,7 +96,7 @@ def validate_cognition_receipt(receipt: dict[str, Any]) -> None:
     if status not in {"BLOCKED", "APPROVAL_REQUIRED"} and mode not in ALLOWED_EXECUTION_MODES:
         raise ValueError("non-blocked cognition receipt uses unsupported execution mode")
     if receipt.get("external_effects"):
-        raise ValueError("cognition receipt may not claim execution effects")
+        raise ValueError("cognition receipt is read-only and may not claim execution effects")
     if receipt.get("authority_transfer") is not False:
         raise ValueError("authority transfer is forbidden")
 
