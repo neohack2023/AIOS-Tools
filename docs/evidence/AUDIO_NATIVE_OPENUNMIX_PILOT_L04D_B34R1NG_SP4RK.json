@@ -1,0 +1,58 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "S2C-20260805T162800Z-001",
+  "track_id": "L04D-B34R1NG_SP4RK",
+  "profile_id": "openunmix-umxhq-native-cpu-v0.1",
+  "status": "TIMED_OUT",
+  "failure_code": "NATIVE_PROCESS_TIMEOUT",
+  "source": {
+    "sha256": "3a1573821ed5ef792014bd5945cf4ca298c8f11b71a9088c65e207834ee5ae7e",
+    "byte_size": 6904230
+  },
+  "environment": {
+    "python": "3.13.5",
+    "openunmix": "1.3.0",
+    "torch": "2.10.0+cpu",
+    "torchaudio": "2.10.0+cpu",
+    "numpy": "2.3.5",
+    "executable": "/opt/pyvenv/bin/umx",
+    "device": "cpu"
+  },
+  "command": [
+    "umx",
+    "<source>",
+    "--model",
+    "umxhq",
+    "--targets",
+    "vocals",
+    "drums",
+    "bass",
+    "other",
+    "--outdir",
+    "<isolated-output>",
+    "--ext",
+    "wav",
+    "--niter",
+    "1",
+    "--wiener-win-len",
+    "300",
+    "--filterbank",
+    "torch",
+    "--verbose",
+    "--no-cuda"
+  ],
+  "timeout_seconds": 900,
+  "stdout_last_line": "Using  cpu",
+  "stderr_observations": [
+    "source resampled to model sample rate",
+    "torchaudio sinc_interpolation deprecation warning"
+  ],
+  "promoted_stems": [],
+  "partial_output_promoted": false,
+  "network_during_analysis": false,
+  "decision": "EVALUATE_SECOND_NATIVE_ENGINE_OR_UPSTREAM_SEGMENTED_MODE",
+  "custom_chunking_authorized": false,
+  "runtime_admission": false,
+  "pilot_authorized": false,
+  "authority_transfer": false
+}
