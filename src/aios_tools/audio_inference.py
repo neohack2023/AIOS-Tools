@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .audio_chunking import AudioChunkingError, ChunkProfile, run_chunked_separator
 from .audio_metrics import compute_stem_metrics
 from .audio_transaction import ArtifactSpec, AudioArtifactTransaction
 from .audio_wav import AudioWavError, require_float32_stereo_wav, write_float32_wav
@@ -14,6 +15,7 @@ EXPECTED_TARGETS = ["vocals", "drums", "bass", "other"]
 EXPECTED_SAMPLE_RATE = 44100
 EXPECTED_CHANNELS = 2
 LEGACY_WEIGHT_KEYS = {"sample_rate", "stft.window", "transform.0.window"}
+FROZEN_CHUNK_PROFILE = ChunkProfile()
 
 
 class AudioInferenceError(RuntimeError):
@@ -167,7 +169,9 @@ def run_frozen_stem_inference(*, source_path: Path, model_cache: Path, transacti
     separator = _load_frozen_separator(openunmix, torch, model_cache)
     try:
         with torch.inference_mode():
-            estimates = separator(source)
+            estimates, chunking = run_chunked_separator(torch, separator, source, profile=FROZEN_CHUNK_PROFILE)
+    except AudioChunkingError as exc:
+        raise AudioInferenceError(exc.code, exc.message) from exc
     except Exception as exc:
         raise AudioInferenceError("SEPARATION_RUNTIME_ERROR", f"Open-Unmix inference failed: {exc}") from exc
     metadata = _validate_estimates(torch, estimates, source)
@@ -200,6 +204,7 @@ def run_frozen_stem_inference(*, source_path: Path, model_cache: Path, transacti
         "targets": list(EXPECTED_TARGETS),
         "stems": staged,
         "metrics": metrics,
+        "chunking": chunking,
         "artifact_specs": artifact_specs,
         "runtime_admission": False,
         "pilot_authorized": False,
