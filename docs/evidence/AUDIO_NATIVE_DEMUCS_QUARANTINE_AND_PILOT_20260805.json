@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1.0",
+  "track_id": "L04D-B34R1NG_SP4RK",
+  "profile_id": "demucs-htdemucs-native-cpu-v0.1",
+  "source_sha256": "3a1573821ed5ef792014bd5945cf4ca298c8f11b71a9088c65e207834ee5ae7e",
+  "package": {
+    "name": "demucs",
+    "version": "4.1.0",
+    "wheel": "demucs-4.1.0-py3-none-any.whl",
+    "sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",
+    "quarantine_status": "METADATA_LOCKED_ARTIFACT_NOT_FETCHED"
+  },
+  "model": {
+    "name": "htdemucs",
+    "signature": "955717e8",
+    "filename": "955717e8-8726e21a.th",
+    "sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",
+    "byte_size": 84141911,
+    "quarantine_status": "ARTIFACT_NOT_FETCHED",
+    "failure_code": "MODEL_ARTIFACT_FETCH_UNAVAILABLE"
+  },
+  "ci": {
+    "head_before_lock_update": "95a8327f7379c0b57be08fb374dc62397210e465",
+    "repository_governance": "SUCCESS",
+    "aios_tools_ci": "SUCCESS",
+    "post_lock_update_ci": "PENDING"
+  },
+  "pilot": {
+    "attempted": true,
+    "status": "BLOCKED_BEFORE_PROCESS_START",
+    "failure_code": "MODEL_ARTIFACT_NOT_IN_QUARANTINE",
+    "process_started": false,
+    "network_during_analysis": false,
+    "promoted_stems": [],
+    "partial_output_promoted": false
+  },
+  "decision": "RETRY_QUARANTINE_FETCH_IN_NETWORK_ENABLED_CONTROLLED_RUNNER_THEN_EXECUTE_SAME_PILOT",
+  "custom_chunking_authorized": false,
+  "runtime_admission": false,
+  "pilot_authorized": false,
+  "authority_transfer": false
+}
