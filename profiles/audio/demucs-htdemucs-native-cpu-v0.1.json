@@ -3,6 +3,15 @@
   "profile_id": "demucs-htdemucs-native-cpu-v0.1",
   "package": "demucs==4.1.0",
   "package_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",
+  "runtime_dependencies": [
+    {
+      "package": "sphn==0.1.12",
+      "filename": "sphn-0.1.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "0b44b49017f6edd62a2977241fde54f096c92da2906ec6bd55f18faa6dee4c27",
+      "python_tag": "cp313",
+      "platform_tag": "manylinux_2_17_x86_64.manylinux2014_x86_64"
+    }
+  ],
   "entrypoint": ["python", "-m", "demucs"],
   "model": "htdemucs",
   "model_artifact": {
