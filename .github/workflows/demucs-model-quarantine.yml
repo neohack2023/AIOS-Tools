@@ -1,0 +1,45 @@
+name: Demucs Model Quarantine
+
+on:
+  push:
+    branches:
+      - agent/audio-native-demucs-evaluation
+    paths:
+      - .github/workflows/demucs-model-quarantine.yml
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-verify-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download pinned htdemucs model
+        run: |
+          set -euo pipefail
+          mkdir -p quarantine
+          curl --fail --location --retry 5 --retry-delay 5 \
+            --output quarantine/955717e8-8726e21a.th \
+            https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th
+
+      - name: Verify exact checksum and size
+        run: |
+          set -euo pipefail
+          file=quarantine/955717e8-8726e21a.th
+          expected_sha=8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4
+          expected_bytes=84141911
+          actual_sha=$(sha256sum "$file" | awk '{print $1}')
+          actual_bytes=$(stat -c '%s' "$file")
+          test "$actual_sha" = "$expected_sha"
+          test "$actual_bytes" = "$expected_bytes"
+          printf '{\n  "filename": "955717e8-8726e21a.th",\n  "sha256": "%s",\n  "byte_size": %s,\n  "source_url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",\n  "quarantine_status": "VERIFIED"\n}\n' "$actual_sha" "$actual_bytes" > quarantine/manifest.json
+
+      - name: Upload verified quarantine artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: demucs-htdemucs-model-quarantine
+          path: quarantine/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
