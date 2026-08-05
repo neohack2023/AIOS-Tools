@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 
+from .audio_native_demucs import NativeDemucsProfile, run_native_demucs
 from .canonical import canonical_sha256
 
 
@@ -63,8 +65,32 @@ def validate_schema(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def audio_demucs_separate(payload: dict[str, Any]) -> dict[str, Any]:
+    required = {"source_path", "output_dir", "profile_path"}
+    missing = sorted(required - payload.keys())
+    if missing:
+        raise ValueError(f"input missing fields: {', '.join(missing)}")
+
+    profile = NativeDemucsProfile.from_json(Path(str(payload["profile_path"])))
+    result = run_native_demucs(
+        profile,
+        Path(str(payload["source_path"])),
+        Path(str(payload["output_dir"])),
+    )
+    return {
+        **result,
+        "workflow": "AUDIO_STEM_SECTION_ANALYSIS",
+        "engine": "demucs",
+        "profile_id": profile.profile_id,
+        "evidence_class": "MODEL_ESTIMATE",
+        "runtime_admission": False,
+        "authority_transfer": False,
+    }
+
+
 HANDLERS = {
     "system.health": system_health,
     "canonical.hash_json": hash_json,
     "schema.validate": validate_schema,
+    "audio.demucs.separate": audio_demucs_separate,
 }
