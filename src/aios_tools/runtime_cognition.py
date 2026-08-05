@@ -84,6 +84,7 @@ def build_execution_cognition_receipt(
         "COMPLETED": "tool.completed",
         "FAILED": "tool.failed",
         "BLOCKED": "tool.blocked",
+        "APPROVAL_REQUIRED": "tool.blocked",
     }[status]
     builder.append(
         terminal_type,
