@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/audio-stem-section-result.v0.1.schema.json",
+  "title": "AIOS Audio Stem and Section Result v0.1",
+  "type": "object",
+  "required": [
+    "status",
+    "tool_identity",
+    "profile_id",
+    "profile_checksum",
+    "source_dependency",
+    "slice1_dependency",
+    "model_cache",
+    "output_transaction",
+    "runtime_admission",
+    "pilot_authorized",
+    "authority_transfer"
+  ],
+  "properties": {
+    "status": {"enum": ["PRECHECK_COMPLETE", "COMPLETED", "FAILED", "BLOCKED"]},
+    "tool_identity": {"const": "audio.stem_section_analyze"},
+    "profile_id": {"const": "slice2-stem-section-v0.1"},
+    "profile_checksum": {
+      "const": "26ac1b86891a8dd7775a3b25bdb7f4b00d9ab284c7575815ce43c5f14e19680f"
+    },
+    "source_dependency": {
+      "type": "object",
+      "required": ["path", "sha256", "byte_size", "evidence_class"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "byte_size": {"type": "integer", "minimum": 1},
+        "evidence_class": {"const": "SOURCE_PROVENANCE"}
+      },
+      "additionalProperties": false
+    },
+    "slice1_dependency": {
+      "type": "object",
+      "required": ["run_id", "status", "profile_id", "source_sha256", "receipt_path", "evidence_class"],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "status": {"const": "COMPLETE"},
+        "profile_id": {"const": "slice1-baseline-v0.1"},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "receipt_path": {"type": "string", "minLength": 1},
+        "evidence_class": {"const": "DEPENDENCY_VERIFICATION"}
+      },
+      "additionalProperties": false
+    },
+    "model_cache": {
+      "type": "object",
+      "required": ["directory", "package", "weights", "network_during_analysis", "evidence_class"],
+      "properties": {
+        "directory": {"type": "string", "minLength": 1},
+        "package": {"$ref": "#/$defs/artifact"},
+        "weights": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/weightedArtifact"}
+        },
+        "network_during_analysis": {"const": false},
+        "evidence_class": {"const": "ENVIRONMENT_RECEIPT"}
+      },
+      "additionalProperties": false
+    },
+    "output_transaction": {
+      "type": "object",
+      "required": ["output_directory", "parent_directory", "overwrite_allowed", "state", "evidence_class"],
+      "properties": {
+        "output_directory": {"type": "string", "minLength": 1},
+        "parent_directory": {"type": "string", "minLength": 1},
+        "overwrite_allowed": {"const": false},
+        "state": {"enum": ["PRECHECKED", "STAGED", "PROMOTED", "ROLLED_BACK"]},
+        "evidence_class": {"const": "EXECUTION_CONTROL"}
+      },
+      "additionalProperties": false
+    },
+    "artifact_manifest": {"type": "object"},
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "message": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "runtime_admission": {"type": "boolean"},
+    "pilot_authorized": {"const": false},
+    "authority_transfer": {"const": false}
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["filename", "sha256", "byte_size"],
+      "properties": {
+        "filename": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "byte_size": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "weightedArtifact": {
+      "type": "object",
+      "required": ["target", "filename", "sha256", "byte_size"],
+      "properties": {
+        "target": {"enum": ["vocals", "drums", "bass", "other"]},
+        "filename": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "byte_size": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

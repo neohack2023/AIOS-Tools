@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.1.0",
+  "run_classification": "STATIC_RUNTIME_CORE_IMPLEMENTATION",
+  "status": "PRECHECK_CORE_IMPLEMENTED_NOT_RUNTIME_ADMITTED",
+  "issue": 27,
+  "parent_plan_pr": 28,
+  "parent_plan_merge_commit": "88a232eca9d17bb99774203af6d180f8d128138f",
+  "branch": "agent/audio-stem-section-runtime-core",
+  "tool_identity": "audio.stem_section_analyze",
+  "profile_id": "slice2-stem-section-v0.1",
+  "profile_checksum": "26ac1b86891a8dd7775a3b25bdb7f4b00d9ab284c7575815ce43c5f14e19680f",
+  "implemented_surfaces": [
+    "input_contract",
+    "result_contract",
+    "artifact_manifest_contract",
+    "prompt_leak_guard",
+    "source_checksum_verification",
+    "slice1_markdown_receipt_verification",
+    "frozen_profile_verification",
+    "offline_package_and_weight_verification",
+    "absolute_path_requirement",
+    "symlink_boundary_rejection",
+    "output_overwrite_rejection",
+    "preflight_result_validation"
+  ],
+  "deferred_surfaces": [
+    "temporary_workspace_transaction",
+    "openunmix_model_loader",
+    "audio_decode_and_normalization",
+    "four_stem_inference",
+    "stem_validation_and_freeze",
+    "reconstruction_and_activity_metrics",
+    "blind_section_inference",
+    "artifact_generation_and_atomic_promotion",
+    "cli_adapter",
+    "mcp_adapter",
+    "registry_admission",
+    "scoped_policy_admission"
+  ],
+  "source_receipt_contract_basis": {
+    "run_id": "S1-20260805T015240Z-001",
+    "status": "COMPLETE",
+    "profile": "slice1-baseline-v0.1",
+    "source_sha256": "3a1573821ed5ef792014bd5945cf4ca298c8f11b71a9088c65e207834ee5ae7e",
+    "drive_file": "https://drive.google.com/file/d/1OQHoJzguq7caKO409OzNB4kigDb74-d1"
+  },
+  "gates": {
+    "contracts_present": true,
+    "preflight_core_present": true,
+    "tests_present": true,
+    "runtime_handler_registered": false,
+    "local_artifact_policy_admitted": false,
+    "model_inference_present": false,
+    "runtime_admission": false,
+    "pilot_authorized": false
+  },
+  "network_during_analysis": false,
+  "authority_transfer": false
+}

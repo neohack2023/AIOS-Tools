@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/audio-stem-section-artifact-manifest.v0.1.schema.json",
+  "title": "AIOS Audio Stem and Section Artifact Manifest v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "tool_identity",
+    "profile_id",
+    "profile_checksum",
+    "output_root",
+    "transaction_state",
+    "artifacts",
+    "complete",
+    "authority_transfer"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "tool_identity": {"const": "audio.stem_section_analyze"},
+    "profile_id": {"const": "slice2-stem-section-v0.1"},
+    "profile_checksum": {
+      "const": "26ac1b86891a8dd7775a3b25bdb7f4b00d9ab284c7575815ce43c5f14e19680f"
+    },
+    "output_root": {"type": "string", "minLength": 1},
+    "transaction_state": {"enum": ["PREPARED", "FROZEN", "PROMOTED", "ROLLED_BACK"]},
+    "artifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": ["relative_path", "sha256", "byte_size", "media_type", "evidence_class", "required"],
+        "properties": {
+          "relative_path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*\\.\\./).+$"
+          },
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "byte_size": {"type": "integer", "minimum": 1},
+          "media_type": {"type": "string", "minLength": 1},
+          "evidence_class": {
+            "enum": [
+              "SOURCE_PROVENANCE",
+              "ENVIRONMENT_RECEIPT",
+              "MEASURED",
+              "MODEL_ESTIMATE",
+              "QUALITY_PROXY",
+              "EXECUTION_RECEIPT"
+            ]
+          },
+          "required": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "complete": {"type": "boolean"},
+    "authority_transfer": {"const": false}
+  },
+  "additionalProperties": false
+}
