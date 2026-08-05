@@ -30,6 +30,11 @@ def main() -> None:
     invoke_parser.add_argument("--scope", default="global-working-memory")
     invoke_parser.add_argument("--mode", default="READ_ONLY")
     invoke_parser.add_argument("--request-id")
+    invoke_parser.add_argument(
+        "--authority-context",
+        default="{}",
+        help="JSON object or @file containing approval and authority context",
+    )
     args = parser.parse_args()
     if args.command == "list":
         try:
@@ -41,6 +46,7 @@ def main() -> None:
         return
     try:
         payload = parse_json_input(args.input)
+        authority_context = parse_json_input(args.authority_context)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         print(json.dumps({"status": "FAILED", "error": str(exc)}), file=sys.stderr)
         raise SystemExit(2) from exc
@@ -51,6 +57,7 @@ def main() -> None:
         scope=args.scope,
         mode=args.mode,
         requested_by={"type": "HUMAN", "id": "aios-tools-cli"},
+        authority_context=authority_context,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
     raise SystemExit(0 if result["status"] == "COMPLETED" else 1)

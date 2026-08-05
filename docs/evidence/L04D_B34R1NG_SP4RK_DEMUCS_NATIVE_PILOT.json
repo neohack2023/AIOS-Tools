@@ -1,0 +1,77 @@
+{
+  "source_sha256": "3a1573821ed5ef792014bd5945cf4ca298c8f11b71a9088c65e207834ee5ae7e",
+  "demucs": "4.1.0",
+  "sphn": "0.1.12",
+  "model_sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",
+  "command": [
+    "python3",
+    "-m",
+    "demucs",
+    "-n",
+    "htdemucs",
+    "-d",
+    "cpu",
+    "-j",
+    "1",
+    "--segment",
+    "7",
+    "--overlap",
+    "0.1",
+    "--shifts",
+    "0",
+    "--float32",
+    "-o",
+    "<output>",
+    "<source>"
+  ],
+  "elapsed_seconds_observed": 136,
+  "status": "COMPLETE",
+  "stems": [
+    {
+      "target": "bass",
+      "bytes": 95493136,
+      "sha256": "bb66a38aa999aeab1497746c9da1408cd1945be9bcef1b5e80fff661f1ccf343",
+      "wav_format_code": 3,
+      "channels": 2,
+      "sample_rate": 44100,
+      "bits_per_sample": 32,
+      "frames": 11936635,
+      "duration_seconds": 270.6719954648526
+    },
+    {
+      "target": "drums",
+      "bytes": 95493136,
+      "sha256": "606958fe2a53336be980096665140894dc5bb65be2d0fa40d6565de6d7a0f336",
+      "wav_format_code": 3,
+      "channels": 2,
+      "sample_rate": 44100,
+      "bits_per_sample": 32,
+      "frames": 11936635,
+      "duration_seconds": 270.6719954648526
+    },
+    {
+      "target": "other",
+      "bytes": 95493136,
+      "sha256": "834a05b74f540fe27151ec1c9bdd6f5086e61c589de07d5c21def60ed1c86aca",
+      "wav_format_code": 3,
+      "channels": 2,
+      "sample_rate": 44100,
+      "bits_per_sample": 32,
+      "frames": 11936635,
+      "duration_seconds": 270.6719954648526
+    },
+    {
+      "target": "vocals",
+      "bytes": 95493136,
+      "sha256": "e9bbc495ca3f4ca186d0067fc7ffc6b06d9a57b7efe9b30948919af3e8e045b7",
+      "wav_format_code": 3,
+      "channels": 2,
+      "sample_rate": 44100,
+      "bits_per_sample": 32,
+      "frames": 11936635,
+      "duration_seconds": 270.6719954648526
+    }
+  ],
+  "runtime_admission": false,
+  "authority_transfer": false
+}

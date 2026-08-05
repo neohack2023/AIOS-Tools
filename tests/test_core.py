@@ -21,9 +21,10 @@ def test_health_receipt_is_read_only_independent_and_traced():
     assert receipt["external_effects"] == []
     assert receipt["output"]["portable_repo_required"] is False
     assert receipt["registry_version"] == "0.1.0"
-    assert receipt["policy_version"] == "0.1.0"
+    assert receipt["policy_version"] == "0.2.0-candidate"
     assert receipt["requested_by"] == {"type": "SERVICE", "id": "aios-tools-python"}
-    assert receipt["output"]["policy"]["durable_writes_enabled"] is False
+    assert receipt["output"]["policy"]["durable_writes_enabled"] is True
+    assert receipt["output"]["policy"]["write_scope"] == "LOCAL_ARTIFACTS_ONLY"
     assert receipt["output"]["policy"]["external_network_effects_enabled"] is False
 
 
@@ -70,10 +71,10 @@ def test_unknown_tool_fails_closed():
     assert receipt["external_effects"] == []
 
 
-def test_disallowed_mode_is_blocked_by_global_policy():
+def test_globally_allowed_mode_still_respects_tool_mode():
     receipt = invoke("system.health", {}, mode="WRITE")
     assert receipt["status"] == "BLOCKED"
-    assert receipt["errors"][0]["code"] == "MODE_GLOBALLY_BLOCKED"
+    assert receipt["errors"][0]["code"] == "MODE_NOT_ALLOWED"
     assert receipt["external_effects"] == []
     assert receipt["authority_transfer"] is False
 

@@ -35,6 +35,7 @@ def load_policy() -> dict[str, Any]:
         "durable_writes_enabled",
         "external_network_effects_enabled",
         "authority_transfer_allowed",
+        "approval_required_for",
     }
     missing = sorted(required - policy.keys())
     if missing:
@@ -43,12 +44,23 @@ def load_policy() -> dict[str, Any]:
         raise ConfigurationError("execution policy allowed_modes must be a non-empty list")
     if policy["default_mode"] not in policy["allowed_modes"]:
         raise ConfigurationError("execution policy default_mode must be globally allowed")
-    if policy["durable_writes_enabled"] is not False:
-        raise ConfigurationError("Slice 0 forbids durable writes")
+    if not isinstance(policy["durable_writes_enabled"], bool):
+        raise ConfigurationError("execution policy durable_writes_enabled must be boolean")
     if policy["external_network_effects_enabled"] is not False:
-        raise ConfigurationError("Slice 0 forbids external network effects")
+        raise ConfigurationError("external network effects must remain disabled")
     if policy["authority_transfer_allowed"] is not False:
-        raise ConfigurationError("Slice 0 forbids authority transfer")
+        raise ConfigurationError("authority transfer must remain disabled")
+    if not isinstance(policy["approval_required_for"], list):
+        raise ConfigurationError("approval_required_for must be a list")
+    if "WRITE" in policy["allowed_modes"]:
+        if policy["durable_writes_enabled"] is not True:
+            raise ConfigurationError("WRITE mode requires durable_writes_enabled=true")
+        if "WRITE" not in policy["approval_required_for"]:
+            raise ConfigurationError("WRITE mode requires explicit approval")
+        if policy.get("write_scope") != "LOCAL_ARTIFACTS_ONLY":
+            raise ConfigurationError("WRITE mode is limited to LOCAL_ARTIFACTS_ONLY")
+    elif policy["durable_writes_enabled"] is not False:
+        raise ConfigurationError("durable writes cannot be enabled when WRITE mode is absent")
     return policy
 
 
@@ -75,7 +87,7 @@ def load_registry(handlers: dict[str, Callable[..., Any]]) -> tuple[dict[str, di
         if name in registry:
             raise ConfigurationError(f"duplicate registry tool: {name}")
         if item["authority_transfer"] is not False:
-            raise ConfigurationError(f"Slice 0 tool {name} cannot transfer authority")
+            raise ConfigurationError(f"tool {name} cannot transfer authority")
         registry[name] = dict(item)
 
     registered = set(registry)
