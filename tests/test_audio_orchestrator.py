@@ -48,7 +48,26 @@ def test_orchestrator_promotes_complete_stem_set(monkeypatch, tmp_path: Path):
             transaction.artifact_path(relative).write_bytes(b"RIFF" + target.encode())
             specs.append(orchestrator.ArtifactSpec(relative, "audio/wav", "MODEL_ESTIMATE"))
             stems.append({"target": target, "relative_path": relative})
-        return {"targets": ["vocals", "drums", "bass", "other"], "stems": stems, "artifact_specs": specs}
+        return {
+            "targets": ["vocals", "drums", "bass", "other"],
+            "stems": stems,
+            "metrics": {
+                "reconstruction_rms_error": 0.0,
+                "residual_to_mix_energy_ratio": 0.0,
+                "stem_activity": [],
+                "evidence_class": "QUALITY_PROXY",
+                "authority_transfer": False,
+            },
+            "chunking": {
+                "profile": {"chunk_seconds": 15, "overlap_seconds": 2},
+                "chunk_count": 1,
+                "chunks": [],
+                "output_samples": 1,
+                "evidence_class": "EXECUTION_CONTROL",
+                "authority_transfer": False,
+            },
+            "artifact_specs": specs,
+        }
 
     monkeypatch.setattr(orchestrator, "run_frozen_stem_inference", fake_inference)
     monkeypatch.setattr(orchestrator, "validate_result_contract", lambda value: None)
@@ -59,6 +78,8 @@ def test_orchestrator_promotes_complete_stem_set(monkeypatch, tmp_path: Path):
     assert output.is_dir()
     assert (output / "artifact-manifest.json").is_file()
     assert (output / "run-receipt.json").is_file()
+    assert (output / "analysis" / "stem-metrics.json").is_file()
+    assert (output / "analysis" / "chunking-receipt.json").is_file()
     for target in ("vocals", "drums", "bass", "other"):
         assert (output / "stems" / f"{target}.wav").is_file()
 
