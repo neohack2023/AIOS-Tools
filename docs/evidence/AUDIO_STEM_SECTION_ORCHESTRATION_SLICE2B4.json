@@ -1,0 +1,29 @@
+{
+  "schema_version": "0.1.0",
+  "run_classification": "STATIC_BASIC_STEM_ORCHESTRATION_IMPLEMENTATION",
+  "status": "BASIC_STEM_SPLIT_ORCHESTRATED_NOT_RUNTIME_ADMITTED",
+  "issue": 27,
+  "parent_prs": [30, 31],
+  "tool_identity": "audio.stem_section_analyze",
+  "profile_id": "slice2-stem-section-v0.1",
+  "implemented": [
+    "preflight to inference orchestration",
+    "bounded transaction preparation",
+    "four-stem staging",
+    "run receipt generation",
+    "artifact manifest freeze",
+    "atomic output promotion",
+    "rollback on bounded runtime failure"
+  ],
+  "deferred": [
+    "reconstruction metrics",
+    "stem activity timelines",
+    "blind neutral section inference",
+    "CLI and MCP adapters",
+    "registry and policy admission",
+    "licensed or user-supplied pilot"
+  ],
+  "runtime_admission": false,
+  "pilot_authorized": false,
+  "authority_transfer": false
+}
