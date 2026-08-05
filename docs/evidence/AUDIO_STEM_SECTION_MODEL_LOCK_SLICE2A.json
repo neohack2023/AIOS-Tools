@@ -1,0 +1,115 @@
+{
+  "schema_version": "0.1.0",
+  "status": "DEPENDENCY_LOCK_PENDING",
+  "profile_id": "slice2-stem-section-v0.1",
+  "tool_identity": "audio.stem_section_analyze",
+  "decision": {
+    "package": "openunmix==1.3.0",
+    "source_repository": "sigsep/open-unmix-pytorch",
+    "source_commit": "822ed57be7728ea42fca933305747251c7293d52",
+    "model_id": "umxhq",
+    "model_record": "10.5281/zenodo.3370489",
+    "taxonomy": ["vocals", "drums", "bass", "other"],
+    "execution_class": "CPU_REFERENCE"
+  },
+  "authority": {
+    "notion_decision_candidate": "https://app.notion.com/p/3b343bd4ae4a817087f2fb9f56936545",
+    "notion_parent_workflow": "https://app.notion.com/p/3b343bd4ae4a81989575f3e2c80fe388",
+    "drive_dossier": "https://docs.google.com/document/d/1v2gfE-JFbDZPSN7pdfIZIx7jqOWtKzDuJiKTjHRG864/edit",
+    "drive_ledger": "https://docs.google.com/spreadsheets/d/12-Li4xI264lYL8f93MVh8Qs03xMpvT6ERVvenk0s2PM/edit",
+    "authority_transfer": false
+  },
+  "runtime_reference": {
+    "python": "3.13.5",
+    "openunmix": "1.3.0",
+    "torch": "2.10.0+cpu",
+    "torchaudio": "2.10.0+cpu",
+    "numpy": "2.3.5",
+    "ffmpeg": "7.1.3",
+    "device": "cpu",
+    "thread_count": 1,
+    "network_during_analysis": false
+  },
+  "inference_profile": {
+    "sample_rate_hz": 44100,
+    "channels": 2,
+    "targets": ["vocals", "drums", "bass", "other"],
+    "device": "cpu",
+    "thread_count": 1,
+    "residual": false,
+    "niter": 1,
+    "wiener_win_len": 300,
+    "filterbank": "torch",
+    "output_encoding": "WAV_FLOAT32",
+    "overwrite_source_or_slice1": false
+  },
+  "smoke_test": {
+    "pretrained": false,
+    "input_description": "1 second stereo float32 zeros at 44100 Hz",
+    "output_shape": [1, 4, 2, 44100],
+    "finite_values": true,
+    "elapsed_seconds": 0.215,
+    "installed_distribution_record_sha256": "d1c41f55cd0f18ee171fbec76b6448b4f4d958058683b8aba6ba30227e7a6317",
+    "scope": "package import, constructor, tensor shape, taxonomy, and CPU compatibility only"
+  },
+  "rights_review": {
+    "source_package_license": "MIT",
+    "weight_record_license": "MIT",
+    "weight_license_evidence": "Zenodo/DataCite/OpenAIRE metadata for record 3370489",
+    "status": "PROVISIONALLY_SATISFIED",
+    "recheck_at_fetch": true
+  },
+  "package_artifact": {
+    "filename": null,
+    "sha256": null,
+    "byte_size": null,
+    "admitted": false
+  },
+  "weights": [
+    {
+      "target": "vocals",
+      "filename": "vocals-b62c91ce.pth",
+      "source_url": "https://zenodo.org/records/3370489/files/vocals-b62c91ce.pth",
+      "provider_md5": "d918985fad0fedf6d9ce89e279aa7218",
+      "sha256": null,
+      "byte_size": null,
+      "admitted": false
+    },
+    {
+      "target": "drums",
+      "filename": "drums-9619578f.pth",
+      "source_url": "https://zenodo.org/records/3370489/files/drums-9619578f.pth",
+      "provider_md5": "cebf76e196e73e85d247f462c31e36fc",
+      "sha256": null,
+      "byte_size": null,
+      "admitted": false
+    },
+    {
+      "target": "bass",
+      "filename": "bass-8d85a5bd.pth",
+      "source_url": "https://zenodo.org/records/3370489/files/bass-8d85a5bd.pth",
+      "provider_md5": "8cc37d31903fe48306468ee968f4b1b6",
+      "sha256": null,
+      "byte_size": null,
+      "admitted": false
+    },
+    {
+      "target": "other",
+      "filename": "other-b52fbbf7.pth",
+      "source_url": "https://zenodo.org/records/3370489/files/other-b52fbbf7.pth",
+      "provider_md5": "8637606623ed7c74986789c3b1f94bc6",
+      "sha256": null,
+      "byte_size": null,
+      "admitted": false
+    }
+  ],
+  "gates": {
+    "baseline_approved": true,
+    "runtime_compatibility_smoke_test": true,
+    "package_artifact_locked": false,
+    "all_weight_sha256_present": false,
+    "resource_envelope_measured_with_pretrained_weights": false,
+    "runtime_admission": false,
+    "pilot_authorized": false
+  }
+}
