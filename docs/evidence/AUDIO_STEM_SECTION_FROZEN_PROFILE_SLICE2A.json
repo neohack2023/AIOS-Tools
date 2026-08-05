@@ -1,0 +1,77 @@
+{
+  "environment": {
+    "cpu_count_logical": 5,
+    "machine": "x86_64",
+    "numpy": "2.3.5",
+    "openunmix": "1.3.0",
+    "os": "Linux-6.18.35-x86_64-with-glibc2.41",
+    "processor": "",
+    "psutil": "7.2.2",
+    "python": "3.13.5",
+    "thread_count": 1,
+    "torch": "2.10.0+cpu",
+    "torchaudio": "2.10.0+cpu"
+  },
+  "fixture": {
+    "copyrighted_source": false,
+    "duration_seconds": 5.0,
+    "input_sha256": "95f9311a11fa49eb1d57a3963bcd37f01f6d43333f30ccc4bf747786001b95ac",
+    "kind": "deterministic_synthetic_multitone_stereo"
+  },
+  "inference": {
+    "authority_transfer": false,
+    "channels": 2,
+    "device": "cpu",
+    "execution_class": "CPU_REFERENCE",
+    "filterbank": "torch",
+    "network_during_analysis": false,
+    "niter": 1,
+    "output_encoding": "WAV_FLOAT32",
+    "residual": false,
+    "sample_rate_hz": 44100,
+    "targets": [
+      "vocals",
+      "drums",
+      "bass",
+      "other"
+    ],
+    "thread_count": 1,
+    "wiener_win_len": 300
+  },
+  "package": {
+    "byte_size": 40047,
+    "filename": "openunmix-1.3.0-py3-none-any.whl",
+    "sha256": "e893ae22c5b8001a6107022499c2587b70d5c2e4777cc7c9ed6272b68a69534e"
+  },
+  "profile_checksum": "26ac1b86891a8dd7775a3b25bdb7f4b00d9ab284c7575815ce43c5f14e19680f",
+  "profile_checksum_algorithm": "sha256-canonical-json-v1",
+  "profile_id": "slice2-stem-section-v0.1",
+  "profile_state": "FROZEN_NOT_RUNTIME_ADMITTED",
+  "tool_identity": "audio.stem_section_analyze",
+  "weights": [
+    {
+      "byte_size": 35637796,
+      "filename": "vocals-b62c91ce.pth",
+      "sha256": "b62c91cedbc7a066f1778ead5b5cecb377aa3a46a31af1cce7c5c8769339d083",
+      "target": "vocals"
+    },
+    {
+      "byte_size": 35637796,
+      "filename": "drums-9619578f.pth",
+      "sha256": "9619578f885c54737cb0234f9f9a4a679ee4f31438fd77fd1dbe02bb16c2da0a",
+      "target": "drums"
+    },
+    {
+      "byte_size": 35637796,
+      "filename": "bass-8d85a5bd.pth",
+      "sha256": "8d85a5bd3f996a8867fca0e8442e077e5a3f5ec747a6112742452a8f347b39c8",
+      "target": "bass"
+    },
+    {
+      "byte_size": 35637796,
+      "filename": "other-b52fbbf7.pth",
+      "sha256": "b52fbbf76479e752bd72e02304c602ac7802aa5bfbfb9cd12054b2695d5093ab",
+      "target": "other"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+name: Audio Model Dependency Lock
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/audio-model-dependency-lock.yml"
+      - "docs/evidence/AUDIO_STEM_SECTION_MODEL_LOCK_SLICE2A.json"
+      - "scripts/lock_audio_model_dependencies.py"
+      - "scripts/audio_model_lock_*.py"
+      - "scripts/verify_audio_model_lock.py"
+      - "tests/test_audio_model_dependency_lock.py"
+      - "tests/test_audio_model_lock.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quarantine-fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Controlled dependency fetch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .quarantine audio-model-lock-artifacts
+          mkdir -p audio-model-lock-artifacts
+          python scripts/lock_audio_model_dependencies.py fetch \
+            --manifest docs/evidence/AUDIO_STEM_SECTION_MODEL_LOCK_SLICE2A.json \
+            --quarantine .quarantine \
+            --output audio-model-lock-artifacts/dependency-fetch-receipt.json
+
+      - name: Verify model/profile lock and quarantined weights offline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/verify_audio_model_lock.py \
+            --manifest docs/evidence/AUDIO_STEM_SECTION_MODEL_LOCK_SLICE2A.json \
+            --profile docs/evidence/AUDIO_STEM_SECTION_FROZEN_PROFILE_SLICE2A.json \
+            --resource-receipt docs/evidence/AUDIO_STEM_SECTION_RESOURCE_ENVELOPE_SLICE2A.json \
+            --runtime-review docs/evidence/AUDIO_STEM_SECTION_RUNTIME_REVIEW_SLICE2A.json \
+            --weights-dir .quarantine/weights \
+            | tee audio-model-lock-artifacts/quarantine-verification.json
+
+      - name: Seal transfer inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path(".quarantine")
+          items = []
+          for path in sorted(p for p in root.rglob("*") if p.is_file()):
+              digest = hashlib.sha256()
+              size = 0
+              with path.open("rb") as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                      size += len(chunk)
+                      digest.update(chunk)
+              items.append({
+                  "path": str(path.relative_to(root)),
+                  "sha256": digest.hexdigest(),
+                  "byte_size": size,
+              })
+          inventory = {
+              "schema_version": "0.1.0",
+              "status": "QUARANTINE_TRANSFER_BUNDLE_SEALED",
+              "run_classification": "CONTROLLED_DEPENDENCY_FETCH",
+              "authority_transfer": False,
+              "runtime_admission": False,
+              "pilot_authorized": False,
+              "items": items,
+          }
+          Path("audio-model-lock-artifacts/quarantine-inventory.json").write_text(
+              json.dumps(inventory, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python -m compileall -q scripts tests
+
+      - name: Upload governed quarantine bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-model-dependency-lock-${{ github.event.pull_request.head.sha || github.sha }}
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+          path: |
+            audio-model-lock-artifacts/
+            .quarantine/package/openunmix-1.3.0-py3-none-any.whl
+            .quarantine/weights/*.pth
+            .quarantine/metadata/*.json
