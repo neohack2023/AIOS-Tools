@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.1.0",
+  "run_classification": "STATIC_STEM_INFERENCE_IMPLEMENTATION",
+  "status": "FROZEN_STEM_INFERENCE_IMPLEMENTED_NOT_RUNTIME_ADMITTED",
+  "issue": 27,
+  "parent_pr": 30,
+  "tool_identity": "audio.stem_section_analyze",
+  "profile_id": "slice2-stem-section-v0.1",
+  "implemented": [
+    "lazy runtime dependency loading",
+    "offline UMXHQ model construction",
+    "strict four-weight loading",
+    "known legacy compatibility-key filtering",
+    "mono-to-stereo normalization",
+    "44.1 kHz resampling",
+    "float32 CPU inference",
+    "deterministic algorithm enforcement",
+    "four-stem shape and finite-value validation",
+    "duration and channel validation",
+    "staged float32 WAV artifacts"
+  ],
+  "deferred": [
+    "runtime adapter integration",
+    "artifact manifest freeze and promotion orchestration",
+    "reconstruction and activity metrics",
+    "section analysis",
+    "registry and policy admission",
+    "licensed or user-supplied pilot"
+  ],
+  "runtime_admission": false,
+  "pilot_authorized": false,
+  "authority_transfer": false
+}
