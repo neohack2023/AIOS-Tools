@@ -14,7 +14,7 @@ permissions:
 jobs:
   fetch-verify-upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Download pinned htdemucs model
         run: |
@@ -24,47 +24,58 @@ jobs:
             --output quarantine/955717e8-8726e21a.th \
             https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th
 
-      - name: Download pinned Demucs 4.1.0 wheel
+      - name: Download pinned Python wheels
         run: |
           set -euo pipefail
           python - <<'PY'
           import json, pathlib, urllib.request
-          expected = '4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758'
-          with urllib.request.urlopen('https://pypi.org/pypi/demucs/4.1.0/json') as response:
-              data = json.load(response)
-          candidates = [item for item in data['urls'] if item['filename'] == 'demucs-4.1.0-py3-none-any.whl']
-          if len(candidates) != 1:
-              raise SystemExit('expected exactly one Demucs 4.1.0 wheel')
-          item = candidates[0]
-          if item['digests']['sha256'] != expected:
-              raise SystemExit('PyPI wheel digest does not match frozen profile')
-          urllib.request.urlretrieve(item['url'], 'quarantine/demucs-4.1.0-py3-none-any.whl')
-          pathlib.Path('quarantine/wheel-source.json').write_text(json.dumps({
-              'filename': item['filename'],
-              'sha256': item['digests']['sha256'],
-              'byte_size': item['size'],
-              'source_url': item['url'],
-          }, indent=2) + '\n')
+          locks = {
+              ('demucs', '4.1.0', 'demucs-4.1.0-py3-none-any.whl'): '4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758',
+              ('sphn', '0.1.12', 'sphn-0.1.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl'): '0b44b49017f6edd62a2977241fde54f096c92da2906ec6bd55f18faa6dee4c27',
+          }
+          sources = []
+          for (project, version, filename), expected in locks.items():
+              with urllib.request.urlopen(f'https://pypi.org/pypi/{project}/{version}/json') as response:
+                  data = json.load(response)
+              candidates = [item for item in data['urls'] if item['filename'] == filename]
+              if len(candidates) != 1:
+                  raise SystemExit(f'expected exactly one file for {filename}')
+              item = candidates[0]
+              if item['digests']['sha256'] != expected:
+                  raise SystemExit(f'PyPI digest mismatch for {filename}')
+              target = pathlib.Path('quarantine') / filename
+              urllib.request.urlretrieve(item['url'], target)
+              sources.append({
+                  'filename': filename,
+                  'sha256': item['digests']['sha256'],
+                  'byte_size': item['size'],
+                  'source_url': item['url'],
+              })
+          pathlib.Path('quarantine/wheel-sources.json').write_text(json.dumps(sources, indent=2) + '\n')
           PY
 
       - name: Verify exact model and wheel identities
         run: |
           set -euo pipefail
           model=quarantine/955717e8-8726e21a.th
-          wheel=quarantine/demucs-4.1.0-py3-none-any.whl
+          demucs_wheel=quarantine/demucs-4.1.0-py3-none-any.whl
+          sphn_wheel=quarantine/sphn-0.1.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
           test "$(sha256sum "$model" | awk '{print $1}')" = "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4"
           test "$(stat -c '%s' "$model")" = "84141911"
-          test "$(sha256sum "$wheel" | awk '{print $1}')" = "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758"
+          test "$(sha256sum "$demucs_wheel" | awk '{print $1}')" = "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758"
+          test "$(sha256sum "$sphn_wheel" | awk '{print $1}')" = "0b44b49017f6edd62a2977241fde54f096c92da2906ec6bd55f18faa6dee4c27"
           python -m venv quarantine/venv
-          quarantine/venv/bin/pip install --no-deps "$wheel"
+          quarantine/venv/bin/pip install --no-deps "$demucs_wheel" "$sphn_wheel"
           test "$(quarantine/venv/bin/python -c 'import importlib.metadata as m; print(m.version("demucs"))')" = "4.1.0"
+          test "$(quarantine/venv/bin/python -c 'import importlib.metadata as m; print(m.version("sphn"))')" = "0.1.12"
+          quarantine/venv/bin/python -c 'import sphn'
           rm -rf quarantine/venv
-          printf '{\n  "model_filename": "955717e8-8726e21a.th",\n  "model_sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",\n  "model_byte_size": 84141911,\n  "wheel_filename": "demucs-4.1.0-py3-none-any.whl",\n  "wheel_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",\n  "installed_version_check": "4.1.0",\n  "quarantine_status": "VERIFIED"\n}\n' > quarantine/manifest.json
+          printf '{\n  "model_filename": "955717e8-8726e21a.th",\n  "model_sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",\n  "model_byte_size": 84141911,\n  "demucs_wheel_filename": "demucs-4.1.0-py3-none-any.whl",\n  "demucs_wheel_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",\n  "sphn_wheel_filename": "sphn-0.1.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",\n  "sphn_wheel_sha256": "0b44b49017f6edd62a2977241fde54f096c92da2906ec6bd55f18faa6dee4c27",\n  "installed_demucs_version": "4.1.0",\n  "installed_sphn_version": "0.1.12",\n  "quarantine_status": "VERIFIED"\n}\n' > quarantine/manifest.json
 
       - name: Upload verified runtime quarantine
         uses: actions/upload-artifact@v4
         with:
-          name: demucs-4.1.0-htdemucs-runtime-quarantine
+          name: demucs-4.1.0-sphn-0.1.12-htdemucs-runtime-quarantine
           path: quarantine/
           if-no-files-found: error
           retention-days: 7
