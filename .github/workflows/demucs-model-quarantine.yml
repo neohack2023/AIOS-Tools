@@ -1,11 +1,12 @@
 name: Demucs Model Quarantine
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/audio-native-demucs-evaluation
+      - main
     paths:
       - .github/workflows/demucs-model-quarantine.yml
+      - profiles/audio/demucs-htdemucs-native-cpu-v0.1.json
 
 permissions:
   contents: read
