@@ -1,0 +1,31 @@
+{
+  "schema_version": "0.1.0",
+  "run_classification": "STATIC_RUNTIME_TRANSACTION_IMPLEMENTATION",
+  "status": "BOUNDED_TRANSACTION_IMPLEMENTED_NOT_RUNTIME_ADMITTED",
+  "issue": 27,
+  "parent_pr": 29,
+  "tool_identity": "audio.stem_section_analyze",
+  "profile_id": "slice2-stem-section-v0.1",
+  "implemented": [
+    "transaction-local staging directory",
+    "absolute output-root enforcement",
+    "symlink-component rejection",
+    "relative artifact path validation",
+    "required artifact completeness",
+    "artifact SHA-256 and byte-size manifest",
+    "atomic directory promotion",
+    "failure rollback",
+    "overwrite prohibition"
+  ],
+  "deferred": [
+    "audio decode",
+    "Open-Unmix model loading",
+    "four-stem inference",
+    "stem validation",
+    "section analysis",
+    "CLI and MCP admission"
+  ],
+  "runtime_admission": false,
+  "pilot_authorized": false,
+  "authority_transfer": false
+}
