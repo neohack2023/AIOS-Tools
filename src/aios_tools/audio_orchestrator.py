@@ -22,7 +22,7 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
 
 
 def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
-    """Run preflight, frozen four-stem inference, evidence freeze, and atomic promotion.
+    """Run preflight, bounded four-stem inference, evidence freeze, and atomic promotion.
 
     This remains an internal runtime function. It does not register or admit the tool.
     """
@@ -47,9 +47,11 @@ def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
 
         metrics_path = transaction.artifact_path("analysis/stem-metrics.json")
         _write_json(metrics_path, inference["metrics"])
+        chunking_path = transaction.artifact_path("analysis/chunking-receipt.json")
+        _write_json(chunking_path, inference["chunking"])
         receipt = {
-            "schema_version": "0.2.0",
-            "status": "BASIC_STEM_SPLIT_STAGED",
+            "schema_version": "0.3.0",
+            "status": "BOUNDED_STEM_SPLIT_STAGED",
             "run_id": payload["run_id"],
             "tool_identity": "audio.stem_section_analyze",
             "profile_id": payload["profile_id"],
@@ -59,6 +61,7 @@ def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
             "model_cache": preflight["model_cache"],
             "stems": inference["stems"],
             "metrics": inference["metrics"],
+            "chunking": inference["chunking"],
             "output_encoding": "WAV_FLOAT32",
             "elapsed_seconds": round(time.perf_counter() - started, 6),
             "runtime_admission": False,
@@ -72,6 +75,7 @@ def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
         specs.extend(
             [
                 ArtifactSpec("analysis/stem-metrics.json", "application/json", "QUALITY_PROXY"),
+                ArtifactSpec("analysis/chunking-receipt.json", "application/json", "EXECUTION_CONTROL"),
                 ArtifactSpec("run-receipt.json", "application/json", "EXECUTION_RECEIPT"),
             ]
         )
