@@ -1,241 +1,171 @@
-# AUDIO_STEM_SECTION_ANALYSIS - Slice 2A Model and Profile Lock
+# AUDIO_STEM_SECTION_ANALYSIS, Slice 2A Model and Profile Lock
 
-Status: `DECISION_CANDIDATE / BASELINE_SELECTED / NO_RUNTIME_ADMISSION`
+Status: `PROFILE_LOCKED / RESOURCE ENVELOPE MEASURED / RUNTIME IMPLEMENTATION REVIEW REQUIRED / NO RUNTIME ADMISSION`
 
-Parent plan: [`AUDIO_STEM_SECTION_ANALYSIS_SLICE2.md`](AUDIO_STEM_SECTION_ANALYSIS_SLICE2.md)
+Scope: `udio-algorithms`
 
-Issue: [#25](https://github.com/neohack2023/AIOS-Tools/issues/25)
+Profile: `slice2-stem-section-v0.1`
 
-Notion decision candidate: https://app.notion.com/p/3b343bd4ae4a817087f2fb9f56936545
+Tool identity: `audio.stem_section_analyze`
 
-Parent Notion workflow: https://app.notion.com/p/3b343bd4ae4a81989575f3e2c80fe388
+Authority transfer: `false`
 
-Drive dossier: https://docs.google.com/document/d/1v2gfE-JFbDZPSN7pdfIZIx7jqOWtKzDuJiKTjHRG864/edit
+## Purpose
 
-Drive ledger: https://docs.google.com/spreadsheets/d/12-Li4xI264lYL8f93MVh8Qs03xMpvT6ERVvenk0s2PM/edit
+Lock one reproducible four-stem CPU reference profile before executable Slice 2 stem and section analysis is implemented. This concern covers dependency identity, controlled acquisition, checksum verification, deterministic synthetic benchmarking, profile freezing, and static runtime-surface review.
 
-## 1. Purpose
+It does not admit the tool into the registry, enable model downloads during analysis, authorize a real-track pilot, or merge the pull request.
 
-Resolve the model-selection and inference-profile gate in the merged Slice 2 plan before contracts, registry admission, policy admission, executable code, or pilot execution are allowed.
+## Selected baseline
 
-This change locks a candidate baseline and records compatibility evidence. It does not fetch pretrained weights, execute separation with pretrained weights, alter the runtime registry, or authorize pilot execution.
+- Package: `openunmix==1.3.0`
+- Artifact: `openunmix-1.3.0-py3-none-any.whl`
+- Artifact SHA-256: `e893ae22c5b8001a6107022499c2587b70d5c2e4777cc7c9ed6272b68a69534e`
+- Artifact byte size: `40047`
+- Source repository: `sigsep/open-unmix-pytorch`
+- Release-code commit: `822ed57be7728ea42fca933305747251c7293d52`
+- Model: `umxhq`
+- Model record: `10.5281/zenodo.3370489`
+- Targets: `vocals`, `drums`, `bass`, `other`
+- Execution class: `CPU_REFERENCE`
+- Input contract: stereo, 44,100 Hz
+- Inference: CPU, one thread, residual disabled, one Wiener iteration, 300-frame Wiener window, Torch filterbank
 
-## 2. Selected reference baseline
+## Controlled acquisition boundary
 
-- package: `openunmix==1.3.0`
-- source repository: `sigsep/open-unmix-pytorch`
-- release-code commit: `822ed57be7728ea42fca933305747251c7293d52`
-- model ID: `umxhq`
-- model record: Zenodo `3370489`, version `1.0.1`
-- taxonomy: `vocals`, `drums`, `bass`, `other`
-- execution class: `CPU_REFERENCE`
-- profile ID: `slice2-stem-section-v0.1`
+```text
+approved HTTPS allowlist
+→ quarantine-only download
+→ original/final URL and redirect receipt
+→ provider metadata capture
+→ provider checksum verification
+→ local SHA-256 and exact byte-size calculation
+→ sealed transfer inventory
+→ offline benchmark and verification
+```
 
-The official loader describes a stereo, 44.1 kHz Open-Unmix UMXHQ separator built from per-target three-layer bidirectional LSTM magnitude-mask models plus multichannel Wiener filtering.
+Only `pypi.org`, `files.pythonhosted.org`, `zenodo.org`, and `www.zenodo.org` are allowed during the dependency-fetch phase. Analysis remains offline. Missing, changed, redirected-to-unapproved-host, checksum-mismatched, or size-mismatched dependencies fail closed.
 
-Observed loader facts:
+The successful controlled fetch was GitHub Actions run `30972750597`, job `92200410166`, on head `235ebb1c1249e5e61731ca32b81945d2810fdd3e`. Its transfer artifact was `8917163165`, sealed as `sha256:972de803d5f73f6c81fe88d763d2e0d4a48fc0eb4a01df2f536366ccb3512be6`.
 
-- `n_fft=4096`
-- `n_hop=1024`
-- `hidden_size=512`
-- modeled bandwidth `16000 Hz`
-- target set `vocals`, `drums`, `bass`, `other`
+## Locked weights
 
-## 3. Pinned CPU reference environment
+| Target | File | Provider MD5 | Local SHA-256 | Bytes |
+| --- | --- | --- | --- | ---: |
+| vocals | `vocals-b62c91ce.pth` | `d918985fad0fedf6d9ce89e279aa7218` | `b62c91cedbc7a066f1778ead5b5cecb377aa3a46a31af1cce7c5c8769339d083` | 35637796 |
+| drums | `drums-9619578f.pth` | `cebf76e196e73e85d247f462c31e36fc` | `9619578f885c54737cb0234f9f9a4a679ee4f31438fd77fd1dbe02bb16c2da0a` | 35637796 |
+| bass | `bass-8d85a5bd.pth` | `8cc37d31903fe48306468ee968f4b1b6` | `8d85a5bd3f996a8867fca0e8442e077e5a3f5ec747a6112742452a8f347b39c8` | 35637796 |
+| other | `other-b52fbbf7.pth` | `8637606623ed7c74986789c3b1f94bc6` | `b52fbbf76479e752bd72e02304c602ac7802aa5bfbfb9cd12054b2695d5093ab` | 35637796 |
 
-The first compatibility reference is pinned to the environment in which the model constructor and synthetic smoke test actually ran:
+The files are locked as profile dependencies but are not admitted to a durable runtime cache by this pull request.
+
+## Weight compatibility correction
+
+The released UMXHQ state dictionaries contain three legacy compatibility keys not present in the current `OpenUnmix` module state:
+
+- `sample_rate`
+- `stft.window`
+- `transform.0.window`
+
+The benchmark loader now requires that exact set, verifies `sample_rate == 44100`, rejects missing model keys or any additional unexpected keys, filters only the known legacy compatibility entries, and then performs a strict model-state load. This mirrors the official loader's compatibility behavior without silently accepting arbitrary state-dict drift.
+
+## Pretrained CPU resource measurement
+
+Run classification: `PRETRAINED_SYNTHETIC_CPU_RESOURCE_BENCHMARK`
+
+Fixture: deterministic five-second stereo multitone signal, generated locally, no copyrighted source.
+
+Environment:
 
 - Python `3.13.5`
 - Open-Unmix `1.3.0`
 - PyTorch `2.10.0+cpu`
 - Torchaudio `2.10.0+cpu`
 - NumPy `2.3.5`
-- FFmpeg `7.1.3`
-- device `cpu`
-- thread count `1` for the recorded smoke test
+- psutil `7.2.2`
+- CPU threads `1`
 
-This pin is an observed compatibility profile, not a claim that other versions are unsupported.
+Observed results:
 
-## 4. Candidate inference profile
+- Model load: `2.797457 s`
+- First inference: `1.493839 s`
+- Second inference: `0.829990 s`
+- Output shape: `(1, 4, 2, 220500)`
+- Finite values: pass
+- Same-context rerun: bit-identical
+- Maximum rerun absolute difference: `0.0`
+- Reconstruction residual RMS: `0.000414302630815655`
+- Peak RSS: `796618752` bytes
+- Quarantine bytes: `142615815`
+- Benchmark artifact bytes: `8820280`
+- Combined bytes: `151436095`
 
-```json
-{
-  "profile_id": "slice2-stem-section-v0.1",
-  "model": "openunmix:umxhq",
-  "package": "openunmix==1.3.0",
-  "python": "3.13.5",
-  "torch": "2.10.0+cpu",
-  "torchaudio": "2.10.0+cpu",
-  "numpy": "2.3.5",
-  "ffmpeg": "7.1.3",
-  "execution_class": "CPU_REFERENCE",
-  "sample_rate_hz": 44100,
-  "channels": 2,
-  "targets": ["vocals", "drums", "bass", "other"],
-  "device": "cpu",
-  "thread_count": 1,
-  "residual": false,
-  "niter": 1,
-  "wiener_win_len": 300,
-  "filterbank": "torch",
-  "output_encoding": "WAV_FLOAT32",
-  "network_during_analysis": false,
-  "overwrite_source_or_slice1": false,
-  "authority_transfer": false
-}
-```
+These measurements are a bounded synthetic CPU reference, not a full-track extrapolation or separation-quality claim.
 
-The workflow computes its own reconstruction residual after all four estimated stems are frozen. The model residual option therefore remains disabled in the baseline profile.
+## Frozen profile
 
-## 5. Verified compatibility smoke test
+Algorithm: `sha256-canonical-json-v1`
 
-The following checks were executed in the pinned CPU environment:
+Checksum: `26ac1b86891a8dd7775a3b25bdb7f4b00d9ab284c7575815ce43c5f14e19680f`
 
-```text
-openunmix package version: 1.3.0
-separator constructor: PASS
-separator sample rate: 44100
-separator targets: vocals, drums, bass, other
-synthetic input: 1 second, stereo, 44100 Hz, float32 zeros
-output shape: (1, 4, 2, 44100)
-finite-value check: PASS
-elapsed inference time: 0.215 seconds
-```
+The committed frozen profile binds package artifact, four weights, environment, inference parameters, and deterministic fixture. It is injected into the model-lock manifest, but not into the executable registry or runtime.
 
-The constructor used:
+## Runtime implementation review
 
-```python
-umxhq(
-    pretrained=False,
-    device="cpu",
-    residual=False,
-    niter=1,
-    wiener_win_len=300,
-    filterbank="torch",
-)
-```
+Run classification: `STATIC_RUNTIME_ADMISSION_SURFACE_REVIEW`
 
-This smoke test verifies package import, model construction, tensor shape, taxonomy, and CPU execution compatibility. It does not verify pretrained weight integrity, separation quality, model licensing, or production resource use.
+Reviewed surfaces:
 
-The installed Open-Unmix distribution `RECORD` file was present and had SHA-256:
+- `registry/tools.v0.1.json`
+- `policies/execution-policy.v0.1.json`
+- `src/aios_tools/tools.py`
+- `src/aios_tools/runner.py`
+- contract bindings
 
-`d1c41f55cd0f18ee171fbec76b6448b4f4d958058683b8aba6ba30227e7a6317`
+Result: `audio.stem_section_analyze` is not registered, not allowed by policy, has no shared handler, and has no admitted contract binding. The correct decision is `SEPARATE_BOUNDED_RUNTIME_IMPLEMENTATION_PR_REQUIRED`.
 
-This is an installed-environment fingerprint only. It is not a substitute for the required wheel or source-artifact checksum.
+Runtime admission remains `false`. Pilot authorization remains `false`.
 
-## 6. Rights and license review
+## Evidence files
 
-- the Open-Unmix source package declares the MIT license;
-- the Zenodo UMXHQ record is published as open software;
-- DataCite/OpenAIRE metadata for record `3370489` reports MIT licensing;
-- the admitted dependency manifest must preserve the record DOI, resolved license identifier, source URL, retrieval timestamp, and local checksums;
-- Zenodo hosting does not transfer intellectual-property rights, so use remains subject to the deposited record license.
+- `docs/evidence/AUDIO_STEM_SECTION_MODEL_LOCK_SLICE2A.json`
+- `docs/evidence/AUDIO_STEM_SECTION_DEPENDENCY_FETCH_SLICE2A.json`
+- `docs/evidence/AUDIO_STEM_SECTION_RESOURCE_ENVELOPE_SLICE2A.json`
+- `docs/evidence/AUDIO_STEM_SECTION_FROZEN_PROFILE_SLICE2A.json`
+- `docs/evidence/AUDIO_STEM_SECTION_RUNTIME_REVIEW_SLICE2A.json`
 
-The UMXHQ weight rights review is provisionally satisfied for the model-lock decision. It must be rechecked and captured in the controlled dependency manifest when the exact files are fetched.
+## Completed gates
 
-`umxl` remains excluded because the official project explicitly limits those weights to non-commercial use under CC BY-NC-SA 4.0.
+- [x] Select UMXHQ as the primary four-stem CPU reference baseline.
+- [x] Recheck package and weight-record licensing metadata during controlled fetch.
+- [x] Pin the package wheel SHA-256 and exact byte size.
+- [x] Fetch dependencies into quarantine through an explicit host allowlist.
+- [x] Record original URL, final URL, redirect chain, provider metadata, and transfer artifact provenance.
+- [x] Verify all four provider MD5 values.
+- [x] Calculate all four local SHA-256 values and exact byte sizes.
+- [x] Verify released weight compatibility and strict model-state loading.
+- [x] Measure a pretrained synthetic CPU resource envelope.
+- [x] Rerun inference in the same context and verify bit-identical output.
+- [x] Freeze and verify the canonical profile checksum.
+- [x] Review runtime admission surfaces.
+- [x] Keep authority transfer disabled.
 
-## 7. Weight candidates
+## Remaining gates
 
-| Target | File | Provider MD5 | Expected size |
-|---|---|---|---|
-| bass | `bass-8d85a5bd.pth` | `8cc37d31903fe48306468ee968f4b1b6` | about 35.6 MB |
-| drums | `drums-9619578f.pth` | `cebf76e196e73e85d247f462c31e36fc` | about 35.6 MB |
-| other | `other-b52fbbf7.pth` | `8637606623ed7c74986789c3b1f94bc6` | about 35.6 MB |
-| vocals | `vocals-b62c91ce.pth` | `d918985fad0fedf6d9ce89e279aa7218` | about 35.6 MB |
+- [ ] Human review of PR #26.
+- [ ] Separate bounded runtime implementation concern.
+- [ ] Add input and result contracts.
+- [ ] Add registry and policy admission.
+- [ ] Add shared handler and CLI/MCP adapter coverage.
+- [ ] Add cancellation, timeout, rollback, path-boundary, and receipt tests.
+- [ ] Approve a durable local dependency-cache promotion mechanism.
+- [ ] Run a licensed or user-supplied pilot only after runtime admission.
 
-Provider MD5 values are discovery evidence only. They do not satisfy the workflow checksum requirement.
+## Authority split
 
-Every admitted weight requires a locally computed SHA-256 and exact byte size from the controlled dependency-fetch phase.
+- Notion: architecture, governance, workflow status, and promotion authority.
+- Google Drive: profile, ledger, dependency receipts, resource measurements, and artifacts.
+- GitHub: executable implementation and version facts.
+- Model files: dependencies only, never authority sources.
 
-## 8. Dependency-fetch boundary
-
-Model acquisition and analysis execution are separate concerns.
-
-The dependency-fetch phase must:
-
-1. use an approved URL allowlist;
-2. download into quarantine;
-3. record the original URL, final URL, and redirect chain;
-4. verify the provider checksum where supplied;
-5. compute local SHA-256 and exact byte size;
-6. record the license evidence attached to the exact record;
-7. freeze a manifest before the files enter the admitted model cache;
-8. never replace an admitted weight silently.
-
-The admitted analysis path must run offline and fail with `MODEL_UNAVAILABLE` or `MODEL_WEIGHT_CHECKSUM_MISMATCH`. It must not download weights.
-
-## 9. Selection rationale
-
-Open-Unmix UMXHQ fits the baseline concern because:
-
-- its output taxonomy exactly matches the Slice 2 contract;
-- its source package is MIT licensed;
-- the UMXHQ record is represented as MIT licensed in repository metadata aggregators sourced from Zenodo and DataCite;
-- the repository is not archived;
-- the model URLs and architecture are inspectable;
-- CPU execution is supported;
-- it is explicitly positioned as a reference implementation;
-- the pinned environment passed a local constructor and synthetic-inference smoke test.
-
-Demucs remains a possible comparator under a separate future profile. It is not admitted here.
-
-## 10. Determinism candidate
-
-The CPU reference profile records and pins:
-
-- Python, FFmpeg, Open-Unmix, PyTorch, Torchaudio, NumPy, OS, and architecture versions;
-- thread counts;
-- random seeds;
-- deterministic-algorithm settings;
-- exact decoded and resampled input checksum;
-- exact profile checksum;
-- output artifact checksums.
-
-Same-context bit identity is a validation target, not a claim. Tolerances must be derived from rerun evidence.
-
-## 11. Approval record
-
-Human authorization to correct the plan, test compatibility, build the lock package, and verify the next implementation gate was given in the governing project conversation on `2026-08-05`.
-
-That authorization approves Open-Unmix UMXHQ as the selected reference baseline and approves the recorded CPU inference settings for implementation planning. It does not waive checksum, artifact, review, or pilot gates.
-
-## 12. Remaining blockers
-
-Runtime implementation and pilot execution remain blocked until all are resolved:
-
-- [x] explicit rights and license review for UMXHQ record metadata;
-- [x] approved Open-Unmix UMXHQ baseline decision;
-- [x] pinned Python, PyTorch, Torchaudio, Open-Unmix, NumPy, and FFmpeg versions;
-- [x] approved CPU inference parameters;
-- [x] synthetic CPU constructor and inference smoke test;
-- [ ] pinned package wheel or source-artifact checksum;
-- [ ] controlled fetch manifest with SHA-256 for all four weights;
-- [ ] CPU resource-envelope evidence using the pretrained weights and a synthetic or properly licensed fixture;
-- [ ] frozen profile JSON and profile checksum after weight hashes are inserted;
-- [ ] implementation PR review.
-
-## 13. Implementation handoff after dependency lock
-
-The next bounded implementation concern may add:
-
-- input and result contracts;
-- offline model and profile manifests;
-- dependency verification before model load;
-- one shared implementation path for core, CLI, and MCP;
-- registry and policy admission for `audio.stem_section_analyze`;
-- synthetic fixtures and fail-closed tests;
-- no copyrighted pilot audio in the repository;
-- no pilot execution before implementation review.
-
-## 14. Governance
-
-Notion owns architecture, workflow status, and promotion.
-
-Google Drive owns the profile, ledger, manifests, artifacts, and receipts.
-
-GitHub owns executable implementation and version facts.
-
-The model remains a dependency, not an authority source.
-
-Every result must retain `authority_transfer: false`.
+Successful checks remain evidence with `authority_transfer=false`.

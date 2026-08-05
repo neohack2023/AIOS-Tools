@@ -1,0 +1,45 @@
+{
+  "authority_transfer": false,
+  "checks": {
+    "contracts": [],
+    "policy": false,
+    "registry": false,
+    "runner": false,
+    "shared_handler": false
+  },
+  "decision": "SEPARATE_BOUNDED_RUNTIME_IMPLEMENTATION_PR_REQUIRED",
+  "implementation_present": false,
+  "pilot_authorized": false,
+  "profile_id": "slice2-stem-section-v0.1",
+  "review_basis": {
+    "head_branch": "agent/audio-stem-section-model-lock",
+    "head_sha_reviewed": "235ebb1c1249e5e61731ca32b81945d2810fdd3e",
+    "pull_request": 26,
+    "repository": "neohack2023/AIOS-Tools",
+    "scope": "static admission-surface review; no runtime behavior executed",
+    "surfaces": {
+      "policies/execution-policy.v0.1.json": {
+        "blob_sha": "f07b4aa7d66889ad0163def9073fce673b195d9f",
+        "tool_binding_present": false
+      },
+      "registry/tools.v0.1.json": {
+        "blob_sha": "f2cfdcb1952a6fefe8c267f3f56ed439d6aa7e9d",
+        "tool_binding_present": false
+      },
+      "src/aios_tools/runner.py": {
+        "blob_sha": "ae825f28aafdab0c26ace9dba52766ba9a3a63b7",
+        "tool_specific_path_present": false
+      },
+      "src/aios_tools/tools.py": {
+        "blob_sha": "c98d5478bbcba9dc7ac6bb2e67c8b8fa4a3cf149",
+        "handler_present": false
+      }
+    }
+  },
+  "reviewed_at": "2026-08-05T03:47:13Z",
+  "run_classification": "STATIC_RUNTIME_ADMISSION_SURFACE_REVIEW",
+  "runtime_admission": false,
+  "schema_version": "0.1.0",
+  "status": "RUNTIME_IMPLEMENTATION_REVIEW_REQUIRED",
+  "tool_identity": "audio.stem_section_analyze"
+}
