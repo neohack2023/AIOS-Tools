@@ -23,7 +23,7 @@
   "device": "cpu",
   "jobs": 1,
   "split": true,
-  "segment_seconds": 7.8,
+  "segment_seconds": 7,
   "overlap": 0.10,
   "shifts": 0,
   "output_format": "wav",
