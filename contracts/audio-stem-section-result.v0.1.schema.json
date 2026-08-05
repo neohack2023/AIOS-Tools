@@ -105,16 +105,15 @@
       "additionalProperties": false
     },
     "weightedArtifact": {
-      "allOf": [
-        {"$ref": "#/$defs/artifact"},
-        {
-          "type": "object",
-          "required": ["target"],
-          "properties": {
-            "target": {"enum": ["vocals", "drums", "bass", "other"]}
-          }
-        }
-      ]
+      "type": "object",
+      "required": ["target", "filename", "sha256", "byte_size"],
+      "properties": {
+        "target": {"enum": ["vocals", "drums", "bass", "other"]},
+        "filename": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "byte_size": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false
