@@ -1,4 +1,4 @@
-name: Demucs Model Quarantine
+name: Demucs Runtime Quarantine
 
 on:
   pull_request:
@@ -14,7 +14,7 @@ permissions:
 jobs:
   fetch-verify-upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Download pinned htdemucs model
         run: |
@@ -24,22 +24,47 @@ jobs:
             --output quarantine/955717e8-8726e21a.th \
             https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th
 
-      - name: Verify exact checksum and size
+      - name: Download pinned Demucs 4.1.0 wheel
         run: |
           set -euo pipefail
-          file=quarantine/955717e8-8726e21a.th
-          expected_sha=8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4
-          expected_bytes=84141911
-          actual_sha=$(sha256sum "$file" | awk '{print $1}')
-          actual_bytes=$(stat -c '%s' "$file")
-          test "$actual_sha" = "$expected_sha"
-          test "$actual_bytes" = "$expected_bytes"
-          printf '{\n  "filename": "955717e8-8726e21a.th",\n  "sha256": "%s",\n  "byte_size": %s,\n  "source_url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",\n  "quarantine_status": "VERIFIED"\n}\n' "$actual_sha" "$actual_bytes" > quarantine/manifest.json
+          python - <<'PY'
+          import json, pathlib, urllib.request
+          expected = '4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758'
+          with urllib.request.urlopen('https://pypi.org/pypi/demucs/4.1.0/json') as response:
+              data = json.load(response)
+          candidates = [item for item in data['urls'] if item['filename'] == 'demucs-4.1.0-py3-none-any.whl']
+          if len(candidates) != 1:
+              raise SystemExit('expected exactly one Demucs 4.1.0 wheel')
+          item = candidates[0]
+          if item['digests']['sha256'] != expected:
+              raise SystemExit('PyPI wheel digest does not match frozen profile')
+          urllib.request.urlretrieve(item['url'], 'quarantine/demucs-4.1.0-py3-none-any.whl')
+          pathlib.Path('quarantine/wheel-source.json').write_text(json.dumps({
+              'filename': item['filename'],
+              'sha256': item['digests']['sha256'],
+              'byte_size': item['size'],
+              'source_url': item['url'],
+          }, indent=2) + '\n')
+          PY
 
-      - name: Upload verified quarantine artifact
+      - name: Verify exact model and wheel identities
+        run: |
+          set -euo pipefail
+          model=quarantine/955717e8-8726e21a.th
+          wheel=quarantine/demucs-4.1.0-py3-none-any.whl
+          test "$(sha256sum "$model" | awk '{print $1}')" = "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4"
+          test "$(stat -c '%s' "$model")" = "84141911"
+          test "$(sha256sum "$wheel" | awk '{print $1}')" = "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758"
+          python -m venv quarantine/venv
+          quarantine/venv/bin/pip install --no-deps "$wheel"
+          test "$(quarantine/venv/bin/python -c 'import importlib.metadata as m; print(m.version("demucs"))')" = "4.1.0"
+          rm -rf quarantine/venv
+          printf '{\n  "model_filename": "955717e8-8726e21a.th",\n  "model_sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",\n  "model_byte_size": 84141911,\n  "wheel_filename": "demucs-4.1.0-py3-none-any.whl",\n  "wheel_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",\n  "installed_version_check": "4.1.0",\n  "quarantine_status": "VERIFIED"\n}\n' > quarantine/manifest.json
+
+      - name: Upload verified runtime quarantine
         uses: actions/upload-artifact@v4
         with:
-          name: demucs-htdemucs-model-quarantine
+          name: demucs-4.1.0-htdemucs-runtime-quarantine
           path: quarantine/
           if-no-files-found: error
           retention-days: 7
