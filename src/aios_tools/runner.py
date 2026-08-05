@@ -66,6 +66,24 @@ def _receipt(
     ).to_dict()
 
 
+def _write_approval_error(authority_context: dict[str, Any], *, tool: str, scope: str) -> ToolError | None:
+    approval = authority_context.get("approval")
+    if not isinstance(approval, dict):
+        return ToolError(code="APPROVAL_REQUIRED", message="WRITE mode requires authority_context.approval")
+    if approval.get("approved") is not True:
+        return ToolError(code="APPROVAL_REQUIRED", message="WRITE approval must set approved=true")
+    approved_by = approval.get("approved_by")
+    if not isinstance(approved_by, str) or not approved_by.strip():
+        return ToolError(code="APPROVAL_INVALID", message="WRITE approval requires approved_by")
+    approved_tool = approval.get("tool")
+    if approved_tool not in (None, tool):
+        return ToolError(code="APPROVAL_SCOPE_MISMATCH", message="approval does not cover the requested tool")
+    approved_scope = approval.get("scope")
+    if approved_scope not in (None, scope):
+        return ToolError(code="APPROVAL_SCOPE_MISMATCH", message="approval does not cover the requested scope")
+    return None
+
+
 def invoke(
     tool: str,
     payload: dict[str, Any],
@@ -196,8 +214,27 @@ def invoke(
             requested_by=requested_by,
             authority_context=authority_context,
             provenance=provenance,
-            errors=[ToolError(code="AUTHORITY_TRANSFER_BLOCKED", message="Slice 0 forbids authority transfer")],
+            errors=[ToolError(code="AUTHORITY_TRANSFER_BLOCKED", message="authority transfer is forbidden")],
         )
+
+    if mode == "WRITE":
+        approval_error = _write_approval_error(authority_context, tool=tool, scope=scope)
+        if approval_error is not None:
+            return _receipt(
+                request_id=request_id,
+                tool=tool,
+                tool_version=tool_version,
+                scope=scope,
+                mode=mode,
+                status="APPROVAL_REQUIRED",
+                started_at=started_at,
+                registry_version=registry_version,
+                policy_version=policy_version,
+                requested_by=requested_by,
+                authority_context=authority_context,
+                provenance=provenance,
+                errors=[approval_error],
+            )
 
     handler = HANDLERS.get(tool)
     if handler is None:
@@ -231,6 +268,8 @@ def invoke(
                     "durable_writes_enabled": policy["durable_writes_enabled"],
                     "external_network_effects_enabled": policy["external_network_effects_enabled"],
                     "authority_transfer_allowed": policy["authority_transfer_allowed"],
+                    "approval_required_for": policy["approval_required_for"],
+                    "write_scope": policy.get("write_scope"),
                 },
             }
         status = "COMPLETED"
