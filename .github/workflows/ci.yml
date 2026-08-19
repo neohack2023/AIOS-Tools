@@ -1,4 +1,4 @@
-name: AIOS-Tools CI
+﻿name: AIOS-Tools CI
 
 on:
   pull_request:
@@ -41,7 +41,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install web dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
       - name: Unit tests
         run: npm run test
       - name: Production build
