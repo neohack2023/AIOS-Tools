@@ -6,7 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .audio_metrics import compute_stem_metrics
 from .audio_transaction import ArtifactSpec, AudioArtifactTransaction
+from .audio_wav import AudioWavError, require_float32_stereo_wav, write_float32_wav
 
 EXPECTED_TARGETS = ["vocals", "drums", "bass", "other"]
 EXPECTED_SAMPLE_RATE = 44100
@@ -169,15 +171,17 @@ def run_frozen_stem_inference(*, source_path: Path, model_cache: Path, transacti
     except Exception as exc:
         raise AudioInferenceError("SEPARATION_RUNTIME_ERROR", f"Open-Unmix inference failed: {exc}") from exc
     metadata = _validate_estimates(torch, estimates, source)
+    metrics = compute_stem_metrics(torch, source, estimates, frame_samples=EXPECTED_SAMPLE_RATE)
     artifact_specs: list[ArtifactSpec] = []
     staged: list[dict[str, Any]] = []
     for index, item in enumerate(metadata):
         relative = f"stems/{item.target}.wav"
         path = transaction.artifact_path(relative)
         try:
-            torchaudio.save(str(path), estimates[0, index].detach().cpu(), EXPECTED_SAMPLE_RATE, encoding="PCM_F", bits_per_sample=32)
-        except Exception as exc:
-            raise AudioInferenceError("ARTIFACT_WRITE_FAILED", f"failed to write {item.target} stem: {exc}") from exc
+            write_float32_wav(path, estimates[0, index], EXPECTED_SAMPLE_RATE)
+            wav_format = require_float32_stereo_wav(path, EXPECTED_SAMPLE_RATE, item.samples)
+        except AudioWavError as exc:
+            raise AudioInferenceError(exc.code, exc.message) from exc
         artifact_specs.append(ArtifactSpec(relative, "audio/wav", "MODEL_ESTIMATE"))
         staged.append({
             "target": item.target,
@@ -188,12 +192,14 @@ def run_frozen_stem_inference(*, source_path: Path, model_cache: Path, transacti
             "duration_seconds": item.duration_seconds,
             "peak_abs": item.peak_abs,
             "finite": item.finite,
+            "wav_format": wav_format,
             "evidence_class": "MODEL_ESTIMATE",
         })
     return {
         "status": "STEMS_STAGED",
         "targets": list(EXPECTED_TARGETS),
         "stems": staged,
+        "metrics": metrics,
         "artifact_specs": artifact_specs,
         "runtime_admission": False,
         "pilot_authorized": False,
