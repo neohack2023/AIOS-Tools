@@ -294,4 +294,5 @@ def test_generated_overlay_and_runner_are_syntactically_valid(
         str(package.output_dir / "overlay" / "sitecustomize.py"),
         doraise=True,
     )
-    subprocess.run(["bash", "-n", str(package.commands_path)], check=True)
+    if sys.platform != "win32":
+        subprocess.run(["bash", "-n", str(package.commands_path)], check=True)
