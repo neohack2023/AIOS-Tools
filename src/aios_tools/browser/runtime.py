@@ -38,7 +38,7 @@ async def _bounded_cleanup(operation: Awaitable[Any], *, timeout_seconds: float 
     try:
         await asyncio.wait_for(operation, timeout=timeout_seconds)
         return True
-    except (TimeoutError, Exception):
+    except Exception:
         return False
 
 
@@ -97,7 +97,6 @@ async def inspect_async(
         },
         elapsed,
     )
-    ledger.consume("pages")
     context_id = f"browser-context-{uuid4()}"
     evidence = BrowserEvidence(allowed_origin.serialize(), context_id)
     blocked_event = asyncio.Event()
@@ -148,6 +147,14 @@ async def inspect_async(
             blocked_event.set()
             await ws.close(code=1008, reason="budget exhausted")
 
+    def page_guard(page) -> None:
+        try:
+            ledger.consume("pages")
+        except BudgetExceeded:
+            evidence.block(channel="page", url=page.url or "about:blank", reason="PAGE_BUDGET_EXHAUSTED")
+            blocked_event.set()
+            asyncio.create_task(page.close())
+
     with tempfile.TemporaryDirectory(prefix="aios-browser-02b-") as temp_root:
         trace_path = RunPaths(Path(temp_root)).artifact("trace.zip")
         try:
@@ -157,6 +164,7 @@ async def inspect_async(
                 context = await browser.new_context(service_workers="block")
                 await context.route("**/*", http_guard)
                 await context.route_web_socket("**/*", websocket_guard)
+                context.on("page", page_guard)
                 await context.tracing.start(screenshots=True, snapshots=True, sources=False)
                 trace_started = True
 
@@ -169,7 +177,7 @@ async def inspect_async(
                 await asyncio.sleep(0)
                 main_status = response.status if response is not None else None
                 if blocked_event.is_set():
-                    raise BrowserExecutionBlocked("browser network policy blocked one or more destinations")
+                    raise BrowserExecutionBlocked("browser policy blocked one or more page or network effects")
                 final_url = page.url
                 if not same_http_origin(final_url, allowed_origin):
                     raise BrowserExecutionBlocked("final page origin is not admitted")
@@ -203,7 +211,7 @@ async def inspect_async(
             result = _terminal("TARGET_BLOCKED", allowed_origin, context_id, ledger, str(exc))
         except (PlaywrightTimeoutError, PlaywrightError) as exc:
             if blocked_event.is_set():
-                result = _terminal("TARGET_BLOCKED", allowed_origin, context_id, ledger, "browser network policy blocked navigation")
+                result = _terminal("TARGET_BLOCKED", allowed_origin, context_id, ledger, "browser policy blocked navigation")
             else:
                 result = _terminal("FAILED", allowed_origin, context_id, ledger, f"browser execution failed: {type(exc).__name__}")
         finally:
