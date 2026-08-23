@@ -1,6 +1,6 @@
 # BROWSER_SESSION_AUTH_RUNTIME_02C
 
-Status: RESEARCHED PLAN / IMPLEMENTATION CANDIDATE / NOT ACTIVE
+Status: 02C-A IMPLEMENTED + EXACT-HEAD VALIDATED / 02C-B + 02C-C PENDING / NOT ACTIVE
 
 ## Governing authority
 
@@ -50,7 +50,50 @@ user takeover != model access to credentials
 
 `OPAQUE_SESSION_STORE + USER_TAKEOVER + ORIGIN_IDENTITY_REVALIDATION + SESSION_LIFECYCLE`
 
-### Session model
+### 02C-A checkpoint — protected session core
+
+Implemented on branch head `d6efb35a4134c4554e66347fc08c5e1ad359feed` and validated against PR merge ref `9163da24f92162d7ea9522c19837134cb3e109cf`.
+
+02C-A adds:
+
+- cryptographically random opaque browser session refs;
+- nonsecret `SessionDescriptor` metadata with exact normalized origin and identity-context fingerprint;
+- explicit auth capability manifest for cookies, localStorage, IndexedDB, sessionStorage, and virtual WebAuthn;
+- `ProtectedSessionStore` protocol;
+- production-safe unavailable protected store as the default;
+- synthetic in-memory protected store available only under explicit test mode;
+- no plaintext fallback and no admitted production secret backend yet;
+- exact-origin, declared-identity, consent, verification, expiry, lifecycle, backend-health, capability and exclusive-lease validation before restore;
+- monotonic session leases and stale-lease recovery;
+- idempotent revoke / expire / invalidate / logout / purge paths;
+- sessionStorage requires a separately reviewed adapter;
+- real-user virtual WebAuthn persistence is blocked by default;
+- secret-free auth receipt projection;
+- candidate browser auth policy and JSON schemas for opaque refs and receipt views;
+- honest 30-entry anti-pattern ownership map: 22 executable in 02C-A, 8 pending later 02C work.
+
+02C-A intentionally does **not** register a reusable-auth browser tool, admit a real secret backend, capture Playwright storage state, or enable session reuse. `session_reuse_enabled=false` and `real_auth_state_capture_enabled=false` remain candidate-policy locks.
+
+### 02C-A exact-head evidence
+
+Head: `d6efb35a4134c4554e66347fc08c5e1ad359feed`
+
+Tested PR merge ref: `9163da24f92162d7ea9522c19837134cb3e109cf`
+
+GitHub Actions:
+
+- Repository Governance run `32643891422`: PASS
+- AIOS-Tools CI run `32643891400`: PASS
+  - Linux shared core: `219 passed, 5 skipped`
+  - Windows shared core + CLI/MCP smoke: PASS
+  - Cartography web build + interaction/screenshot regressions: PASS
+  - Browser core: `72 passed`
+  - Browser lane confirmed `playwright==1.62.0`
+  - Registry/health CLI and MCP startup smoke: PASS
+
+No Benchmark Registry workflow was observed for this checkpoint and none is claimed here.
+
+## Session model
 
 Add a nonsecret `SessionDescriptor` containing only:
 
@@ -65,7 +108,7 @@ Add a nonsecret `SessionDescriptor` containing only:
 - verification result;
 - authority transfer: false.
 
-### Protected session store
+## Protected session store
 
 Introduce a `ProtectedSessionStore` protocol with at minimum:
 
@@ -83,7 +126,7 @@ Properties:
 - CI uses a synthetic in-memory test store only;
 - any future OS keyring backend is separately admitted after backend/security compatibility review rather than treating all installed keyring providers as equivalent.
 
-### Opaque session ref
+## Opaque session ref
 
 Use a cryptographically random opaque identifier. Do not encode:
 
@@ -95,7 +138,7 @@ Use a cryptographically random opaque identifier. Do not encode:
 
 Receipts may use an alias or safe digest for correlation, never raw site session IDs.
 
-### Restore and validation
+## Restore and validation
 
 Before protected state is restored:
 
@@ -112,7 +155,7 @@ Before protected state is restored:
 
 Origin mismatch returns an auth/session block. It does not widen the allowlist.
 
-### Auth capability manifest
+## Auth capability manifest
 
 Track presence/requirement without exposing values:
 
@@ -128,9 +171,9 @@ Playwright does not natively persist sessionStorage through normal storage-state
 
 For real-user sessions, persisted virtual WebAuthn credentials are blocked by default. Their storage state can include private keys and restoration installs a virtual authenticator that can suppress real authenticators inside that context. Real passkey ceremonies route through user takeover unless an explicitly test-only virtual authenticator profile is admitted.
 
-### User takeover
+## User takeover
 
-Implement a bounded headed-mode checkpoint state machine:
+02C-B implements a bounded headed-mode checkpoint state machine:
 
 ```text
 AUTH_REQUIRED
@@ -147,7 +190,7 @@ User takeover may be used for password, SSO, MFA, CAPTCHA, consent, and real pas
 
 Production takeover must not inherit Playwright debug defaults such as an unlimited timeout. It receives an explicit elapsed budget, cancellation path, and bounded cleanup.
 
-### Secret evidence blackout
+## Secret evidence blackout
 
 During the secret-entry window:
 
@@ -160,7 +203,7 @@ During the secret-entry window:
 
 After user control returns, the runtime performs a bounded authenticated-state assertion before state may be sealed for reuse.
 
-### Storage-state sealing
+## Storage-state sealing
 
 Raw Playwright storage state exists only transiently within the protected runtime boundary.
 
@@ -168,9 +211,9 @@ Capture -> classify capabilities -> seal immediately -> drop plaintext reference
 
 No storage-state JSON is written into the repository, Drive, Notion, normal run artifacts, or user-visible output.
 
-### Dedicated automation profile
+## Dedicated automation profile
 
-If persistent-context semantics are needed, allocate a runtime-owned contained directory:
+02C-C will cover persistent-context semantics where needed. Allocate a runtime-owned contained directory:
 
 - random/profile-specific path under an admitted root;
 - no caller-controlled arbitrary path;
@@ -179,7 +222,7 @@ If persistent-context semantics are needed, allocate a runtime-owned contained d
 - never treat the directory as a promotable artifact;
 - purge/invalidate according to session policy.
 
-### Session lifecycle
+## Session lifecycle
 
 At minimum:
 
@@ -208,35 +251,24 @@ The research STONE defines the implementation candidates. They are clean-room ad
 - `BRC-02C-013` ReauthDecision
 - `BRC-02C-014` TakeoverResumeProof
 
+02C-A implements the session/store/validation/lifecycle foundations. 02C-B and 02C-C retain the remaining candidates.
+
 ## Negative-knowledge ownership
 
 The 02C STONE contains `B02C-AP-001` through `B02C-AP-030`.
 
-Implementation must provide an explicit mapping from every anti-pattern ID to one or more executable regression tests. No anti-pattern may remain documentation-only at review-ready state.
+The repository map `fixtures/browser/auth/antipattern-regression-map.json` is the executable ownership ledger.
 
-Core negative classes include:
+At the 02C-A checkpoint:
 
-- raw storage-state persistence outside protected runtime;
-- personal/default browser profile automation;
-- caller-controlled profile/storage paths;
-- secret-bearing session refs/receipts/logs;
-- unleased concurrent persistent profiles;
-- arbitrary CDP/extension attachment;
-- auth reuse without origin/identity/expiry validation;
-- authentication mistaken for mutation authority;
-- automatic model-visible password/MFA/passkey handling;
-- tracing/screenshots/network-body capture during secret entry;
-- unbounded user takeover;
-- sessionStorage persistence via arbitrary JavaScript;
-- real-user WebAuthn private-key persistence;
-- silent SSO origin widening;
-- blind retry/credential guessing;
-- insecure protected-store fallback;
-- stale session resurrection after logout/cancel/privilege change.
+- 22 anti-patterns: `IMPLEMENTED / 02C-A`
+- 8 anti-patterns: `PENDING / 02C-B or 02C-C`
+
+Pending hazards are intentionally not represented as implemented until their executable regression guards exist.
 
 ## Required regression fixtures
 
-At minimum:
+At full 02C review-ready state the following remain required:
 
 - SESSION_OPAQUE_REF_NO_SECRET_MATERIAL
 - RAW_STORAGE_STATE_NEVER_DURABLE_OUTPUT
@@ -266,7 +298,7 @@ At minimum:
 
 Tests use synthetic fixture accounts/state only. No real user credentials or authentication state are captured in CI.
 
-## Proposed repository additions
+## Repository shape
 
 ```text
 src/aios_tools/browser/
@@ -299,13 +331,12 @@ External architecture references include official Playwright authentication, Bro
 
 This plan promotes no literal third-party source bytes. Any later literal extraction must independently pass AIOS `CODE_HARVEST_MODE_01` / CODE-REUSE provenance, pinned-revision, exact-byte, license, validation, and promotion gates.
 
-## Review panel
+## Specialist routing
 
-Keep the specialist panel bounded:
-
-- Rowan Vale / `PERS-BROWSER-01`: browser/session mechanics;
-- Arden Pike / `PERS-BOUNDARY-01`: secret, prompt, tool and authority boundaries;
-- Mara Voss / `PERS-CI-01`: independent CI/evidence cross-check at final gate.
+- Ilya Mercer / `PERS-RUNTIME-01`: hired as 02C-A implementation specialist for lifecycle, lease, failure-state and cleanup semantics.
+- Rowan Vale / `PERS-BROWSER-01`: independent browser/session mechanics reviewer at review gate.
+- Arden Pike / `PERS-BOUNDARY-01`: independent secret, prompt, tool and authority-boundary reviewer after implementation candidate exists.
+- Mara Voss / `PERS-CI-01`: final CI/evidence cross-check.
 
 Role profiles grant no merge or activation authority.
 
@@ -315,10 +346,10 @@ Role profiles grant no merge or activation authority.
 
 - all pre-existing 02B tests remain green;
 - all 30 anti-patterns have regression ownership;
-- all 25 required session/auth fixtures pass;
+- all required session/auth fixtures pass;
 - synthetic-only auth-state policy is verified in CI;
 - repository search proves fixture secrets/raw storage state did not escape into tracked artifacts;
-- CLI/MCP outputs are scanned for secret sentinels;
+- CLI/MCP outputs are scanned for secret sentinels where auth projections are exposed;
 - Linux and Windows shared core pass;
 - browser-core Chromium passes;
 - headed takeover fixture passes in a controlled display environment where deterministic;
@@ -333,6 +364,6 @@ No download acquisition, upload runtime, remote mutation, Suno site profile, tra
 
 ## Current disposition
 
-`RESEARCHED / PLAN_READY / IMPLEMENTATION_NOT_YET_CLAIMED / NOT_MERGED / NOT_ACTIVE`
+`02C_A_IMPLEMENTED / EXACT_HEAD_VALIDATED_AT_d6efb35 / SYNTHETIC_ONLY / SESSION_REUSE_DISABLED / 02C_B_02C_C_PENDING / DRAFT / NOT_MERGED / NOT_ACTIVE`
 
-This plan authorizes no merge, deployment, authentication-state capture, runtime activation, or authority expansion.
+This plan authorizes no merge, deployment, real authentication-state capture, runtime activation, or authority expansion.
