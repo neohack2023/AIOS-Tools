@@ -1,12 +1,13 @@
 # BROWSER_CORE_RUNTIME_02B
 
-Status: PLAN / IMPLEMENTATION NOT YET CLAIMED
+Status: IMPLEMENTED / SPECIALIST-REVIEW REPAIRED / EXACT-HEAD REVALIDATION REQUIRED AFTER THIS DOC COMMIT / NOT_MERGED / NOT_ACTIVE
 
 ## Governing authority
 
 - Notion Browser Runtime 02 contract: https://app.notion.com/p/3c543bd4ae4a81678197ed28c361b536
 - 02B deep-research + code-harvest STONE: https://app.notion.com/p/3c543bd4ae4a81e6a541e0510bdfbc41
 - Umbrella issue: https://github.com/neohack2023/AIOS-Tools/issues/44
+- Pull request: https://github.com/neohack2023/AIOS-Tools/pull/46
 
 ## Frozen base
 
@@ -14,54 +15,56 @@ Status: PLAN / IMPLEMENTATION NOT YET CLAIMED
 
 This base includes merged Browser Effect Policy Runtime 02A from PR #45.
 
-## Problem
+## Implemented objective
 
-02A correctly classifies `READ_NETWORK` as a network effect and keeps `external_network_effects_enabled=false`. The current shared runner therefore blocks a registered `READ_NETWORK` tool before handler invocation, and configuration rejects globally admitted network classes while the global network law is closed.
+02B implements the first governed browser core capable of inspecting one explicitly admitted public HTTP(S) origin through an isolated Playwright context while preserving AIOS authority, effect, origin, budget, redaction, and receipt boundaries.
 
-02B must open a narrowly scoped browser read-network path without turning on unscoped/global external network effects.
+The global execution law remains network-closed:
 
-## Slice objective
+`external_network_effects_enabled=false`
 
-Implement the first governed browser core capable of inspecting an explicitly admitted public web origin through an isolated Playwright context while preserving AIOS authority, effect, origin, budget, redaction, and receipt boundaries.
-
-The core design is:
+02B does not add `READ_NETWORK` to the globally admitted effect classes. Instead, one exact registered tool, `browser.inspect`, enters a browser-specific admission path whose effect class remains `READ_NETWORK` and whose browser policy is independently validated.
 
 ```text
 validated AIOS request
 -> existing global effect firewall
--> exact registered browser capability
+-> exact registered browser.inspect capability
 -> browser-specific READ_NETWORK admission
 -> normalized exact-origin envelope
 -> public-address policy
--> isolated Playwright context
--> HTTP + WebSocket guards installed before page creation
--> bounded INSPECT actions
--> pre/post-state evidence
--> cancellation-safe teardown
--> governed result + receipt
+-> isolated Playwright BrowserContext
+-> Service Worker block
+-> HTTP GET/HEAD guard + WebSocket block before page execution
+-> one-page bounded INSPECT run
+-> semantic/transport evidence
+-> cancellation-safe bounded teardown
+-> governed result + minimized external-effect receipt
 ```
 
-## Required invariants
+## Implemented invariants
 
-1. `external_network_effects_enabled=false` remains unchanged in the global execution policy.
-2. Unrelated/synthetic network-effect tools remain blocked.
+1. `external_network_effects_enabled=false` remains unchanged.
+2. Unrelated or synthetic network-effect tools remain blocked before handler invocation.
 3. Only exact registered browser tools may enter browser-specific network admission.
-4. Browser admission is `READ_NETWORK` only in 02B. No remote mutation.
-5. Target origins are exact, normalized, explicit, and immutable for the run.
-6. Page/DOM/network content is `UNTRUSTED_CONTENT` and cannot widen origins, effect class, budgets, policy, or authority.
-7. Every redirect, document/subresource request, frame/popup navigation, and WebSocket target is independently checked.
-8. Governed contexts use `service_workers="block"` in 02B so request routing remains observable.
-9. HTTP and WebSocket guards are installed before the first page is created.
-10. Unknown/unadmitted routes abort. No unrestricted fallback path.
-11. One fresh BrowserContext per execution by default.
-12. No raw authentication/storage state is persisted or returned.
-13. No arbitrary JavaScript, shell, Playwright source, CSS/XPath selector, or `force=True` primitive is exposed through the public browser contract.
-14. Playwright action completion never substitutes for explicit expected post-state verification.
-15. Cancellation/budget exhaustion closes resources and preserves bounded partial evidence.
-16. Trace/screenshot artifacts remain inside an exact per-run root and are supporting evidence, not authority.
-17. CLI and MCP adapters call the same browser shared core.
+4. 02B is `READ_NETWORK` only. No remote mutation is admitted.
+5. HTTP methods are restricted to `GET` and `HEAD`; POST/PUT/PATCH/DELETE and other methods are blocked before forwarding.
+6. Live WebSockets are blocked in 02B, including same-origin sockets, so page-to-server frames cannot become a mutation channel under `READ_NETWORK`.
+7. Downloads are disabled with `accept_downloads=False`; a download attempt is treated as a blocked browser effect.
+8. Target origins are exact, normalized, explicit, and immutable for the run.
+9. Every redirect and subresource request is independently checked against the exact admitted origin.
+10. Governed contexts use `service_workers="block"` while request routing is the enforcement boundary.
+11. HTTP and WebSocket guards are installed before page execution.
+12. One fresh BrowserContext is created per execution; isolation is validated with observable browser storage state, not only generated context labels.
+13. No raw authentication or storage state is persisted or returned.
+14. No arbitrary JavaScript, shell, Playwright source, CSS/XPath selector, `force=True`, persistent profile, or CDP primitive is exposed through the public contract.
+15. HTTP transport completion is not semantic success; 4xx/5xx responses remain visible as non-success terminal results.
+16. Cancellation and budget exhaustion preserve bounded partial evidence and use bounded teardown paths.
+17. Popup/page-budget cleanup is itself bounded and cannot hold the execution indefinitely after the main elapsed budget ends.
+18. Trace artifacts remain inside an exact per-run root and are supporting evidence, not authority.
+19. Model-visible final-navigation output is minimized to normalized origin plus a path digest; raw redirect query strings and fragments are not returned.
+20. CLI and MCP use the same shared runner/core. Current CI proves registry/health CLI behavior, MCP startup, and an MCP adapter routing unit test; it does not claim a live browser execution through an external MCP transport.
 
-## Proposed implementation surface
+## Repository implementation surface
 
 ```text
 src/aios_tools/browser/
@@ -71,23 +74,23 @@ src/aios_tools/browser/
   policy.py
   budget.py
   evidence.py
-  session.py
   runtime.py
 contracts/browser-inspect.v0.1.schema.json
 policies/browser-policy.v0.1.json
 fixtures/browser/
-tests/test_browser_origin.py
-tests/test_browser_policy.py
-tests/test_browser_budget.py
-tests/test_browser_runtime.py
+  antipattern-regression-map.json
+  review-regression-map.json
+tests/test_browser_*.py
+docs/plans/BROWSER_CORE_RUNTIME_02B.md
 ```
 
-Existing surfaces may also require bounded changes:
+Bounded shared-core changes also exist in:
 
 ```text
 src/aios_tools/config.py
 src/aios_tools/runner.py
 src/aios_tools/tools.py
+src/aios_tools/mcp_server.py
 registry/tools.v0.1.json
 contracts/tool-result.v0.1.schema.json
 pyproject.toml
@@ -95,228 +98,214 @@ pyproject.toml
 docs/VALIDATION.md
 ```
 
-Registry/handler changes land only when the browser inspect path has a complete admission gate and executable handler.
-
 ## Dependency posture
 
-- Playwright Python is an optional browser extra, not a base dependency.
-- Research baseline: `microsoft/playwright-python@010a9cc73f8a90bc2d7b9e34591c4e2c4a4ea566`, Apache-2.0.
-- Pin the implementation to the tested current minor range rather than an unbounded dependency.
+- Playwright Python remains an optional browser extra rather than a base dependency.
+- 02B is pinned to the exact validated runtime: `playwright==1.62.0`.
 - Browser binaries are installed only in the dedicated browser integration lane.
-- Ordinary `pip install -e ".[dev]"` must not silently download browser binaries.
-- Chromium is the 02B integration target. Firefox/WebKit remain target capabilities, not claims of this slice.
+- Ordinary `pip install -e ".[dev]"` does not install or download browser binaries.
+- Chromium is the 02B integration target. Firefox and WebKit remain future target capabilities, not claims of this slice.
+- Research provenance for Playwright is preserved in the 02B STONE; implementation behavior is verified against repository tests and exact CI evidence.
 
-## Core models
+## Core models and policy
 
 ### NormalizedOrigin
 
-Must validate rather than merely parse:
-- only admitted `http`/`https` schemes;
+The implementation validates rather than merely parses:
+- only `http`/`https` schemes;
 - hostname required;
 - userinfo forbidden;
 - explicit/default port normalization;
-- normalized host comparison;
-- literal loopback/private/link-local/unspecified/multicast/reserved address rejection for public-only 02B;
-- DNS resolution classification before admission;
-- exact serialized origin used for comparisons.
+- IDNA-normalized host comparison;
+- valid IPv6 serialization using brackets;
+- public-address classification before admission;
+- exact serialized origin comparison.
 
-DNS rebinding remains a named residual risk until stronger network-layer address binding/proxy evidence exists. Do not claim arbitrary-internet SSRF resistance in 02B.
+DNS rebinding remains an explicit residual risk. 02B does not claim connection-level address pinning or complete arbitrary-internet SSRF resistance.
 
-### BrowserNetworkAdmission
+### Browser policy
 
-Minimum data:
+Current trusted browser policy is `browser-policy/0.2` and requires:
 
 ```yaml
 capability_id: cap:browser-control
 effect_class: READ_NETWORK
-origin_allowlist: []
+admitted_tools:
+  browser.inspect:
+    mode: READ_ONLY
+    effect_class: READ_NETWORK
 allowed_schemes: [https, http]
+allowed_http_methods: [GET, HEAD]
 public_network_only: true
 service_workers: block
-websocket_policy: explicit_allowlist
-cross_origin_transition_budget: 3
+websocket_policy: block
+downloads: block
 ```
 
-Browser policy is trusted runtime configuration. Page content cannot modify it.
+Page content cannot modify this policy.
 
 ### BudgetLedger
 
-Use a monotonic deadline and explicit counters. No silent expansion on retry.
+Uses a monotonic elapsed deadline plus explicit request/page/WebSocket counters. Callers may tighten exposed budgets but cannot silently expand policy limits.
 
 ### SemanticLocator
 
-Public 02B kinds:
-- role + accessible name
-- label
-- test ID
-- bounded exact text
+Public 02B locator kinds remain semantic only:
+- role + accessible name;
+- label;
+- test ID;
+- bounded exact text.
 
-Structural CSS/XPath fallback is not a public primitive in 02B.
+CSS/XPath and arbitrary selector fallback are not public primitives in 02B.
 
 ### BrowserEvidence
 
-Default network observation is metadata-minimized: method, normalized origin, path digest, resource type, status, redirect-origin relation, timestamps/counts. Cookies, auth headers, query strings, bodies, and secret-bearing content are not default evidence.
+Network observations are metadata-minimized. The browser result and external-effect receipt do not persist cookies, auth headers, request/response bodies, query strings, fragments, or raw redirect URLs. Trace content is represented by a SHA-256 digest when successfully written inside the per-run root.
 
-## Async lifecycle decision
+## Async lifecycle
 
-Use Playwright's async API inside the browser shared core.
+The browser shared core uses Playwright's async API. The lifecycle includes:
+- one `async_playwright()` manager per execution;
+- bounded startup/execution through the elapsed budget;
+- explicit navigation task ownership;
+- `CancelledError` propagation with partial evidence;
+- bounded cancellation/drain of navigation;
+- bounded drain of popup/page-close background tasks;
+- bounded trace stop, BrowserContext close, browser close, and Playwright manager exit.
 
-Rationale:
-- browser execution is inherently event-driven;
-- Python 3.11 structured cancellation via `asyncio.timeout()` provides a clear elapsed-budget boundary;
-- cleanup can be guaranteed in `try/finally` while propagating `CancelledError`;
-- Playwright documents its API as not thread-safe and warns against sync API use inside an active asyncio loop.
+The synchronous AIOS handler bridges into the async runtime only when no event loop is already running.
 
-The existing synchronous AIOS runner must receive one controlled bridge rather than allowing arbitrary event-loop/thread ownership throughout handlers. The bridge design must be tested under CLI and MCP hosts before public registration.
+## Network enforcement
 
-## Network enforcement design
+### Preflight
 
-### Before page creation
+1. Validate the exact browser payload allowlist.
+2. Parse and normalize the target origin.
+3. Resolve/classify the public target before Playwright launch.
+4. Return `TARGET_BLOCKED` for invalid or private targets instead of falling through to a generic internal error.
 
-1. Validate browser-specific admission.
-2. Normalize and classify every allowed origin.
-3. Create fresh BrowserContext with `service_workers="block"`.
-4. Install context HTTP route for all requests.
-5. Install WebSocket route for all WebSockets.
-6. Attach console/page-error/request/response lifecycle observers.
-7. Start tracing into the bounded run root.
-8. Only then create the first page.
+### HTTP guard
 
-### HTTP request guard
+Every request:
+- consumes the request budget;
+- requires `GET` or `HEAD`;
+- validates and normalizes the destination;
+- requires the exact admitted origin;
+- applies public-network classification in normal runtime;
+- records minimized evidence;
+- continues only after all checks pass.
 
-For every request:
-- parse + normalize destination origin;
-- reject userinfo/non-http(s)/invalid host/port;
-- require exact admitted origin;
-- enforce public-network-only policy;
-- decrement relevant budgets;
-- record bounded observation;
-- continue only after all gates pass;
-- abort on validation error or policy ambiguity.
-
-Redirects are evaluated as new requests. HTTP 4xx/5xx are transport-complete responses and must not be treated as semantic success.
+Redirects and subresources are checked as new requests. A blocked request downgrades the browser run to a fail-visible target block.
 
 ### WebSocket guard
 
-Every WebSocket target must independently match an admitted WS/WSS mapping derived from the exact site profile/request policy. Unknown WebSocket targets block. The route is installed before pages.
+All WebSockets are blocked in 02B. This is intentionally stricter than the research-plan's earlier same-origin concept because Playwright WebSocket routing otherwise permits page-to-server message forwarding, which would violate the `READ_NETWORK` boundary.
 
-## Action proof model
+### Downloads
 
-Every action follows:
+Downloads are outside 02B. BrowserContext download acceptance is disabled and a page download event becomes a blocked browser effect. No downloaded artifact is promoted or returned.
 
-```text
-expected pre-state
--> resolve semantic locator
--> Playwright actionability check
--> perform fixed typed action
--> expected post-state
--> record observed evidence
-```
+## Anti-pattern and specialist-review regression ownership
 
-`force=True` is not exposed. Failed actionability or missing post-state returns a typed fail-visible state rather than coordinate guessing.
+The implementation carries two explicit negative-knowledge ledgers:
 
-## Research-derived anti-pattern guards
+- `B02B-AP-001` through `B02B-AP-022`: all 22 harvested browser/runtime anti-patterns.
+- `B02B-RV-001` through `B02B-RV-010`: defects found by Rowan Vale's specialist review and re-review.
 
-The implementation and review must explicitly reject:
-- global network-switch enablement;
-- initial-URL-only origin checks;
-- Service Workers left enabled while claiming complete routing;
-- HTTP routing treated as WebSocket coverage;
-- `force=True` drift repair;
-- durable CSS/XPath chains as normal identity;
-- immediate `locator.all()` on dynamic lists;
-- `time.sleep()` / `wait_for_timeout()` production readiness;
-- `networkidle` as generic ready state;
-- `requestfinished` treated as application success;
-- shared global browser/page/context state;
-- persistent user browser profile by default;
-- CDP as the core browser transport;
-- raw Playwright storage state in durable evidence;
-- trace treated as terminal proof;
-- caller-controlled output filesystem paths;
-- `urlsplit()` treated as validation;
-- denylist-only network protection;
-- swallowed `CancelledError`;
-- shared Playwright instance across threads;
-- arbitrary `page.evaluate()` / JavaScript execution exposed to callers.
+The Rowan regression set covers:
+1. mutating HTTP verbs under READ_NETWORK;
+2. WebSocket mutation channels;
+3. implicit downloads;
+4. raw final-URL secret exposure;
+5. browser target policy misclassification;
+6. cancellation teardown leaks;
+7. reproducible Playwright pinning;
+8. real BrowserContext storage isolation;
+9. IPv6 origin serialization;
+10. bounded background page cleanup.
 
-Full negative-knowledge record: https://app.notion.com/p/3c543bd4ae4a81e6a541e0510bdfbc41
+A review finding is not considered closed merely because the implementation changed; each material finding has an executable regression owner.
 
-## Required 02B fixtures
+## Browser fixture coverage
 
-1. `B02B_PUBLIC_PAGE_INSPECT_LOCAL`
-2. `B02B_GLOBAL_NETWORK_SWITCH_STAYS_FALSE`
-3. `B02B_UNRELATED_NETWORK_TOOL_STAYS_BLOCKED`
-4. `B02B_REDIRECT_TO_UNADMITTED_ORIGIN`
-5. `B02B_SUBRESOURCE_ORIGIN_BLOCK`
-6. `B02B_WEBSOCKET_ORIGIN_BLOCK`
-7. `B02B_SERVICE_WORKER_REGISTRATION_BLOCKED`
-8. `B02B_PROMPT_INJECTION_TEXT_IS_DATA`
-9. `B02B_FORCE_ACTION_UNAVAILABLE`
-10. `B02B_DYNAMIC_LIST_FREEZE`
-11. `B02B_HTTP_404_NOT_SEMANTIC_SUCCESS`
-12. `B02B_BUDGET_EXHAUSTION`
-13. `B02B_CANCEL_PARTIAL_EVIDENCE`
-14. `B02B_RUN_PATH_ESCAPE_BLOCK`
-15. `B02B_CONTEXT_ISOLATION`
-16. `B02B_CLI_MCP_PARITY`
+The dedicated Chromium lane exercises, among other cases:
+- global network switch remains false;
+- unrelated network tool stays blocked;
+- prompt-injection-looking page text remains data;
+- redirect escape block;
+- subresource origin block;
+- mutating same-origin HTTP method block before server receipt;
+- cross-origin WebSocket block;
+- same-origin WebSocket block;
+- automatic download block;
+- same-origin popup page-budget block;
+- Service Worker containment;
+- HTTP 404 non-success semantics;
+- real browser-storage isolation between executions;
+- elapsed-budget exhaustion;
+- cancellation with partial evidence and clean event-loop teardown;
+- bounded cleanup helpers;
+- minimized observed-network receipt shape;
+- 22 anti-pattern ownership entries;
+- 10 specialist-review regression ownership entries.
 
-All browser network fixtures should use controlled local test servers where possible. CI must not depend on arbitrary public websites for deterministic correctness.
+All browser correctness fixtures use controlled local servers through a test-only private-network admission switch that is not exposed by the public `browser.inspect` handler.
 
 ## Validation ladder
 
-Existing required validation remains mandatory:
-
-```bash
-python -m pip install -e ".[dev]"
-pytest
-aios-tools list
-aios-tools invoke system.health --input '{}'
-aios-tools-mcp --help
-```
-
-Add a dedicated browser lane that:
+Required repository validation:
 
 ```text
-install browser optional dependencies
-install pinned Chromium
-run browser unit tests
-run local-server browser integration fixtures
-run CLI/MCP parity fixture
-preserve trace/screenshots only as bounded failure evidence
+Linux shared-core pytest + CLI + MCP startup smoke
+Windows shared-core pytest + CLI + MCP startup smoke
+Repository Governance
+Benchmark Registry
+Cartography production build + Chromium interaction/screenshot regressions
+Dedicated Python/Chromium browser-core fixture lane
 ```
 
-Windows shared-core validation must remain green. Chromium integration is initially required on the supported CI host selected by the implementation; cross-platform browser execution is not claimed until exercised.
+GitHub pull-request workflows test the PR merge ref. Final receipts must therefore preserve both:
+- exact branch head SHA;
+- exact tested PR merge-ref SHA.
 
-## Non-goals
+Green CI is evidence, not merge authorization.
 
-- auth/session persistence
-- user secret entry
-- existing-browser/CDP attachment
-- downloads/uploads
-- remote mutation
-- Suno-specific traversal
-- guided training/replay profile lifecycle
-- model-assisted drift repair
-- generic crawler behavior
-- arbitrary JavaScript or Playwright code execution
-- global external-network enablement
-- claim of complete DNS-rebinding resistance
+## Non-goals and residual boundaries
+
+Not implemented or claimed in 02B:
+- persistent authentication/session reuse;
+- user secret entry;
+- existing-browser/CDP attachment;
+- file upload runtime;
+- download acquisition/promotion runtime;
+- remote mutation;
+- Suno-specific traversal;
+- guided training/replay profile lifecycle;
+- model-assisted drift repair;
+- generic crawler behavior;
+- arbitrary JavaScript or Playwright code execution;
+- global external-network enablement;
+- complete DNS-rebinding resistance.
 
 ## Rollback
 
-02B must remain removable by reverting the bounded PR. Global 02A effect policy must remain valid and network-closed after rollback. No migration or durable external state may be required to revert this slice.
+02B remains removable by reverting the bounded PR. The merged 02A global effect policy remains valid and network-closed after rollback. 02B creates no durable remote browser state that must be migrated to revert the slice.
 
-## Review gates
+## Merge-review gates
 
 Before merge:
-1. exact-head repository validation PASS;
-2. exact-head browser integration fixture PASS;
-3. security review of origin/address/redirect/WebSocket/Service-Worker boundaries;
-4. async lifecycle + cancellation review;
-5. path/evidence containment review;
-6. dependency/license review;
-7. fresh final review after the last code-changing commit;
-8. explicit human merge approval.
+1. exact current head and PR merge-ref CI PASS;
+2. browser-core fixture lane PASS with no unhandled async teardown exceptions;
+3. origin/address/redirect/method/WebSocket/Service-Worker/download boundary review PASS;
+4. async lifecycle + cancellation + cleanup review PASS;
+5. evidence/redaction/path containment review PASS;
+6. dependency/license posture reviewed;
+7. fresh specialist review after the last code-changing commit;
+8. documentation and PR/MASON evidence agree on the current state;
+9. explicit human merge authorization.
 
-Green CI alone is not merge authorization.
+## Current disposition
+
+`IMPLEMENTED / REVIEW_REPAIRED / DOC_SYNC_COMMITTED / EXACT-HEAD REVALIDATION PENDING / NOT_MERGED / NOT_ACTIVE`
+
+This document records implementation state; it does not authorize merge, deployment, activation, or authority expansion.
