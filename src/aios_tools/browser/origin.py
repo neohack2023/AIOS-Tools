@@ -23,7 +23,10 @@ class NormalizedOrigin:
     def parse(cls, raw: str, *, schemes: frozenset[str] = frozenset({"http", "https"})) -> "NormalizedOrigin":
         if not isinstance(raw, str) or not raw.strip():
             raise OriginValidationError("browser target must be a non-empty URL")
-        parsed = urlsplit(raw)
+        try:
+            parsed = urlsplit(raw)
+        except ValueError as exc:
+            raise OriginValidationError("browser target URL is invalid") from exc
         scheme = parsed.scheme.lower()
         if scheme not in schemes:
             raise OriginValidationError("browser origin scheme is not admitted")
@@ -42,7 +45,13 @@ class NormalizedOrigin:
 
     def serialize(self) -> str:
         default = 443 if self.scheme == "https" else 80
-        return f"{self.scheme}://{self.host}" + ("" if self.port == default else f":{self.port}")
+        host = self.host
+        try:
+            if ipaddress.ip_address(host).version == 6:
+                host = f"[{host}]"
+        except ValueError:
+            pass
+        return f"{self.scheme}://{host}" + ("" if self.port == default else f":{self.port}")
 
     def websocket_tuple(self) -> tuple[str, str, int]:
         return ("wss" if self.scheme == "https" else "ws", self.host, self.port)
@@ -85,7 +94,10 @@ def same_http_origin(raw_url: str, allowed: NormalizedOrigin) -> bool:
 
 
 def same_websocket_origin(raw_url: str, allowed: NormalizedOrigin) -> bool:
-    parsed = urlsplit(raw_url)
+    try:
+        parsed = urlsplit(raw_url)
+    except ValueError:
+        return False
     if parsed.scheme not in {"ws", "wss"} or parsed.username is not None or parsed.password is not None or not parsed.hostname:
         return False
     try:

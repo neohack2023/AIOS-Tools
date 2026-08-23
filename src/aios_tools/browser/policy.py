@@ -20,8 +20,8 @@ def load_browser_policy() -> dict[str, Any]:
 
     required = {
         "policy_version", "capability_id", "effect_class", "admitted_tools",
-        "allowed_schemes", "public_network_only", "service_workers",
-        "websocket_policy", "budgets",
+        "allowed_schemes", "allowed_http_methods", "public_network_only",
+        "service_workers", "websocket_policy", "downloads", "budgets",
     }
     missing = sorted(required - policy.keys())
     if missing:
@@ -34,10 +34,14 @@ def load_browser_policy() -> dict[str, Any]:
         raise BrowserConfigurationError("02B must remain public-network-only")
     if policy["service_workers"] != "block":
         raise BrowserConfigurationError("02B must block service workers")
-    if policy["websocket_policy"] != "same_origin_only":
-        raise BrowserConfigurationError("02B websocket policy must remain same-origin-only")
+    if policy["websocket_policy"] != "block":
+        raise BrowserConfigurationError("02B must block WebSocket connections")
+    if policy["downloads"] != "block":
+        raise BrowserConfigurationError("02B must block downloads")
     if policy["allowed_schemes"] != ["https", "http"]:
         raise BrowserConfigurationError("02B schemes must be exactly https/http")
+    if policy["allowed_http_methods"] != ["GET", "HEAD"]:
+        raise BrowserConfigurationError("02B HTTP methods must be exactly GET/HEAD")
     expected_tools = {"browser.inspect": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"}}
     if policy["admitted_tools"] != expected_tools:
         raise BrowserConfigurationError("02B admitted browser tool set is invalid")

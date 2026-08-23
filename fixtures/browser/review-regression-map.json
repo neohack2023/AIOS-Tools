@@ -1,0 +1,16 @@
+{
+  "schema": "browser-review-regression-map/0.1",
+  "slice": "BROWSER_CORE_RUNTIME_02B",
+  "reviewer": "PERS-BROWSER-01",
+  "entries": [
+    {"id":"B02B-RV-001","finding":"READ_NETWORK must not forward mutating HTTP methods","guard":"tests/test_browser_runtime.py::test_mutating_http_method_is_blocked_before_server_receives_it"},
+    {"id":"B02B-RV-002","finding":"READ_NETWORK must not forward page WebSocket messages","guard":"tests/test_browser_runtime.py::test_same_origin_websocket_is_blocked_in_read_only_slice"},
+    {"id":"B02B-RV-003","finding":"02B must not accept downloads","guard":"tests/test_browser_runtime.py::test_auto_download_attempt_is_blocked_and_never_promoted"},
+    {"id":"B02B-RV-004","finding":"model-visible output must not expose raw final redirect URLs","guard":"tests/test_browser_runtime.py::test_same_origin_redirect_never_returns_raw_secret_url"},
+    {"id":"B02B-RV-005","finding":"invalid/private preflight targets must fail as browser policy blocks rather than INTERNAL_ERROR","guard":"tests/test_browser_policy.py::test_private_target_is_browser_block_not_internal_error"},
+    {"id":"B02B-RV-006","finding":"cancellation teardown must not leak unhandled Playwright futures","guard":"tests/test_browser_runtime.py::test_cancellation_propagates_cleanly_with_partial_evidence"},
+    {"id":"B02B-RV-007","finding":"browser runtime dependency must be reproducibly pinned to the validated Playwright version","guard":"tests/test_browser_review_map.py::test_playwright_dependency_is_pinned_to_validated_version"},
+    {"id":"B02B-RV-008","finding":"fresh BrowserContext isolation must be proven with observable browser storage rather than generated labels","guard":"tests/test_browser_runtime.py::test_context_isolation_uses_fresh_browser_storage"},
+    {"id":"B02B-RV-009","finding":"IPv6 origins must serialize as valid bracketed URL origins","guard":"tests/test_browser_origin.py::test_origin_serializes_ipv6_with_brackets"}
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "policy_version": "browser-policy/0.1",
+  "policy_version": "browser-policy/0.2",
   "capability_id": "cap:browser-control",
   "effect_class": "READ_NETWORK",
   "admitted_tools": {
@@ -9,9 +9,11 @@
     }
   },
   "allowed_schemes": ["https", "http"],
+  "allowed_http_methods": ["GET", "HEAD"],
   "public_network_only": true,
   "service_workers": "block",
-  "websocket_policy": "same_origin_only",
+  "websocket_policy": "block",
+  "downloads": "block",
   "budgets": {
     "elapsed_seconds": 60,
     "network_requests": 80,

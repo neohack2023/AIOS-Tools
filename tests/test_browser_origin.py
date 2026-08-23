@@ -8,7 +8,9 @@ from aios_tools.browser.origin import NormalizedOrigin, OriginValidationError, a
 def _resolver_for(address: str):
     def resolver(host, port, *, type):
         assert type == socket.SOCK_STREAM
-        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, port))]
+        family = socket.AF_INET6 if ":" in address else socket.AF_INET
+        sockaddr = (address, port, 0, 0) if family == socket.AF_INET6 else (address, port)
+        return [(family, socket.SOCK_STREAM, 6, "", sockaddr)]
     return resolver
 
 
@@ -17,12 +19,18 @@ def test_origin_normalizes_default_port_and_host():
     assert origin.serialize() == "https://example.com"
 
 
+def test_origin_serializes_ipv6_with_brackets():
+    origin = NormalizedOrigin.parse("https://[2606:4700:4700::1111]/path")
+    assert origin.serialize() == "https://[2606:4700:4700::1111]"
+
+
 @pytest.mark.parametrize("url", [
     "file:///tmp/x",
     "javascript:alert(1)",
     "https://user:pass@example.com/",
     "https:///",
     "https://example.com:99999/",
+    "https://[not-an-ipv6]/",
 ])
 def test_origin_rejects_unsafe_forms(url):
     with pytest.raises(OriginValidationError):

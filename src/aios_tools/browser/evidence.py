@@ -13,6 +13,12 @@ def _digest(value: str) -> str:
     return "sha256:" + sha256(value.encode("utf-8")).hexdigest()
 
 
+def minimize_url(raw_url: str) -> dict[str, str]:
+    origin = NormalizedOrigin.parse(raw_url).serialize()
+    path = urlsplit(raw_url).path or "/"
+    return {"origin": origin, "path_digest": _digest(path)}
+
+
 @dataclass(slots=True)
 class BrowserEvidence:
     target_origin: str
@@ -55,7 +61,11 @@ class BrowserEvidence:
 
     def finalize_trace(self, path: Path) -> None:
         if path.exists() and path.is_file():
-            self.trace_digest = "sha256:" + sha256(path.read_bytes()).hexdigest()
+            digest = sha256()
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            self.trace_digest = "sha256:" + digest.hexdigest()
 
     def to_dict(self) -> dict:
         return {

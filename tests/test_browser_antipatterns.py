@@ -34,6 +34,7 @@ def test_harvested_browser_antipattern_primitives_are_absent():
         "storage_state(",
         "xpath=",
         "css=",
+        "connect_to_server(",
         "await ws.connect(",
     ]
     for pattern in forbidden:
@@ -43,11 +44,14 @@ def test_harvested_browser_antipattern_primitives_are_absent():
 def test_required_network_guards_are_present():
     source = _browser_source()
     assert 'service_workers="block"' in source
+    assert 'accept_downloads=False' in source
     assert 'route_web_socket("**/*"' in source
     assert 'context.route("**/*"' in source
-    assert "ws.connect_to_server()" in source
     policy = load_browser_policy()
     assert policy["public_network_only"] is True
+    assert policy["allowed_http_methods"] == ["GET", "HEAD"]
+    assert policy["websocket_policy"] == "block"
+    assert policy["downloads"] == "block"
 
 
 def test_browser_payload_cannot_supply_authority_or_paths():

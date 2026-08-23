@@ -20,7 +20,9 @@ def test_browser_policy_is_exact_read_only_admission():
     }
     assert policy["public_network_only"] is True
     assert policy["service_workers"] == "block"
-    assert policy["websocket_policy"] == "same_origin_only"
+    assert policy["websocket_policy"] == "block"
+    assert policy["downloads"] == "block"
+    assert policy["allowed_http_methods"] == ["GET", "HEAD"]
 
 
 def test_unrelated_network_tool_never_reaches_handler(monkeypatch):
@@ -49,3 +51,11 @@ def test_unrelated_network_tool_never_reaches_handler(monkeypatch):
     assert receipt["status"] == "BLOCKED"
     assert receipt["errors"][0]["code"] == "EXTERNAL_EFFECT_BLOCKED"
     assert called is False
+
+
+def test_private_target_is_browser_block_not_internal_error():
+    receipt = runner.invoke("browser.inspect", {"url": "http://127.0.0.1/"})
+    assert receipt["errors"] == []
+    assert receipt["output"]["terminal_status"] == "TARGET_BLOCKED"
+    assert receipt["output"]["semantic_success"] is False
+    assert receipt["output"]["evidence"]["blocked"]
