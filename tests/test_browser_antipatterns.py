@@ -31,7 +31,6 @@ def test_harvested_browser_antipattern_primitives_are_absent():
         "launch_persistent_context(",
         ".evaluate(",
         "time.sleep(",
-        "storage_state(",
         "xpath=",
         "css=",
         "connect_to_server(",
@@ -39,6 +38,24 @@ def test_harvested_browser_antipattern_primitives_are_absent():
     ]
     for pattern in forbidden:
         assert pattern not in source, pattern
+
+
+def test_storage_state_access_is_confined_to_protected_adapter():
+    adapter = PACKAGE / "storage_state.py"
+    assert adapter.exists()
+    for path in sorted(PACKAGE.glob("*.py")):
+        source = path.read_text(encoding="utf-8")
+        if path == adapter:
+            continue
+        assert ".storage_state(" not in source, path.name
+        assert "storage_state=" not in source, path.name
+
+    source = adapter.read_text(encoding="utf-8")
+    assert "context.storage_state(indexed_db=True, credentials=False)" in source
+    assert "storage_state=state" in source
+    assert "storage_state_path" not in source
+    assert "path=" not in source
+    assert "credentials=True" not in source
 
 
 def test_required_network_guards_are_present():
