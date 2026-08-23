@@ -28,24 +28,16 @@ def test_all_30_02c_antipatterns_have_honest_phase_ownership():
     ids = [entry["id"] for entry in entries]
     assert ids == [f"B02C-AP-{index:03d}" for index in range(1, 31)]
     assert len(set(ids)) == 30
-    assert sum(entry["status"] == "IMPLEMENTED" for entry in entries) == 27
-    assert sum(entry["status"] == "PENDING" for entry in entries) == 3
-    assert {entry["id"] for entry in entries if entry["status"] == "PENDING"} == {
-        "B02C-AP-005",
-        "B02C-AP-006",
-        "B02C-AP-007",
-    }
+    assert all(entry["status"] == "IMPLEMENTED" for entry in entries)
+    assert {entry["phase"] for entry in entries} == {"02C-A", "02C-B", "02C-C"}
 
 
 def test_every_implemented_02c_guard_names_an_executable_test():
     document = json.loads(MAP_PATH.read_text(encoding="utf-8"))
     available = _test_functions()
     for entry in document["entries"]:
-        if entry["status"] == "PENDING":
-            assert entry["phase"] == "02C-C"
-            assert entry["guard"] is None
-            continue
-        assert entry["phase"] in {"02C-A", "02C-B"}
+        assert entry["status"] == "IMPLEMENTED"
+        assert entry["phase"] in {"02C-A", "02C-B", "02C-C"}
         guard = entry["guard"]
         assert isinstance(guard, str) and guard.strip()
         guard_tests = TEST_NAME_RE.findall(guard)
