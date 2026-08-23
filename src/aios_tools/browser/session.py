@@ -103,6 +103,8 @@ class SessionDescriptor:
         for value in (self.created_at, self.verified_at, self.expires_at):
             if value.tzinfo is None or value.utcoffset() is None:
                 raise ValueError("session timestamps must be timezone-aware")
+        if not (self.created_at <= self.verified_at < self.expires_at):
+            raise ValueError("session timestamps must satisfy created <= verified < expires")
         if not self.backend_kind or any(ch.isspace() for ch in self.backend_kind):
             raise ValueError("backend kind must be a compact nonsecret identifier")
         if self.verification_result not in {"VERIFIED", "UNVERIFIED", "FAILED"}:
