@@ -35,10 +35,11 @@ def _descriptor() -> SessionDescriptor:
 
 def test_02c_a_policy_is_fail_closed_for_real_auth_state():
     policy = json.loads(AUTH_POLICY.read_text(encoding="utf-8"))
-    assert policy["policy_version"] == "browser-auth-policy/0.2-candidate"
+    assert policy["policy_version"] == "browser-auth-policy/0.3-candidate"
     assert policy["session_reuse_enabled"] is False
     assert policy["real_auth_state_capture_enabled"] is False
     assert policy["production_user_takeover_enabled"] is False
+    assert policy["production_persistent_profiles_enabled"] is False
     assert policy["authority_transfer"] is False
     assert policy["protected_store"]["plaintext_fallback"] is False
     assert policy["protected_store"]["admitted_production_backends"] == []
@@ -57,6 +58,13 @@ def test_02c_a_policy_is_fail_closed_for_real_auth_state():
     assert policy["takeover"]["cancelled_partial_state_reusable"] is False
     assert policy["takeover"]["failed_partial_state_reusable"] is False
     assert policy["takeover"]["privilege_or_risk_change_requires_reauth"] is True
+    assert policy["automation_profiles"]["runtime_owned_root_required"] is True
+    assert policy["automation_profiles"]["caller_controlled_path_allowed"] is False
+    assert policy["automation_profiles"]["personal_default_profile_allowed"] is False
+    assert policy["automation_profiles"]["cloud_sync_root_allowed"] is False
+    assert policy["automation_profiles"]["promotable_artifact"] is False
+    assert policy["automation_profiles"]["exclusive_lease_required"] is True
+    assert policy["automation_profiles"]["generic_cdp_attachment_allowed"] is False
     assert policy["capabilities"]["virtual_webauthn_real_user_persistence"] == "block"
 
 
