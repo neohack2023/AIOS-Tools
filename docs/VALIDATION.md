@@ -25,10 +25,27 @@ The test suite must prove:
 - registry and handler drift fails closed
 - unexpected handler failures produce sanitized governed receipts
 - completed and blocked receipts validate against the result contract
+- browser READ_NETWORK admission is capability-scoped and does not enable the global network switch
+- unrelated network-class tools remain blocked before handler invocation
+- browser origin, redirect, subresource, WebSocket, Service Worker, budget, cancellation, path, and context-isolation fixtures fail visibly
+- browser page text is returned as untrusted data rather than execution authority
+- HTTP transport completion does not substitute for semantic success
+
+## Browser 02B integration
+
+Browser binaries are not part of the ordinary development install. The dedicated browser lane runs:
+
+```bash
+python -m pip install -e ".[dev,browser]"
+python -m playwright install --with-deps chromium
+pytest tests/test_browser_*.py
+```
+
+02B browser correctness uses controlled local HTTP fixtures through an internal test-only private-network admission parameter. The public `browser.inspect` handler never exposes that parameter and remains public-network-only.
 
 ## CI
 
-`.github/workflows/ci.yml` installs the development package, runs the complete test suite, exercises the CLI, and loads the MCP adapter. `.github/workflows/repo-governance.yml` verifies required repository surfaces, authority markers, and Python source compilation.
+`.github/workflows/ci.yml` runs shared-core Linux and Windows jobs, a dedicated Python/Chromium browser-core lane, and the existing Cartography web lane. `.github/workflows/repo-governance.yml` verifies required repository surfaces, authority markers, and Python source compilation.
 
 ## Evidence rule
 
