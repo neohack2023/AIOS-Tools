@@ -24,14 +24,15 @@ def profile() -> NativeDemucsProfile:
 
 
 def test_build_command_freezes_upstream_segmentation() -> None:
-    command = build_command(profile(), Path("/tmp/source.wav"), Path("/tmp/out"))
+    source = Path("/tmp/source.wav")
+    command = build_command(profile(), source, Path("/tmp/out"))
     assert command[:3] == ["python", "-m", "demucs"]
     assert command[command.index("--name") + 1] == "htdemucs"
     assert command[command.index("--segment") + 1] == "7.8"
     assert command[command.index("--overlap") + 1] == "0.1"
     assert command[command.index("--shifts") + 1] == "0"
     assert "--float32" in command
-    assert command[-1] == "/tmp/source.wav"
+    assert command[-1] == str(source)
 
 
 def test_profile_rejects_custom_non_upstream_split_path() -> None:
