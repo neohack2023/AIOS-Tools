@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
+from .browser.policy import BrowserConfigurationError, browser_network_tool_admitted
 from .config import ConfigurationError, load_policy, load_registry, validate_request
 from .envelope import ExecutionReceipt, ToolError, utc_now
 from .runtime_cognition import build_execution_cognition_receipt
@@ -226,24 +227,45 @@ def invoke(
         )
 
     effect_policy = policy["effect_policy"]
-    if effect_class in effect_policy["network_effect_classes"] and policy["external_network_effects_enabled"] is False:
-        return _receipt(
-            request_id=request_id,
-            tool=tool,
-            tool_version=tool_version,
-            scope=scope,
-            mode=mode,
-            effect_class=effect_class,
-            status="BLOCKED",
-            started_at=started_at,
-            registry_version=registry_version,
-            policy_version=policy_version,
-            requested_by=requested_by,
-            authority_context=authority_context,
-            provenance=provenance,
-            errors=[ToolError(code="EXTERNAL_EFFECT_BLOCKED", message=f"network effect class is disabled: {effect_class}")],
-        )
-    if effect_class not in effect_policy["allowed_effect_classes"]:
+    browser_network_admission = False
+    if effect_class in effect_policy["network_effect_classes"]:
+        try:
+            browser_network_admission = browser_network_tool_admitted(tool, metadata)
+        except BrowserConfigurationError as exc:
+            return _receipt(
+                request_id=request_id,
+                tool=tool,
+                tool_version=tool_version,
+                scope=scope,
+                mode=mode,
+                effect_class=effect_class,
+                status="BLOCKED",
+                started_at=started_at,
+                registry_version=registry_version,
+                policy_version=policy_version,
+                requested_by=requested_by,
+                authority_context=authority_context,
+                provenance=provenance,
+                errors=[ToolError(code="BROWSER_CONFIGURATION_INVALID", message=str(exc))],
+            )
+        if policy["external_network_effects_enabled"] is False and not browser_network_admission:
+            return _receipt(
+                request_id=request_id,
+                tool=tool,
+                tool_version=tool_version,
+                scope=scope,
+                mode=mode,
+                effect_class=effect_class,
+                status="BLOCKED",
+                started_at=started_at,
+                registry_version=registry_version,
+                policy_version=policy_version,
+                requested_by=requested_by,
+                authority_context=authority_context,
+                provenance=provenance,
+                errors=[ToolError(code="EXTERNAL_EFFECT_BLOCKED", message=f"network effect class is disabled: {effect_class}")],
+            )
+    if effect_class not in effect_policy["allowed_effect_classes"] and not browser_network_admission:
         return _receipt(
             request_id=request_id,
             tool=tool,
