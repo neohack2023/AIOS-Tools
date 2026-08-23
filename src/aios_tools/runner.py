@@ -79,14 +79,13 @@ def _browser_external_effects(tool: str, effect_class: str, output: dict[str, An
     if not isinstance(evidence, dict):
         return []
     network = evidence.get("network")
-    blocked = evidence.get("blocked")
     if not isinstance(network, list):
         network = []
-    if not isinstance(blocked, list):
-        blocked = []
     request_count = sum(1 for item in network if isinstance(item, dict) and item.get("event") == "request")
-    websocket_count = sum(1 for item in blocked if isinstance(item, dict) and item.get("channel") == "websocket")
-    websocket_count += int(output.get("budget_used", {}).get("websockets", 0))
+    budget_used = output.get("budget_used")
+    if not isinstance(budget_used, dict):
+        budget_used = {}
+    websocket_count = int(budget_used.get("websockets", 0))
     if request_count == 0 and websocket_count == 0:
         return []
     target_origin = output.get("target_origin")
