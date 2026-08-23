@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 import socket
 import tempfile
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
 from .budget import BudgetExceeded, BudgetLedger
@@ -32,6 +32,14 @@ class RunPaths:
         candidate = (self.root / logical_name).resolve(strict=False)
         candidate.relative_to(self.root)
         return candidate
+
+
+async def _bounded_cleanup(operation: Awaitable[Any], *, timeout_seconds: float = 3.0) -> bool:
+    try:
+        await asyncio.wait_for(operation, timeout=timeout_seconds)
+        return True
+    except (TimeoutError, Exception):
+        return False
 
 
 def _validated_payload(payload: dict[str, Any], policy: dict[str, Any]) -> tuple[str, int, int]:
@@ -134,7 +142,7 @@ async def inspect_async(
                 blocked_event.set()
                 await ws.close(code=1008, reason="origin blocked")
                 return
-            await ws.connect()
+            ws.connect_to_server()
         except BudgetExceeded:
             evidence.block(channel="websocket", url=ws.url, reason="BUDGET_EXHAUSTED")
             blocked_event.set()
@@ -158,6 +166,7 @@ async def inspect_async(
                 context.on("response", lambda response: evidence.response(url=response.url, status=response.status))
 
                 response = await page.goto(raw_url, wait_until="domcontentloaded")
+                await asyncio.sleep(0)
                 main_status = response.status if response is not None else None
                 if blocked_event.is_set():
                     raise BrowserExecutionBlocked("browser network policy blocked one or more destinations")
@@ -200,25 +209,14 @@ async def inspect_async(
         finally:
             if context is not None:
                 if trace_started:
-                    try:
-                        await context.tracing.stop(path=str(trace_path))
+                    trace_ok = await _bounded_cleanup(context.tracing.stop(path=str(trace_path)))
+                    if trace_ok:
                         evidence.finalize_trace(trace_path)
-                    except Exception:
-                        pass
-                try:
-                    await context.close(reason="AIOS browser execution complete")
-                except Exception:
-                    pass
+                await _bounded_cleanup(context.close(reason="AIOS browser execution complete"))
             if browser is not None:
-                try:
-                    await browser.close()
-                except Exception:
-                    pass
+                await _bounded_cleanup(browser.close())
             if playwright is not None:
-                try:
-                    await playwright.stop()
-                except Exception:
-                    pass
+                await _bounded_cleanup(playwright.stop())
 
         if cancelled is not None:
             setattr(cancelled, "browser_evidence", evidence.to_dict())
