@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "browser-auth-receipt.v0.1.schema.json",
+  "title": "AIOS Browser Authentication Receipt View",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session_ref_fingerprint",
+    "origin",
+    "created_at",
+    "verified_at",
+    "expires_at",
+    "consent",
+    "lifecycle",
+    "backend_kind",
+    "backend_healthy",
+    "capabilities",
+    "verification_result",
+    "authority_transfer"
+  ],
+  "properties": {
+    "session_ref_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "origin": {
+      "type": "string",
+      "pattern": "^https?://[^/?#]+$"
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "verified_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "consent": {"type": "boolean"},
+    "lifecycle": {
+      "type": "string",
+      "enum": ["AVAILABLE", "IN_USE", "EXPIRED", "REVOKED", "INVALID", "PURGED"]
+    },
+    "backend_kind": {"type": "string", "minLength": 1, "maxLength": 64},
+    "backend_healthy": {"type": "boolean"},
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cookies", "local_storage", "indexed_db", "session_storage", "virtual_webauthn"],
+      "properties": {
+        "cookies": {"type": "boolean"},
+        "local_storage": {"type": "boolean"},
+        "indexed_db": {"type": "boolean"},
+        "session_storage": {"type": "boolean"},
+        "virtual_webauthn": {"type": "boolean"}
+      }
+    },
+    "verification_result": {
+      "type": "string",
+      "enum": ["VERIFIED", "UNVERIFIED", "FAILED"]
+    },
+    "authority_transfer": {"const": false}
+  }
+}
