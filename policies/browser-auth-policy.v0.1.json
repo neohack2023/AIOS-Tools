@@ -1,0 +1,40 @@
+{
+  "policy_version": "browser-auth-policy/0.1-candidate",
+  "capability_id": "cap:browser-control",
+  "session_reuse_enabled": false,
+  "real_auth_state_capture_enabled": false,
+  "authority_transfer": false,
+  "protected_store": {
+    "require_available": true,
+    "require_protected": true,
+    "plaintext_fallback": false,
+    "admitted_production_backends": [],
+    "synthetic_backend": "synthetic-memory-test",
+    "synthetic_backend_test_only": true
+  },
+  "validation": {
+    "exact_origin_required": true,
+    "identity_context_fingerprint_required": true,
+    "consent_required": true,
+    "verified_state_required": true,
+    "expiry_required": true,
+    "exclusive_lease_required": true
+  },
+  "capabilities": {
+    "restorable_in_02c_a": ["cookies", "local_storage", "indexed_db"],
+    "session_storage_requires_adapter": true,
+    "virtual_webauthn_real_user_persistence": "block"
+  },
+  "lifecycle": {
+    "reusable_state": "AVAILABLE",
+    "in_use_state": "IN_USE",
+    "terminal_unusable_states": ["EXPIRED", "REVOKED", "INVALID", "PURGED"]
+  },
+  "receipts": {
+    "raw_session_ref": false,
+    "raw_storage_state": false,
+    "raw_identity_context": false,
+    "protected_store_path": false,
+    "authority_transfer": false
+  }
+}
