@@ -23,10 +23,7 @@ class ValidatedSession:
     lease: SessionLease
 
     def public_receipt(self) -> dict[str, object]:
-        receipt = self.descriptor.public_receipt()
-        receipt["lease_owner"] = self.lease.owner_execution_id
-        receipt["authority_transfer"] = False
-        return receipt
+        return self.descriptor.public_receipt()
 
 
 class SessionValidator:
@@ -89,6 +86,8 @@ class SessionValidator:
             raise SessionValidationError("SESSION_CONSENT_REQUIRED", "browser session consent is not available")
         if descriptor.verification_result != "VERIFIED":
             raise SessionValidationError("AUTH_REQUIRED", "browser authentication state requires verification")
+        if descriptor.lifecycle is SessionLifecycle.IN_USE:
+            raise SessionValidationError("SESSION_LEASE_CONFLICT", "browser session is already leased")
         if descriptor.lifecycle is not SessionLifecycle.AVAILABLE:
             code = "SESSION_EXPIRED" if descriptor.lifecycle is SessionLifecycle.EXPIRED else "AUTH_STATE_UNAVAILABLE"
             raise SessionValidationError(code, "browser authentication state is not reusable")
