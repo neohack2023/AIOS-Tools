@@ -1,9 +1,10 @@
 {
-  "policy_version": "browser-auth-policy/0.2-candidate",
+  "policy_version": "browser-auth-policy/0.3-candidate",
   "capability_id": "cap:browser-control",
   "session_reuse_enabled": false,
   "real_auth_state_capture_enabled": false,
   "production_user_takeover_enabled": false,
+  "production_persistent_profiles_enabled": false,
   "authority_transfer": false,
   "protected_store": {
     "require_available": true,
@@ -33,6 +34,16 @@
     "failed_partial_state_reusable": false,
     "privilege_or_risk_change_requires_reauth": true
   },
+  "automation_profiles": {
+    "runtime_owned_root_required": true,
+    "caller_controlled_path_allowed": false,
+    "personal_default_profile_allowed": false,
+    "cloud_sync_root_allowed": false,
+    "promotable_artifact": false,
+    "exclusive_lease_required": true,
+    "stale_lease_recovery_required": true,
+    "generic_cdp_attachment_allowed": false
+  },
   "capabilities": {
     "restorable_in_02c_a": ["cookies", "local_storage", "indexed_db"],
     "session_storage_requires_adapter": true,
@@ -58,6 +69,7 @@
     "raw_storage_state": false,
     "raw_identity_context": false,
     "protected_store_path": false,
+    "automation_profile_directory": false,
     "secret_form_values": false,
     "request_bodies": false,
     "sensitive_headers": false,
