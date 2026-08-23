@@ -42,6 +42,15 @@ async def _bounded_cleanup(operation: Awaitable[Any], *, timeout_seconds: float 
         return False
 
 
+async def _drain_background_tasks(tasks: set[asyncio.Task[Any]], *, timeout_seconds: float = 3.0) -> bool:
+    if not tasks:
+        return True
+    return await _bounded_cleanup(
+        asyncio.gather(*list(tasks), return_exceptions=True),
+        timeout_seconds=timeout_seconds,
+    )
+
+
 async def _cancel_and_drain(task: asyncio.Task[Any]) -> None:
     if not task.done():
         task.cancel()
@@ -293,8 +302,7 @@ async def inspect_async(
         finally:
             if navigation_task is not None:
                 await _bounded_cleanup(_cancel_and_drain(navigation_task))
-            if background_tasks:
-                await asyncio.gather(*list(background_tasks), return_exceptions=True)
+            await _drain_background_tasks(background_tasks)
             if context is not None:
                 if trace_started:
                     trace_ok = await _bounded_cleanup(context.tracing.stop(path=str(trace_path)))

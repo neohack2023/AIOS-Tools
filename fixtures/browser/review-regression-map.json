@@ -11,6 +11,7 @@
     {"id":"B02B-RV-006","finding":"cancellation teardown must not leak unhandled Playwright futures","guard":"tests/test_browser_runtime.py::test_cancellation_propagates_cleanly_with_partial_evidence"},
     {"id":"B02B-RV-007","finding":"browser runtime dependency must be reproducibly pinned to the validated Playwright version","guard":"tests/test_browser_review_map.py::test_playwright_dependency_is_pinned_to_validated_version"},
     {"id":"B02B-RV-008","finding":"fresh BrowserContext isolation must be proven with observable browser storage rather than generated labels","guard":"tests/test_browser_runtime.py::test_context_isolation_uses_fresh_browser_storage"},
-    {"id":"B02B-RV-009","finding":"IPv6 origins must serialize as valid bracketed URL origins","guard":"tests/test_browser_origin.py::test_origin_serializes_ipv6_with_brackets"}
+    {"id":"B02B-RV-009","finding":"IPv6 origins must serialize as valid bracketed URL origins","guard":"tests/test_browser_origin.py::test_origin_serializes_ipv6_with_brackets"},
+    {"id":"B02B-RV-010","finding":"background page-close cleanup must remain bounded after the execution timeout ends","guard":"tests/test_browser_budget.py::test_background_page_cleanup_is_bounded"}
   ]
 }

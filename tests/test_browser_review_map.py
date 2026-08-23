@@ -11,7 +11,7 @@ def test_rowan_review_findings_have_explicit_regression_ownership():
     assert document["slice"] == "BROWSER_CORE_RUNTIME_02B"
     assert document["reviewer"] == "PERS-BROWSER-01"
     entries = document["entries"]
-    assert [entry["id"] for entry in entries] == [f"B02B-RV-{index:03d}" for index in range(1, 10)]
+    assert [entry["id"] for entry in entries] == [f"B02B-RV-{index:03d}" for index in range(1, 11)]
     for entry in entries:
         assert entry["finding"].strip()
         assert entry["guard"].startswith("tests/")
