@@ -1,0 +1,22 @@
+{
+  "policy_version": "browser-policy/0.1",
+  "capability_id": "cap:browser-control",
+  "effect_class": "READ_NETWORK",
+  "admitted_tools": {
+    "browser.inspect": {
+      "mode": "READ_ONLY",
+      "effect_class": "READ_NETWORK"
+    }
+  },
+  "allowed_schemes": ["https", "http"],
+  "public_network_only": true,
+  "service_workers": "block",
+  "websocket_policy": "same_origin_only",
+  "budgets": {
+    "elapsed_seconds": 60,
+    "network_requests": 80,
+    "pages": 1,
+    "websockets": 8,
+    "visible_text_chars": 50000
+  }
+}
