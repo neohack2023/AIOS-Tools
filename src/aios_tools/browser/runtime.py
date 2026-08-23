@@ -232,6 +232,14 @@ async def inspect_async(
         if cancelled is not None:
             setattr(cancelled, "browser_evidence", evidence.to_dict())
             raise cancelled
+        if blocked_event.is_set() and (result is None or result.get("terminal_status") != "TARGET_BLOCKED"):
+            result = _terminal(
+                "TARGET_BLOCKED",
+                allowed_origin,
+                context_id,
+                ledger,
+                "browser policy blocked one or more page or network effects",
+            )
         if result is None:
             result = _terminal("FAILED", allowed_origin, context_id, ledger, "browser execution ended without a terminal result")
         result["evidence"] = evidence.to_dict()
