@@ -24,6 +24,7 @@ class ExecutionReceipt:
     tool_version: str
     scope: str
     mode: str
+    effect_class: str
     status: str
     started_at: str
     completed_at: str
