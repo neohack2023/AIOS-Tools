@@ -1,8 +1,9 @@
 {
-  "policy_version": "browser-auth-policy/0.1-candidate",
+  "policy_version": "browser-auth-policy/0.2-candidate",
   "capability_id": "cap:browser-control",
   "session_reuse_enabled": false,
   "real_auth_state_capture_enabled": false,
+  "production_user_takeover_enabled": false,
   "authority_transfer": false,
   "protected_store": {
     "require_available": true,
@@ -18,7 +19,19 @@
     "consent_required": true,
     "verified_state_required": true,
     "expiry_required": true,
-    "exclusive_lease_required": true
+    "exclusive_lease_required": true,
+    "post_takeover_verification_required": true
+  },
+  "takeover": {
+    "synthetic_test_enabled": true,
+    "explicit_timeout_required": true,
+    "timeout_zero_allowed": false,
+    "debug_pause_allowed": false,
+    "evidence_blackout_required": true,
+    "explicit_transition_origins_required": true,
+    "cancelled_partial_state_reusable": false,
+    "failed_partial_state_reusable": false,
+    "privilege_or_risk_change_requires_reauth": true
   },
   "capabilities": {
     "restorable_in_02c_a": ["cookies", "local_storage", "indexed_db"],
@@ -28,13 +41,26 @@
   "lifecycle": {
     "reusable_state": "AVAILABLE",
     "in_use_state": "IN_USE",
-    "terminal_unusable_states": ["EXPIRED", "REVOKED", "INVALID", "PURGED"]
+    "terminal_unusable_states": ["EXPIRED", "REVOKED", "INVALID", "PURGED"],
+    "takeover_states": [
+      "AUTH_REQUIRED",
+      "TAKEOVER_PENDING",
+      "USER_CONTROL",
+      "VERIFY_PENDING",
+      "SESSION_AVAILABLE",
+      "AUTH_FAILED",
+      "CANCELLED",
+      "EXPIRED"
+    ]
   },
   "receipts": {
     "raw_session_ref": false,
     "raw_storage_state": false,
     "raw_identity_context": false,
     "protected_store_path": false,
+    "secret_form_values": false,
+    "request_bodies": false,
+    "sensitive_headers": false,
     "authority_transfer": false
   }
 }
