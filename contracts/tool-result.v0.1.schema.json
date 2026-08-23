@@ -3,7 +3,7 @@
   "$id": "https://aios.local/contracts/tool-result.v0.1.schema.json",
   "title": "AIOS Tool Execution Receipt v0.1",
   "type": "object",
-  "required": ["receipt_id", "request_id", "tool", "tool_version", "scope", "mode", "status", "started_at", "completed_at", "registry_version", "policy_version", "requested_by", "authority_context", "output", "errors", "provenance", "cognition_receipt", "external_effects", "authority_transfer"],
+  "required": ["receipt_id", "request_id", "tool", "tool_version", "scope", "mode", "effect_class", "status", "started_at", "completed_at", "registry_version", "policy_version", "requested_by", "authority_context", "output", "errors", "provenance", "cognition_receipt", "external_effects", "authority_transfer"],
   "properties": {
     "receipt_id": {"type": "string", "minLength": 1},
     "request_id": {"type": "string", "minLength": 1},
@@ -11,7 +11,17 @@
     "tool_version": {"type": "string", "minLength": 1},
     "scope": {"type": "string", "minLength": 1},
     "mode": {"type": "string", "minLength": 1},
-    "status": {"enum": ["COMPLETED", "FAILED", "BLOCKED"]},
+    "effect_class": {
+      "enum": [
+        "UNKNOWN",
+        "NO_EXTERNAL_EFFECT",
+        "LOCAL_DURABLE_WRITE",
+        "READ_NETWORK",
+        "REMOTE_MUTATION_REVERSIBLE",
+        "REMOTE_MUTATION_HIGH_IMPACT"
+      ]
+    },
+    "status": {"enum": ["COMPLETED", "FAILED", "BLOCKED", "APPROVAL_REQUIRED"]},
     "started_at": {"type": "string", "format": "date-time"},
     "completed_at": {"type": "string", "format": "date-time"},
     "registry_version": {"type": "string", "minLength": 1},
