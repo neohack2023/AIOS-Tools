@@ -18,6 +18,7 @@ def _receipt(
     mode: str,
     status: str,
     started_at: str,
+    effect_class: str = "UNKNOWN",
     registry_version: str = "UNKNOWN",
     policy_version: str = "UNKNOWN",
     requested_by: dict[str, Any] | None = None,
@@ -52,6 +53,7 @@ def _receipt(
         tool_version=tool_version,
         scope=scope,
         mode=mode,
+        effect_class=effect_class,
         status=status,
         started_at=started_at,
         completed_at=completed_at,
@@ -122,6 +124,7 @@ def invoke(
     policy_version = policy["policy_version"]
     metadata = registry.get(tool)
     tool_version = metadata["version"] if metadata else "UNKNOWN"
+    effect_class = metadata["effect_class"] if metadata else "UNKNOWN"
     request = {
         "request_id": request_id,
         "tool": tool,
@@ -141,6 +144,7 @@ def invoke(
             tool_version=tool_version,
             scope=scope,
             mode=mode,
+            effect_class=effect_class,
             status="BLOCKED",
             started_at=started_at,
             registry_version=registry_version,
@@ -158,6 +162,7 @@ def invoke(
             tool_version="UNKNOWN",
             scope=scope,
             mode=mode,
+            effect_class="UNKNOWN",
             status="BLOCKED",
             started_at=started_at,
             registry_version=registry_version,
@@ -175,6 +180,7 @@ def invoke(
             tool_version=tool_version,
             scope=scope,
             mode=mode,
+            effect_class=effect_class,
             status="BLOCKED",
             started_at=started_at,
             registry_version=registry_version,
@@ -191,6 +197,7 @@ def invoke(
             tool_version=tool_version,
             scope=scope,
             mode=mode,
+            effect_class=effect_class,
             status="BLOCKED",
             started_at=started_at,
             registry_version=registry_version,
@@ -207,6 +214,7 @@ def invoke(
             tool_version=tool_version,
             scope=scope,
             mode=mode,
+            effect_class=effect_class,
             status="BLOCKED",
             started_at=started_at,
             registry_version=registry_version,
@@ -215,6 +223,42 @@ def invoke(
             authority_context=authority_context,
             provenance=provenance,
             errors=[ToolError(code="AUTHORITY_TRANSFER_BLOCKED", message="authority transfer is forbidden")],
+        )
+
+    effect_policy = policy["effect_policy"]
+    if effect_class in effect_policy["network_effect_classes"] and policy["external_network_effects_enabled"] is False:
+        return _receipt(
+            request_id=request_id,
+            tool=tool,
+            tool_version=tool_version,
+            scope=scope,
+            mode=mode,
+            effect_class=effect_class,
+            status="BLOCKED",
+            started_at=started_at,
+            registry_version=registry_version,
+            policy_version=policy_version,
+            requested_by=requested_by,
+            authority_context=authority_context,
+            provenance=provenance,
+            errors=[ToolError(code="EXTERNAL_EFFECT_BLOCKED", message=f"network effect class is disabled: {effect_class}")],
+        )
+    if effect_class not in effect_policy["allowed_effect_classes"]:
+        return _receipt(
+            request_id=request_id,
+            tool=tool,
+            tool_version=tool_version,
+            scope=scope,
+            mode=mode,
+            effect_class=effect_class,
+            status="BLOCKED",
+            started_at=started_at,
+            registry_version=registry_version,
+            policy_version=policy_version,
+            requested_by=requested_by,
+            authority_context=authority_context,
+            provenance=provenance,
+            errors=[ToolError(code="EFFECT_CLASS_BLOCKED", message=f"policy does not admit effect class: {effect_class}")],
         )
 
     if mode == "WRITE":
@@ -226,6 +270,7 @@ def invoke(
                 tool_version=tool_version,
                 scope=scope,
                 mode=mode,
+                effect_class=effect_class,
                 status="APPROVAL_REQUIRED",
                 started_at=started_at,
                 registry_version=registry_version,
@@ -244,6 +289,7 @@ def invoke(
             tool_version=tool_version,
             scope=scope,
             mode=mode,
+            effect_class=effect_class,
             status="BLOCKED",
             started_at=started_at,
             registry_version=registry_version,
@@ -270,6 +316,7 @@ def invoke(
                     "authority_transfer_allowed": policy["authority_transfer_allowed"],
                     "approval_required_for": policy["approval_required_for"],
                     "write_scope": policy.get("write_scope"),
+                    "effect_policy": policy["effect_policy"],
                 },
             }
         status = "COMPLETED"
@@ -289,6 +336,7 @@ def invoke(
         tool_version=tool_version,
         scope=scope,
         mode=mode,
+        effect_class=effect_class,
         status=status,
         started_at=started_at,
         registry_version=registry_version,
