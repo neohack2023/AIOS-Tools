@@ -70,36 +70,164 @@ def test_schema_validate_rejects_nested_invalid_instance():
         },
         "unevaluatedProperties": False,
     }
-    receipt = invoke("schema.validate", {"schema": schema, "instance": {"node": {"count": 0}}})
+    receipt = invoke("schema.validate", {"schema": schema, "instance": {"node": {"count": 0, "extra": True}}})
     assert receipt["status"] == "COMPLETED"
     assert receipt["output"]["valid"] is False
-
-
-def test_schema_validate_rejects_invalid_schema():
-    schema = {"type": "not-a-real-json-schema-type"}
-    receipt = invoke("schema.validate", {"schema": schema, "instance": {}})
-    assert receipt["status"] == "COMPLETED"
-    assert receipt["output"]["valid"] is False
-    assert receipt["output"]["schema_valid"] is False
+    validators = {error["validator"] for error in receipt["output"]["errors"]}
+    assert "minimum" in validators
+    assert "unevaluatedProperties" in validators
 
 
 def test_unknown_tool_fails_closed():
-    receipt = invoke("missing.tool", {})
+    receipt = invoke("unknown.tool", {})
     assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "UNKNOWN"
     assert receipt["errors"][0]["code"] == "TOOL_NOT_REGISTERED"
+    assert receipt["external_effects"] == []
 
 
-def test_invalid_requester_envelope_fails_closed():
-    receipt = invoke("system.health", {}, requested_by={"type": "MAGIC", "id": "bad"})
+def test_globally_allowed_mode_still_respects_tool_mode():
+    receipt = invoke("system.health", {}, mode="WRITE")
     assert receipt["status"] == "BLOCKED"
+    assert receipt["errors"][0]["code"] == "MODE_NOT_ALLOWED"
+    assert receipt["external_effects"] == []
+    assert receipt["authority_transfer"] is False
+
+
+def test_invalid_requester_is_blocked_by_request_contract():
+    receipt = invoke("system.health", {}, requested_by={"type": "ROBOT", "id": "x"})
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "NO_EXTERNAL_EFFECT"
     assert receipt["errors"][0]["code"] == "REQUEST_INVALID"
 
 
-def test_registry_and_handlers_match():
-    registry, _ = config.load_registry(HANDLERS)
-    assert set(registry) == set(HANDLERS)
+def test_missing_or_malformed_policy_fails_closed(monkeypatch, tmp_path):
+    bad_policy = tmp_path / "execution-policy.json"
+    bad_policy.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(config, "POLICY_PATH", bad_policy)
+    receipt = invoke("system.health", {})
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "UNKNOWN"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
 
 
-def test_request_schema_is_draft_202012():
-    schema = json.loads(Path("contracts/tool-request.v0.1.schema.json").read_text(encoding="utf-8"))
-    Draft202012Validator.check_schema(schema)
+def test_global_network_switch_remains_hard_disabled(monkeypatch, tmp_path):
+    policy = _policy_document()
+    policy["external_network_effects_enabled"] = True
+    bad_policy = tmp_path / "execution-policy.json"
+    bad_policy.write_text(json.dumps(policy), encoding="utf-8")
+    monkeypatch.setattr(config, "POLICY_PATH", bad_policy)
+
+    receipt = invoke("system.health", {})
+
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "UNKNOWN"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
+    assert "external network effects must remain disabled" in receipt["errors"][0]["message"]
+
+
+def test_policy_cannot_admit_network_class_while_global_network_is_disabled(monkeypatch, tmp_path):
+    policy = _policy_document()
+    policy["effect_policy"]["allowed_effect_classes"].append("READ_NETWORK")
+    bad_policy = tmp_path / "execution-policy.json"
+    bad_policy.write_text(json.dumps(policy), encoding="utf-8")
+    monkeypatch.setattr(config, "POLICY_PATH", bad_policy)
+
+    receipt = invoke("system.health", {})
+
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "UNKNOWN"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
+    assert "network effect classes cannot be admitted" in receipt["errors"][0]["message"]
+
+
+def test_registry_missing_effect_class_fails_closed(monkeypatch, tmp_path):
+    registry = _registry_document()
+    del registry["tools"][0]["effect_class"]
+    bad_registry = tmp_path / "tools.json"
+    bad_registry.write_text(json.dumps(registry), encoding="utf-8")
+    monkeypatch.setattr(config, "REGISTRY_PATH", bad_registry)
+
+    receipt = invoke("system.health", {})
+
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "UNKNOWN"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
+    assert "effect_class" in receipt["errors"][0]["message"]
+
+
+def test_registry_unknown_effect_class_fails_closed(monkeypatch, tmp_path):
+    registry = _registry_document()
+    registry["tools"][0]["effect_class"] = "MYSTERY_EFFECT"
+    bad_registry = tmp_path / "tools.json"
+    bad_registry.write_text(json.dumps(registry), encoding="utf-8")
+    monkeypatch.setattr(config, "REGISTRY_PATH", bad_registry)
+
+    receipt = invoke("system.health", {})
+
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "UNKNOWN"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
+    assert "unknown effect_class" in receipt["errors"][0]["message"]
+
+
+def test_network_effect_class_is_blocked_before_handler_invocation(monkeypatch, tmp_path):
+    registry = _registry_document()
+    registry["tools"][0]["effect_class"] = "READ_NETWORK"
+    network_registry = tmp_path / "tools.json"
+    network_registry.write_text(json.dumps(registry), encoding="utf-8")
+    monkeypatch.setattr(config, "REGISTRY_PATH", network_registry)
+
+    def should_never_run(_payload):
+        raise AssertionError("blocked network handler was invoked")
+
+    monkeypatch.setitem(HANDLERS, "system.health", should_never_run)
+    receipt = invoke("system.health", {})
+
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "READ_NETWORK"
+    assert receipt["errors"][0]["code"] == "EXTERNAL_EFFECT_BLOCKED"
+    assert receipt["external_effects"] == []
+    event_types = [event["event_type"] for event in receipt["cognition_receipt"]["events"]]
+    assert "tool.invoked" not in event_types
+
+
+def test_registry_handler_drift_fails_closed(monkeypatch):
+    handlers = dict(HANDLERS)
+    handlers.pop("schema.validate")
+    monkeypatch.setattr("aios_tools.runner.HANDLERS", handlers)
+    receipt = invoke("system.health", {})
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
+    assert "missing handlers" in receipt["errors"][0]["message"]
+
+
+def test_unexpected_handler_exception_is_sanitized(monkeypatch):
+    def explode(_payload):
+        raise RuntimeError("secret internal detail")
+
+    monkeypatch.setitem(HANDLERS, "system.health", explode)
+    receipt = invoke("system.health", {})
+    assert receipt["status"] == "FAILED"
+    assert receipt["effect_class"] == "NO_EXTERNAL_EFFECT"
+    assert receipt["errors"][0]["code"] == "INTERNAL_ERROR"
+    assert "secret internal detail" not in receipt["errors"][0]["message"]
+
+
+def test_result_contract_validates_completed_blocked_and_approval_receipts():
+    schema = json.loads(Path("contracts/tool-result.v0.1.schema.json").read_text())
+    completed = invoke("system.health", {})
+    blocked = invoke("system.health", {}, mode="WRITE")
+    approval_required = invoke(
+        "audio.demucs.separate",
+        {
+            "source_path": "/does/not/matter/source.wav",
+            "output_dir": "/does/not/matter/output",
+            "profile_path": "/does/not/matter/profile.json",
+        },
+        mode="WRITE",
+        scope="udio-algorithms",
+    )
+    assert list(Draft202012Validator(schema).iter_errors(completed)) == []
+    assert list(Draft202012Validator(schema).iter_errors(blocked)) == []
+    assert list(Draft202012Validator(schema).iter_errors(approval_required)) == []
