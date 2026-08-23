@@ -111,6 +111,21 @@ def test_missing_or_malformed_policy_fails_closed(monkeypatch, tmp_path):
     assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
 
 
+def test_global_network_switch_remains_hard_disabled(monkeypatch, tmp_path):
+    policy = _policy_document()
+    policy["external_network_effects_enabled"] = True
+    bad_policy = tmp_path / "execution-policy.json"
+    bad_policy.write_text(json.dumps(policy), encoding="utf-8")
+    monkeypatch.setattr(config, "POLICY_PATH", bad_policy)
+
+    receipt = invoke("system.health", {})
+
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["effect_class"] == "UNKNOWN"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
+    assert "external network effects must remain disabled" in receipt["errors"][0]["message"]
+
+
 def test_policy_cannot_admit_network_class_while_global_network_is_disabled(monkeypatch, tmp_path):
     policy = _policy_document()
     policy["effect_policy"]["allowed_effect_classes"].append("READ_NETWORK")
