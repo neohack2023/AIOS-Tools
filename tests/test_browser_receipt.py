@@ -43,6 +43,7 @@ def test_non_network_receipt_still_requires_zero_external_effects():
         effect_class="NO_EXTERNAL_EFFECT",
         status="COMPLETED",
         started_at="2026-08-23T00:00:00+00:00",
+        handler_invoked=True,
     )
     assert receipt["external_effects"] == []
     schema = json.loads(Path("contracts/tool-result.v0.1.schema.json").read_text(encoding="utf-8"))
@@ -59,6 +60,7 @@ def test_browser_network_receipt_shape_validates():
         effect_class="READ_NETWORK",
         status="COMPLETED",
         started_at="2026-08-23T00:00:00+00:00",
+        handler_invoked=True,
         external_effects=[{
             "effect_class": "READ_NETWORK",
             "capability_id": "cap:browser-control",
