@@ -11,6 +11,29 @@ REGISTRY_PATH = ROOT / "registry" / "tools.v0.1.json"
 POLICY_PATH = ROOT / "policies" / "execution-policy.v0.1.json"
 REQUEST_SCHEMA_PATH = ROOT / "contracts" / "tool-request.v0.1.schema.json"
 
+EFFECT_CLASSES = frozenset(
+    {
+        "NO_EXTERNAL_EFFECT",
+        "LOCAL_DURABLE_WRITE",
+        "READ_NETWORK",
+        "REMOTE_MUTATION_REVERSIBLE",
+        "REMOTE_MUTATION_HIGH_IMPACT",
+    }
+)
+NETWORK_EFFECT_CLASSES = frozenset(
+    {
+        "READ_NETWORK",
+        "REMOTE_MUTATION_REVERSIBLE",
+        "REMOTE_MUTATION_HIGH_IMPACT",
+    }
+)
+REMOTE_MUTATION_EFFECT_CLASSES = frozenset(
+    {
+        "REMOTE_MUTATION_REVERSIBLE",
+        "REMOTE_MUTATION_HIGH_IMPACT",
+    }
+)
+
 
 class ConfigurationError(RuntimeError):
     """Raised when governed runtime configuration is missing or contradictory."""
@@ -26,6 +49,17 @@ def _load_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def _validated_string_set(value: Any, *, field: str, allow_empty: bool = False) -> set[str]:
+    if not isinstance(value, list) or (not value and not allow_empty):
+        qualifier = "a list" if allow_empty else "a non-empty list"
+        raise ConfigurationError(f"{field} must be {qualifier}")
+    if not all(isinstance(item, str) and item for item in value):
+        raise ConfigurationError(f"{field} must contain non-empty strings")
+    if len(value) != len(set(value)):
+        raise ConfigurationError(f"{field} must not contain duplicates")
+    return set(value)
+
+
 def load_policy() -> dict[str, Any]:
     policy = _load_json(POLICY_PATH)
     required = {
@@ -36,6 +70,7 @@ def load_policy() -> dict[str, Any]:
         "external_network_effects_enabled",
         "authority_transfer_allowed",
         "approval_required_for",
+        "effect_policy",
     }
     missing = sorted(required - policy.keys())
     if missing:
@@ -61,6 +96,45 @@ def load_policy() -> dict[str, Any]:
             raise ConfigurationError("WRITE mode is limited to LOCAL_ARTIFACTS_ONLY")
     elif policy["durable_writes_enabled"] is not False:
         raise ConfigurationError("durable writes cannot be enabled when WRITE mode is absent")
+
+    effect_policy = policy["effect_policy"]
+    if not isinstance(effect_policy, dict):
+        raise ConfigurationError("execution policy effect_policy must be an object")
+    effect_required = {
+        "known_effect_classes",
+        "allowed_effect_classes",
+        "network_effect_classes",
+        "remote_mutation_effect_classes",
+    }
+    effect_missing = sorted(effect_required - effect_policy.keys())
+    if effect_missing:
+        raise ConfigurationError(f"effect_policy missing fields: {', '.join(effect_missing)}")
+
+    known = _validated_string_set(effect_policy["known_effect_classes"], field="effect_policy known_effect_classes")
+    allowed = _validated_string_set(
+        effect_policy["allowed_effect_classes"],
+        field="effect_policy allowed_effect_classes",
+        allow_empty=True,
+    )
+    network = _validated_string_set(effect_policy["network_effect_classes"], field="effect_policy network_effect_classes")
+    remote = _validated_string_set(
+        effect_policy["remote_mutation_effect_classes"],
+        field="effect_policy remote_mutation_effect_classes",
+    )
+
+    if known != EFFECT_CLASSES:
+        raise ConfigurationError("effect_policy known_effect_classes must match the runtime effect taxonomy")
+    if network != NETWORK_EFFECT_CLASSES:
+        raise ConfigurationError("effect_policy network_effect_classes must match the runtime network taxonomy")
+    if remote != REMOTE_MUTATION_EFFECT_CLASSES:
+        raise ConfigurationError("effect_policy remote_mutation_effect_classes must match the runtime mutation taxonomy")
+    if not allowed <= known:
+        raise ConfigurationError("effect_policy allowed_effect_classes must be a subset of known_effect_classes")
+    if not remote <= network:
+        raise ConfigurationError("remote mutation effect classes must also be network effect classes")
+    if allowed & network:
+        raise ConfigurationError("network effect classes cannot be admitted while external network effects are disabled")
+
     return policy
 
 
@@ -73,7 +147,7 @@ def load_registry(handlers: dict[str, Callable[..., Any]]) -> tuple[dict[str, di
     if not isinstance(tools, list) or not tools:
         raise ConfigurationError("registry tools must be a non-empty list")
 
-    required = {"name", "version", "mode", "reversibility", "blast_radius", "authority_transfer"}
+    required = {"name", "version", "mode", "effect_class", "reversibility", "blast_radius", "authority_transfer"}
     registry: dict[str, dict[str, Any]] = {}
     for item in tools:
         if not isinstance(item, dict):
@@ -88,6 +162,20 @@ def load_registry(handlers: dict[str, Callable[..., Any]]) -> tuple[dict[str, di
             raise ConfigurationError(f"duplicate registry tool: {name}")
         if item["authority_transfer"] is not False:
             raise ConfigurationError(f"tool {name} cannot transfer authority")
+
+        effect_class = item["effect_class"]
+        if effect_class not in EFFECT_CLASSES:
+            raise ConfigurationError(f"tool {name} has unknown effect_class: {effect_class}")
+        mode = item["mode"]
+        if effect_class == "NO_EXTERNAL_EFFECT" and mode == "WRITE":
+            raise ConfigurationError(f"tool {name} cannot declare NO_EXTERNAL_EFFECT in WRITE mode")
+        if effect_class == "LOCAL_DURABLE_WRITE" and mode != "WRITE":
+            raise ConfigurationError(f"tool {name} LOCAL_DURABLE_WRITE requires WRITE mode")
+        if effect_class == "READ_NETWORK" and mode != "READ_ONLY":
+            raise ConfigurationError(f"tool {name} READ_NETWORK requires READ_ONLY mode")
+        if effect_class in REMOTE_MUTATION_EFFECT_CLASSES and mode != "WRITE":
+            raise ConfigurationError(f"tool {name} remote mutation effect requires WRITE mode")
+
         registry[name] = dict(item)
 
     registered = set(registry)

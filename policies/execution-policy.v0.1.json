@@ -1,5 +1,5 @@
 {
-  "policy_version": "0.2.0-candidate",
+  "policy_version": "0.3.0-candidate",
   "default_mode": "READ_ONLY",
   "allowed_modes": ["READ_ONLY", "WRITE"],
   "durable_writes_enabled": true,
@@ -7,5 +7,27 @@
   "authority_transfer_allowed": false,
   "approval_required_for": ["WRITE", "DELETE", "EXTERNAL_EFFECT", "AUTHORITY_CHANGE"],
   "write_scope": "LOCAL_ARTIFACTS_ONLY",
+  "effect_policy": {
+    "known_effect_classes": [
+      "NO_EXTERNAL_EFFECT",
+      "LOCAL_DURABLE_WRITE",
+      "READ_NETWORK",
+      "REMOTE_MUTATION_REVERSIBLE",
+      "REMOTE_MUTATION_HIGH_IMPACT"
+    ],
+    "allowed_effect_classes": [
+      "NO_EXTERNAL_EFFECT",
+      "LOCAL_DURABLE_WRITE"
+    ],
+    "network_effect_classes": [
+      "READ_NETWORK",
+      "REMOTE_MUTATION_REVERSIBLE",
+      "REMOTE_MUTATION_HIGH_IMPACT"
+    ],
+    "remote_mutation_effect_classes": [
+      "REMOTE_MUTATION_REVERSIBLE",
+      "REMOTE_MUTATION_HIGH_IMPACT"
+    ]
+  },
   "law": "An agent is only as safe as its least reversible action."
 }

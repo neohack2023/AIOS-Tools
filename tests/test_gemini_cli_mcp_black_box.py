@@ -27,6 +27,7 @@ def _structured(result: Any) -> dict[str, Any]:
 def _assert_governed_receipt(receipt: dict[str, Any], tool: str) -> None:
     assert receipt["tool"] == tool
     assert receipt["status"] == "COMPLETED"
+    assert receipt["effect_class"] == "NO_EXTERNAL_EFFECT"
     assert receipt["authority_transfer"] is False
     assert receipt["external_effects"] == []
     assert receipt["requested_by"] == {"type": "LLM", "id": "aios-tools-mcp"}
