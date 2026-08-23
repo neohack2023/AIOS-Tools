@@ -108,6 +108,7 @@ async def inspect_async(
     except ImportError as exc:
         raise BrowserRuntimeUnavailable("browser optional dependency is not installed") from exc
 
+    playwright_manager = None
     playwright = None
     browser = None
     context = None
@@ -159,7 +160,8 @@ async def inspect_async(
         trace_path = RunPaths(Path(temp_root)).artifact("trace.zip")
         try:
             async with asyncio.timeout(ledger.remaining_seconds()):
-                playwright = await async_playwright().start()
+                playwright_manager = async_playwright()
+                playwright = await playwright_manager.start()
                 browser = await playwright.chromium.launch(headless=True)
                 context = await browser.new_context(service_workers="block")
                 await context.route("**/*", http_guard)
@@ -173,13 +175,14 @@ async def inspect_async(
                 page.on("pageerror", lambda exc: evidence.page_error(str(exc)))
                 context.on("response", lambda response: evidence.response(url=response.url, status=response.status))
 
-                response = await page.goto(raw_url, wait_until="domcontentloaded")
+                response = await page.goto(raw_url, wait_until="load")
                 await asyncio.sleep(0)
                 main_status = response.status if response is not None else None
                 if blocked_event.is_set():
                     raise BrowserExecutionBlocked("browser policy blocked one or more page or network effects")
                 final_url = page.url
                 if not same_http_origin(final_url, allowed_origin):
+                    evidence.block(channel="navigation", url=final_url, reason="FINAL_ORIGIN_NOT_ADMITTED")
                     raise BrowserExecutionBlocked("final page origin is not admitted")
 
                 title = await page.title()
@@ -223,8 +226,8 @@ async def inspect_async(
                 await _bounded_cleanup(context.close(reason="AIOS browser execution complete"))
             if browser is not None:
                 await _bounded_cleanup(browser.close())
-            if playwright is not None:
-                await _bounded_cleanup(playwright.stop())
+            if playwright_manager is not None:
+                await _bounded_cleanup(playwright_manager.stop())
 
         if cancelled is not None:
             setattr(cancelled, "browser_evidence", evidence.to_dict())
