@@ -81,8 +81,8 @@ def load_policy() -> dict[str, Any]:
         raise ConfigurationError("execution policy default_mode must be globally allowed")
     if not isinstance(policy["durable_writes_enabled"], bool):
         raise ConfigurationError("execution policy durable_writes_enabled must be boolean")
-    if not isinstance(policy["external_network_effects_enabled"], bool):
-        raise ConfigurationError("external_network_effects_enabled must be boolean")
+    if policy["external_network_effects_enabled"] is not False:
+        raise ConfigurationError("external network effects must remain disabled")
     if policy["authority_transfer_allowed"] is not False:
         raise ConfigurationError("authority transfer must remain disabled")
     if not isinstance(policy["approval_required_for"], list):
@@ -132,7 +132,7 @@ def load_policy() -> dict[str, Any]:
         raise ConfigurationError("effect_policy allowed_effect_classes must be a subset of known_effect_classes")
     if not remote <= network:
         raise ConfigurationError("remote mutation effect classes must also be network effect classes")
-    if policy["external_network_effects_enabled"] is False and allowed & network:
+    if allowed & network:
         raise ConfigurationError("network effect classes cannot be admitted while external network effects are disabled")
 
     return policy
