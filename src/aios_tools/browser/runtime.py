@@ -227,7 +227,7 @@ async def inspect_async(
             if browser is not None:
                 await _bounded_cleanup(browser.close())
             if playwright_manager is not None:
-                await _bounded_cleanup(playwright_manager.stop())
+                await _bounded_cleanup(playwright_manager.__aexit__(None, None, None))
 
         if cancelled is not None:
             setattr(cancelled, "browser_evidence", evidence.to_dict())
