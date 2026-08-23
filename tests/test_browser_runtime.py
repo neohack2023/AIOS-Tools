@@ -45,6 +45,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "</script></body></html>"
             ).encode()
             self.send_response(200)
+        elif self.path == "/popup":
+            body = b'<html><body>popup<script>window.open("/ok", "_blank");</script></body></html>'
+            self.send_response(200)
         elif self.path == "/service-worker":
             body = (
                 '<html><body>sw<script>'
@@ -132,6 +135,20 @@ def test_websocket_origin_is_independently_blocked():
     result = asyncio.run(run())
     assert result["terminal_status"] == "TARGET_BLOCKED"
     assert any(item["channel"] == "websocket" for item in result["evidence"]["blocked"])
+
+
+def test_same_origin_popup_exhausts_page_budget_and_blocks():
+    async def run():
+        with fixture_server() as server:
+            return await inspect_async({"url": _url(server, "/popup")}, allow_private_fixture=True)
+    result = asyncio.run(run())
+    assert result["terminal_status"] == "TARGET_BLOCKED"
+    assert result["semantic_success"] is False
+    assert result["budget_used"]["pages"] == 1
+    assert any(
+        item["channel"] == "page" and item["reason"] == "PAGE_BUDGET_EXHAUSTED"
+        for item in result["evidence"]["blocked"]
+    )
 
 
 def test_service_worker_registration_does_not_escape_routing():
