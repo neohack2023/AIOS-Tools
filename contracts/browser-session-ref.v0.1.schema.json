@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "browser-session-ref.v0.1.schema.json",
+  "title": "AIOS Browser Opaque Session Reference",
+  "type": "string",
+  "pattern": "^bs_[0-9a-f]{64}$",
+  "minLength": 67,
+  "maxLength": 67
+}
