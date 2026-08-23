@@ -12,14 +12,7 @@
     "scope": {"type": "string", "minLength": 1},
     "mode": {"type": "string", "minLength": 1},
     "effect_class": {
-      "enum": [
-        "UNKNOWN",
-        "NO_EXTERNAL_EFFECT",
-        "LOCAL_DURABLE_WRITE",
-        "READ_NETWORK",
-        "REMOTE_MUTATION_REVERSIBLE",
-        "REMOTE_MUTATION_HIGH_IMPACT"
-      ]
+      "enum": ["UNKNOWN", "NO_EXTERNAL_EFFECT", "LOCAL_DURABLE_WRITE", "READ_NETWORK", "REMOTE_MUTATION_REVERSIBLE", "REMOTE_MUTATION_HIGH_IMPACT"]
     },
     "status": {"enum": ["COMPLETED", "FAILED", "BLOCKED", "APPROVAL_REQUIRED"]},
     "started_at": {"type": "string", "format": "date-time"},
@@ -32,8 +25,30 @@
     "errors": {"type": "array", "items": {"type": "object"}},
     "provenance": {"type": "array", "items": {"type": "object"}},
     "cognition_receipt": {"type": "object"},
-    "external_effects": {"type": "array", "maxItems": 0},
+    "external_effects": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["effect_class", "capability_id", "target_origin", "request_count", "websocket_count", "terminal_status"],
+        "properties": {
+          "effect_class": {"const": "READ_NETWORK"},
+          "capability_id": {"const": "cap:browser-control"},
+          "target_origin": {"type": "string", "pattern": "^https?://"},
+          "request_count": {"type": "integer", "minimum": 0},
+          "websocket_count": {"type": "integer", "minimum": 0},
+          "terminal_status": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
     "authority_transfer": {"const": false}
   },
+  "allOf": [
+    {
+      "if": {"properties": {"effect_class": {"enum": ["UNKNOWN", "NO_EXTERNAL_EFFECT", "LOCAL_DURABLE_WRITE"]}}},
+      "then": {"properties": {"external_effects": {"maxItems": 0}}}
+    }
+  ],
   "unevaluatedProperties": false
 }

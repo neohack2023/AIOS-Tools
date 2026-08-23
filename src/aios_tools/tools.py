@@ -88,9 +88,16 @@ def audio_demucs_separate(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def browser_inspect(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.runtime import run_browser_inspect
+
+    return run_browser_inspect(payload)
+
+
 HANDLERS = {
     "system.health": system_health,
     "canonical.hash_json": hash_json,
     "schema.validate": validate_schema,
     "audio.demucs.separate": audio_demucs_separate,
+    "browser.inspect": browser_inspect,
 }

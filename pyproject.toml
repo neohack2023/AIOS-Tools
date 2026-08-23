@@ -17,6 +17,9 @@ dependencies = [
 dev = [
   "pytest>=8.3,<9",
 ]
+browser = [
+  "playwright==1.62.0",
+]
 
 [project.scripts]
 aios-tools = "aios_tools.cli:main"
