@@ -13,6 +13,7 @@ EXPECTED_MCP_TOOLS = {
     "system_health",
     "canonical_hash_json",
     "validate_json_schema",
+    "browser_inspect",
 }
 
 
