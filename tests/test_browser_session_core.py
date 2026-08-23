@@ -73,6 +73,20 @@ def test_session_opaque_ref_contains_no_identity_or_origin_material():
     assert "\\" not in ref.value
 
 
+def test_session_descriptor_rejects_invalid_timeline():
+    base = datetime(2026, 8, 23, 13, 0, tzinfo=timezone.utc)
+    with pytest.raises(ValueError, match="created <= verified < expires"):
+        SessionDescriptor.verified(
+            origin=ORIGIN,
+            identity_context_fingerprint=IDENTITY_FP,
+            created_at=base,
+            verified_at=base + timedelta(minutes=2),
+            expires_at=base + timedelta(minutes=1),
+            backend_kind=InMemorySyntheticProtectedSessionStore.BACKEND_KIND,
+            capabilities=AuthCapabilityManifest(cookies=True),
+        )
+
+
 def test_raw_session_ref_is_not_in_public_receipt():
     desc = descriptor()
     receipt = desc.public_receipt()
@@ -80,6 +94,7 @@ def test_raw_session_ref_is_not_in_public_receipt():
     assert desc.session_ref.value not in rendered
     assert SYNTHETIC_SECRET.decode() not in rendered
     assert IDENTITY_SUBJECT not in rendered
+    assert IDENTITY_FP not in rendered
     assert receipt["authority_transfer"] is False
     assert len(receipt["session_ref_fingerprint"]) == 64
 
@@ -179,7 +194,6 @@ def test_exclusive_lease_blocks_concurrent_session_reuse():
         now=desc.created_at + timedelta(minutes=1),
         now_monotonic=10,
     )
-    # A second validator cannot treat IN_USE state as AVAILABLE even if it shares the registry.
     with pytest.raises(SessionValidationError) as exc:
         validator(store, leases).validate_for_restore(
             desc.session_ref,
@@ -190,7 +204,7 @@ def test_exclusive_lease_blocks_concurrent_session_reuse():
             now=desc.created_at + timedelta(minutes=1),
             now_monotonic=11,
         )
-    assert exc.value.code == "AUTH_STATE_UNAVAILABLE"
+    assert exc.value.code == "SESSION_LEASE_CONFLICT"
     assert first.descriptor.lifecycle is SessionLifecycle.IN_USE
 
 
