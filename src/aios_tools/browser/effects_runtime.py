@@ -14,6 +14,7 @@ from .mutation import (
     MutationLedger,
     MutationPolicyError,
     canonical_http_url,
+    mutation_contract_fingerprint,
 )
 from .origin import NormalizedOrigin, OriginValidationError, assert_public_origin
 from .secret_store import default_protected_session_store
@@ -319,6 +320,222 @@ async def mutate_request_async(
                 pass
 
 
+
+async def mutate_reversible_async(
+    payload: dict[str, Any],
+    *,
+    allow_private_fixture: bool = False,
+    resolver: Callable[..., list[tuple]] = socket.getaddrinfo,
+    ledger: MutationLedger | None = None,
+) -> dict[str, Any]:
+    grant = payload.get("_aios_mutation_grant")
+    if not isinstance(grant, MutationGrant) or grant.effect_class != "REMOTE_MUTATION_REVERSIBLE":
+        raise MutationPolicyError("APPROVAL_REQUIRED", "trusted reversible mutation grant is unavailable")
+    allowed = {
+        "url", "method", "idempotency_key", "json", "headers", "precheck", "postcheck",
+        "expected_status", "timeout_seconds", "session", "rollback", "_aios_mutation_grant"
+    }
+    if set(payload) - allowed:
+        raise ValueError("browser.mutate.reversible contains unsupported fields")
+    rollback = payload.get("rollback")
+    if not isinstance(rollback, dict) or mutation_contract_fingerprint(rollback) != grant.rollback_fingerprint:
+        raise MutationPolicyError("APPROVAL_SCOPE_MISMATCH", "rollback contract is not bound to approval")
+
+    url = canonical_http_url(payload.get("url"))
+    method = str(payload.get("method", "")).upper()
+    key = payload.get("idempotency_key")
+    if method not in _MUTATING_METHODS or not isinstance(key, str):
+        raise ValueError("reversible mutation method/idempotency key is invalid")
+    timeout_seconds = payload.get("timeout_seconds", 30)
+    if not isinstance(timeout_seconds, int) or not (1 <= timeout_seconds <= 60):
+        raise ValueError("reversible mutation timeout must be 1..60 seconds")
+    expected_status = payload.get("expected_status")
+    if not isinstance(expected_status, int) or not (100 <= expected_status <= 599):
+        raise ValueError("reversible mutation expected_status is required")
+    headers = _validate_headers(payload.get("headers"))
+    body = _validate_json_body(payload.get("json"))
+    target_origin = await _assert_target(url, allow_private_fixture=allow_private_fixture, resolver=resolver)
+
+    for check_name in ("precheck", "postcheck"):
+        check = payload.get(check_name)
+        if not isinstance(check, dict) or not isinstance(check.get("url"), str):
+            raise ValueError(f"reversible mutation {check_name} is required")
+        await _assert_target(check["url"], allow_private_fixture=allow_private_fixture, resolver=resolver)
+        if not _same_origin(check["url"], target_origin):
+            raise ValueError(f"reversible mutation {check_name} must use exact target origin")
+
+    rollback_url = canonical_http_url(rollback.get("url"))
+    rollback_method = str(rollback.get("method", "")).upper()
+    rollback_status = rollback.get("expected_status")
+    rollback_postcheck = rollback.get("postcheck")
+    if (
+        rollback_method not in _MUTATING_METHODS
+        or not _same_origin(rollback_url, target_origin)
+        or not isinstance(rollback_status, int)
+        or not isinstance(rollback_postcheck, dict)
+        or not isinstance(rollback_postcheck.get("url"), str)
+        or not _same_origin(rollback_postcheck["url"], target_origin)
+    ):
+        raise ValueError("rollback contract is invalid or crosses the exact target origin")
+    rollback_headers = _validate_headers(rollback.get("headers"))
+    rollback_body = _validate_json_body(rollback.get("json"))
+
+    grant.consume(target_url=url, method=method, idempotency_key=key)
+    mutation_ledger = ledger or MutationLedger.default()
+    mutation_ledger.reserve(grant)
+    mutation_started = False
+
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError as exc:
+        mutation_ledger.mark(key, "FAILED_NO_EFFECT")
+        raise BrowserEffectRuntimeUnavailable("browser optional dependency is not installed") from exc
+
+    manager = None
+    browser = None
+    context = None
+    validator = None
+    validated = None
+    try:
+        manager = async_playwright()
+        playwright = await manager.start()
+        browser = await playwright.chromium.launch(headless=True)
+        context, validator, validated = await _new_context(
+            browser,
+            payload.get("session"),
+            target_url=url,
+            owner_execution_id=grant.request_id,
+        )
+        pre = await _readcheck(
+            context.request,
+            payload["precheck"],
+            target_origin=target_origin,
+            timeout_ms=timeout_seconds * 1000,
+        )
+        mutation_started = True
+        response = await context.request.fetch(
+            url,
+            method=method,
+            data=body,
+            headers=headers or None,
+            fail_on_status_code=False,
+            max_redirects=0,
+            max_retries=0,
+            timeout=timeout_seconds * 1000,
+        )
+        if response.status != expected_status:
+            mutation_ledger.mark(key, "MUTATION_STATE_UNKNOWN")
+            return {
+                "terminal_status": "MUTATION_STATE_UNKNOWN",
+                "semantic_success": False,
+                "target_origin": target_origin,
+                "method": method,
+                "response_status": response.status,
+                "rollback_attempted": False,
+                "grant": grant.public_receipt(),
+                "authority_transfer": False,
+            }
+
+        post_verified = True
+        try:
+            post = await _readcheck(
+                context.request,
+                payload["postcheck"],
+                target_origin=target_origin,
+                timeout_ms=timeout_seconds * 1000,
+            )
+        except Exception:
+            post_verified = False
+            post = None
+
+        try:
+            rollback_response = await context.request.fetch(
+                rollback_url,
+                method=rollback_method,
+                data=rollback_body,
+                headers=rollback_headers or None,
+                fail_on_status_code=False,
+                max_redirects=0,
+                max_retries=0,
+                timeout=timeout_seconds * 1000,
+            )
+            if rollback_response.status != rollback_status:
+                mutation_ledger.mark(key, "ROLLBACK_FAILED")
+                return {
+                    "terminal_status": "ROLLBACK_FAILED",
+                    "semantic_success": False,
+                    "target_origin": target_origin,
+                    "method": method,
+                    "response_status": response.status,
+                    "post_verified": post_verified,
+                    "rollback_attempted": True,
+                    "rollback_status": rollback_response.status,
+                    "grant": grant.public_receipt(),
+                    "authority_transfer": False,
+                }
+            restored = await _readcheck(
+                context.request,
+                rollback_postcheck,
+                target_origin=target_origin,
+                timeout_ms=timeout_seconds * 1000,
+            )
+        except Exception:
+            mutation_ledger.mark(key, "ROLLBACK_FAILED")
+            return {
+                "terminal_status": "ROLLBACK_FAILED",
+                "semantic_success": False,
+                "target_origin": target_origin,
+                "method": method,
+                "response_status": response.status,
+                "post_verified": post_verified,
+                "rollback_attempted": True,
+                "grant": grant.public_receipt(),
+                "authority_transfer": False,
+            }
+
+        mutation_ledger.mark(key, "ROLLED_BACK")
+        return {
+            "terminal_status": "ROLLED_BACK",
+            "semantic_success": post_verified,
+            "target_origin": target_origin,
+            "method": method,
+            "response_status": response.status,
+            "precheck": pre,
+            "postcheck": post,
+            "rollback_attempted": True,
+            "rollback_verified": True,
+            "rollback_postcheck": restored,
+            "grant": grant.public_receipt(),
+            "auth_state_used": _session_receipt(validated),
+            "authority_transfer": False,
+        }
+    except Exception:
+        status = mutation_ledger.status(key)
+        if status == "STARTED":
+            mutation_ledger.mark(key, "MUTATION_STATE_UNKNOWN" if mutation_started else "FAILED_NO_EFFECT")
+        raise
+    finally:
+        if validator is not None and validated is not None:
+            try:
+                validator.release(validated, reusable=True)
+            except Exception:
+                pass
+        if context is not None:
+            try:
+                await context.close(reason="AIOS reversible mutation complete")
+            except Exception:
+                pass
+        if browser is not None:
+            try:
+                await browser.close()
+            except Exception:
+                pass
+        if manager is not None:
+            try:
+                await manager.__aexit__(None, None, None)
+            except Exception:
+                pass
+
 def _locator(page: Any, spec: Any) -> Any:
     if not isinstance(spec, dict):
         raise ValueError("upload locator must be an object")
@@ -584,6 +801,14 @@ def run_mutation_request(payload: dict[str, Any]) -> dict[str, Any]:
     except RuntimeError:
         return asyncio.run(mutate_request_async(payload))
     raise BrowserEffectRuntimeUnavailable("browser mutation sync bridge cannot run inside an active event loop")
+
+
+def run_mutation_reversible(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(mutate_reversible_async(payload))
+    raise BrowserEffectRuntimeUnavailable("browser reversible mutation sync bridge cannot run inside an active event loop")
 
 
 def run_upload_execute(payload: dict[str, Any]) -> dict[str, Any]:
