@@ -79,6 +79,12 @@ def _rehash(path: Path) -> tuple[str, int]:
 
 class DownloadPromotionManager:
     def __init__(self, *, quarantine_root: Path, artifact_root: Path, manifest_path: Path) -> None:
+        if (
+            _is_reparse_point(quarantine_root)
+            or _is_reparse_point(artifact_root)
+            or _is_reparse_point(manifest_path)
+        ):
+            raise DownloadPromotionError("promotion runtime roots may not be symlinks or reparse points")
         self.quarantine_root = quarantine_root.resolve(strict=True)
         self.artifact_root = artifact_root.resolve(strict=True)
         self.manifest_path = manifest_path.resolve(strict=True)
