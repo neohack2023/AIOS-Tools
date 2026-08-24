@@ -119,6 +119,7 @@ async def inspect_async(
     *,
     resolver: Callable[..., list[tuple]] = socket.getaddrinfo,
     allow_private_fixture: bool = False,
+    allowed_resource_origins: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     policy = load_browser_policy()
     raw_url, visible_limit, elapsed = _validated_payload(payload, policy)
@@ -138,6 +139,13 @@ async def inspect_async(
         elapsed,
     )
     evidence = BrowserEvidence(allowed_origin.serialize(), context_id)
+    if len(allowed_resource_origins) > 8:
+        raise ValueError("browser profile resource-origin allowlist exceeds budget")
+    resource_origins: frozenset[NormalizedOrigin] = frozenset(
+        NormalizedOrigin.parse(value) for value in allowed_resource_origins
+    )
+    if allowed_origin in resource_origins:
+        resource_origins = frozenset(origin for origin in resource_origins if origin != allowed_origin)
 
     if policy["public_network_only"] and not allow_private_fixture:
         try:
@@ -192,7 +200,7 @@ async def inspect_async(
                 await route.abort("blockedbyclient")
                 return
             destination = NormalizedOrigin.parse(request.url)
-            if destination != allowed_origin:
+            if destination != allowed_origin and destination not in resource_origins:
                 evidence.block(channel="http", url=request.url, reason="ORIGIN_NOT_ADMITTED")
                 blocked_event.set()
                 await route.abort("blockedbyclient")
