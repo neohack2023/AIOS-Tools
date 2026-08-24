@@ -72,3 +72,31 @@ def test_browser_network_receipt_shape_validates():
     )
     schema = json.loads(Path("contracts/tool-result.v0.1.schema.json").read_text(encoding="utf-8"))
     assert list(Draft202012Validator(schema).iter_errors(receipt)) == []
+
+
+def test_browser_remote_mutation_receipt_shape_validates_and_is_secret_free():
+    effects = [{
+        "effect_class": "REMOTE_MUTATION_HIGH_IMPACT",
+        "capability_id": "cap:browser-control",
+        "target_origin": "https://example.com",
+        "mutation_count": 1,
+        "method": "POST",
+        "terminal_status": "SUCCEEDED",
+    }]
+    receipt = _receipt(
+        request_id="r-mutate",
+        tool="browser.mutate.request",
+        tool_version="0.1.0",
+        scope="global-working-memory",
+        mode="WRITE",
+        effect_class="REMOTE_MUTATION_HIGH_IMPACT",
+        status="COMPLETED",
+        started_at="2026-08-24T00:00:00+00:00",
+        handler_invoked=True,
+        external_effects=effects,
+    )
+    schema = json.loads(Path("contracts/tool-result.v0.1.schema.json").read_text(encoding="utf-8"))
+    assert list(Draft202012Validator(schema).iter_errors(receipt)) == []
+    rendered = json.dumps(receipt).lower()
+    for forbidden in ("authorization", "cookie", "request_body", "password", "session_ref"):
+        assert forbidden not in rendered
