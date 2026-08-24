@@ -94,10 +94,119 @@ def browser_inspect(payload: dict[str, Any]) -> dict[str, Any]:
     return run_browser_inspect(payload)
 
 
+
+def browser_profile_replay(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.site_profile import run_site_profile_replay
+
+    return run_site_profile_replay(payload)
+
+
+def browser_mutate_request(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.effects_runtime import run_mutation_request
+
+    return run_mutation_request(payload)
+
+
+def browser_mutate_reversible(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.effects_runtime import run_mutation_reversible
+
+    return run_mutation_reversible(payload)
+
+
+def browser_upload_execute(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.effects_runtime import run_upload_execute
+
+    return run_upload_execute(payload)
+
+
+def browser_download_promote(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.downloads import DownloadRecord
+    from .browser.promotion import DownloadPromotionManager, DownloadPromotionRules
+    from .browser.site_profile import load_site_profile
+
+    if set(payload) != {"profile_id", "download"}:
+        raise ValueError("browser.download.promote requires profile_id and download")
+    profile_id = payload.get("profile_id")
+    profile = load_site_profile(profile_id)
+    rules = profile.get("download_rules")
+    if not isinstance(rules, dict) or rules.get("auto_promote") is not True:
+        raise ValueError("site profile does not admit automatic download promotion")
+    raw = payload.get("download")
+    if not isinstance(raw, dict):
+        raise ValueError("download promotion receipt must be an object")
+    required = {
+        "state", "source_origin", "source_path_digest", "suggested_filename",
+        "content_type", "declared_size", "observed_bytes", "sha256",
+        "quarantine_name", "promoted", "mime_extension_mismatch", "reason",
+    }
+    if set(raw) != required:
+        raise ValueError("download promotion receipt has unexpected fields")
+    record = DownloadRecord(**raw)
+    manager = DownloadPromotionManager.from_environment()
+    receipt = manager.promote(
+        record,
+        DownloadPromotionRules(
+            profile_id=profile_id,
+            auto_promote=True,
+            allowed_content_types=tuple(rules.get("allowed_content_types", ())),
+            allowed_extensions=tuple(rules.get("allowed_extensions", ())),
+            max_bytes=int(rules.get("max_bytes", 0)),
+        ),
+    )
+    return {
+        "terminal_status": "SUCCEEDED",
+        "semantic_success": True,
+        "promotion": receipt.to_dict(),
+        "authority_transfer": False,
+    }
+
+
+def browser_runtime_status(payload: dict[str, Any]) -> dict[str, Any]:
+    if payload:
+        raise ValueError("browser.runtime.status accepts no input")
+    import json
+    from .browser.policy import load_browser_policy
+    from .browser.secret_store import default_protected_session_store
+
+    auth_path = Path(__file__).resolve().parents[2] / "policies" / "browser-auth-policy.v0.1.json"
+    auth = json.loads(auth_path.read_text(encoding="utf-8"))
+    browser_policy = load_browser_policy()
+    store = default_protected_session_store()
+    health = store.health()
+    return {
+        "capability_id": "cap:browser-control",
+        "runtime_state": browser_policy["runtime_state"],
+        "browser_policy_version": browser_policy["policy_version"],
+        "auth_policy_version": auth.get("policy_version"),
+        "session_reuse_enabled": auth.get("session_reuse_enabled") is True,
+        "real_auth_state_capture_enabled": auth.get("real_auth_state_capture_enabled") is True,
+        "production_user_takeover_enabled": auth.get("production_user_takeover_enabled") is True,
+        "protected_store": {
+            "backend_kind": health.backend_kind,
+            "available": health.available,
+            "protected": health.protected,
+            "admitted": health.admitted,
+            "synthetic": health.synthetic,
+        },
+        "remote_mutation_tools_admitted": sorted(
+            name
+            for name, meta in browser_policy["admitted_tools"].items()
+            if meta["effect_class"].startswith("REMOTE_MUTATION_")
+        ),
+        "global_network_switch_changed": False,
+        "authority_transfer": False,
+    }
+
 HANDLERS = {
     "system.health": system_health,
     "canonical.hash_json": hash_json,
     "schema.validate": validate_schema,
     "audio.demucs.separate": audio_demucs_separate,
     "browser.inspect": browser_inspect,
+    "browser.profile.replay": browser_profile_replay,
+    "browser.mutate.request": browser_mutate_request,
+    "browser.mutate.reversible": browser_mutate_reversible,
+    "browser.upload.execute": browser_upload_execute,
+    "browser.download.promote": browser_download_promote,
+    "browser.runtime.status": browser_runtime_status,
 }
