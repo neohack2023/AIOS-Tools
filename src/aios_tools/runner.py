@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from .browser.policy import BrowserConfigurationError, browser_network_tool_admitted
 from .browser.mutation import MutationPolicyError, build_mutation_grant
+from .browser.session_capture import SessionCapturePolicyError, build_session_capture_grant
 from .config import ConfigurationError, load_policy, load_registry, validate_request
 from .envelope import ExecutionReceipt, ToolError, utc_now
 from .runtime_cognition import build_execution_cognition_receipt
@@ -279,7 +280,7 @@ def invoke(
                 payload=payload,
                 authority_context=authority_context,
             )
-        except MutationPolicyError as exc:
+        except (MutationPolicyError, SessionCapturePolicyError) as exc:
             approval_codes = {
                 "APPROVAL_REQUIRED",
                 "APPROVAL_INVALID",
@@ -288,6 +289,32 @@ def invoke(
                 "APPROVAL_TARGET_MISMATCH",
                 "APPROVAL_METHOD_MISMATCH",
                 "APPROVAL_IDEMPOTENCY_MISMATCH",
+            }
+            return _receipt(
+                request_id=request_id, tool=tool, tool_version=tool_version, scope=scope, mode=mode,
+                effect_class=effect_class,
+                status="APPROVAL_REQUIRED" if exc.code in approval_codes else "BLOCKED",
+                started_at=started_at, registry_version=registry_version, policy_version=policy_version,
+                requested_by=requested_by, authority_context=authority_context, provenance=provenance,
+                errors=[ToolError(code=exc.code, message=str(exc))],
+            )
+
+    if tool == "browser.session.capture":
+        try:
+            handler_payload["_aios_session_capture_grant"] = build_session_capture_grant(
+                request_id=request_id,
+                tool=tool,
+                scope=scope,
+                effect_class=effect_class,
+                payload=payload,
+                authority_context=authority_context,
+            )
+        except SessionCapturePolicyError as exc:
+            approval_codes = {
+                "APPROVAL_REQUIRED",
+                "APPROVAL_INVALID",
+                "APPROVAL_EXPIRED",
+                "APPROVAL_SCOPE_MISMATCH",
             }
             return _receipt(
                 request_id=request_id, tool=tool, tool_version=tool_version, scope=scope, mode=mode,
