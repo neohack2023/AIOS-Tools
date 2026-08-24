@@ -177,9 +177,11 @@ class UploadIntake:
         data = bytearray()
         with resolved.open("rb") as handle:
             opened = handle.fileno()
-            opened_stat = __import__("os").fstat(opened)
+            opened_stat = os.fstat(opened)
             if not stat.S_ISREG(opened_stat.st_mode):
                 raise UploadPreparationError("artifact handle is not a regular file")
+            if not os.path.samestat(before, opened_stat):
+                raise UploadPreparationError("artifact changed before it could be opened safely")
             while True:
                 chunk = handle.read(min(1024 * 1024, self.limits.max_file_bytes + 1 - len(data)))
                 if not chunk:
@@ -191,7 +193,8 @@ class UploadIntake:
 
         after = resolved.stat()
         if (
-            before.st_size != after.st_size
+            not os.path.samestat(opened_stat, after)
+            or before.st_size != after.st_size
             or getattr(before, "st_mtime_ns", None) != getattr(after, "st_mtime_ns", None)
             or getattr(opened_stat, "st_size", before.st_size) != len(data)
         ):
@@ -221,8 +224,3 @@ class UploadIntake:
             buffer=bytes(data),
             receipt=receipt,
         )
-
-    async def set_input_files(self, locator, prepared: PreparedUpload) -> UploadReceipt:
-        """Populate a file input only. No click/submit/navigation is performed."""
-        await locator.set_input_files(prepared.playwright_file_payload())
-        return prepared.receipt
