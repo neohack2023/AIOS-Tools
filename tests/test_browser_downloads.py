@@ -222,3 +222,57 @@ def test_download_elapsed_budget_blocks_and_never_expands(tmp_path):
     assert record.reason == "DOWNLOAD_ELAPSED_BUDGET_EXHAUSTED"
     assert record.promoted is False
     assert record.observed_bytes == 1
+
+
+def test_download_source_identity_guard_is_present():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "aios_tools"
+        / "browser"
+        / "downloads.py"
+    ).read_text(encoding="utf-8")
+    assert "os.path.samestat(before, opened_stat)" in source
+    assert "os.path.samestat(opened_stat, after)" in source
+
+
+def test_download_incomplete_receipt_hashes_retained_partial_bytes(tmp_path, monkeypatch):
+    quarantine = _quarantine(tmp_path)
+    original_open = Path.open
+
+    class FailingWriter:
+        def __init__(self, handle):
+            self.handle = handle
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            self.handle.flush()
+            self.handle.close()
+            return False
+
+        def write(self, data):
+            retained = data[:2]
+            self.handle.write(retained)
+            self.handle.flush()
+            raise OSError("disk full fixture")
+
+    def patched_open(path_obj, mode="r", *args, **kwargs):
+        handle = original_open(path_obj, mode, *args, **kwargs)
+        if mode == "xb" and str(path_obj).endswith(".partial"):
+            return FailingWriter(handle)
+        return handle
+
+    monkeypatch.setattr(Path, "open", patched_open)
+    record = quarantine.quarantine_chunks(
+        [b"abcdef"],
+        source_url="https://example.com/fail",
+        suggested_filename="fail.bin",
+    )
+    assert record.state == "INCOMPLETE"
+    assert record.reason == "DOWNLOAD_TRANSFER_FAILED"
+    assert record.observed_bytes == 2
+    assert record.sha256 == "sha256:" + sha256(b"ab").hexdigest()
+    assert quarantine.aggregate_bytes_used == 2
+    assert (tmp_path / record.quarantine_name).read_bytes() == b"ab"
