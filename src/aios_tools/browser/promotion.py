@@ -13,6 +13,7 @@ from uuid import uuid4
 from .downloads import DownloadRecord, _is_reparse_point
 
 
+_QUARANTINE_NAME_RE = re.compile(r"^download-[A-Za-z0-9_-]{1,128}\.quarantine$")
 _EXECUTABLE_EXTENSIONS = frozenset({
     ".exe", ".com", ".bat", ".cmd", ".ps1", ".msi", ".scr", ".dll", ".jar", ".app", ".sh"
 })
@@ -109,6 +110,8 @@ class DownloadPromotionManager:
             raise DownloadPromotionError("profile does not admit automatic promotion")
         if record.state != "QUARANTINED" or record.promoted or not record.sha256 or not record.quarantine_name:
             raise DownloadPromotionError("only complete quarantined downloads may be promoted")
+        if not _QUARANTINE_NAME_RE.fullmatch(record.quarantine_name):
+            raise DownloadPromotionError("quarantine entry name is not runtime-owned")
         if record.mime_extension_mismatch is True:
             raise DownloadPromotionError("MIME/extension mismatch blocks promotion")
         if not isinstance(record.content_type, str) or record.content_type not in rules.allowed_content_types:
@@ -172,27 +175,47 @@ class DownloadPromotionManager:
             raise
 
         artifact_ref = f"artifact:browser-download:{token}"
+        lock_path = self.manifest_path.with_name(self.manifest_path.name + ".lock")
+        lock_fd: int | None = None
         try:
-            manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            target.unlink(missing_ok=True)
-            raise DownloadPromotionError("artifact manifest is invalid") from exc
-        if not isinstance(manifest, dict) or not isinstance(manifest.get("artifacts"), dict):
-            target.unlink(missing_ok=True)
-            raise DownloadPromotionError("artifact manifest is invalid")
-        if artifact_ref in manifest["artifacts"]:
-            target.unlink(missing_ok=True)
-            raise DownloadPromotionError("artifact reference collision")
-        manifest["artifacts"][artifact_ref] = {
-            "path": relative.as_posix(),
-            "sha256": target_hash,
-            "media_type": record.content_type,
-            "display_name": display_name,
-            "source_profile_id": rules.profile_id,
-        }
-        temp = self.manifest_path.with_name(self.manifest_path.name + f".{token}.tmp")
-        temp.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")
-        os.replace(temp, self.manifest_path)
+            try:
+                lock_fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                os.write(lock_fd, f"{os.getpid()}\n".encode("ascii"))
+                os.fsync(lock_fd)
+            except FileExistsError as exc:
+                target.unlink(missing_ok=True)
+                raise DownloadPromotionError("artifact manifest is locked by another promotion") from exc
+
+            try:
+                manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                target.unlink(missing_ok=True)
+                raise DownloadPromotionError("artifact manifest is invalid") from exc
+            if not isinstance(manifest, dict) or not isinstance(manifest.get("artifacts"), dict):
+                target.unlink(missing_ok=True)
+                raise DownloadPromotionError("artifact manifest is invalid")
+            if artifact_ref in manifest["artifacts"]:
+                target.unlink(missing_ok=True)
+                raise DownloadPromotionError("artifact reference collision")
+            manifest["artifacts"][artifact_ref] = {
+                "path": relative.as_posix(),
+                "sha256": target_hash,
+                "media_type": record.content_type,
+                "display_name": display_name,
+                "source_profile_id": rules.profile_id,
+            }
+            temp = self.manifest_path.with_name(self.manifest_path.name + f".{token}.tmp")
+            temp.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+            with temp.open("rb") as manifest_handle:
+                os.fsync(manifest_handle.fileno())
+            os.replace(temp, self.manifest_path)
+        finally:
+            if lock_fd is not None:
+                os.close(lock_fd)
+                try:
+                    lock_path.unlink()
+                except FileNotFoundError:
+                    pass
         return PromotionReceipt(
             artifact_ref=artifact_ref,
             profile_id=rules.profile_id,
