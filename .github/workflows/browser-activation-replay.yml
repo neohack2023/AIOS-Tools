@@ -1,0 +1,29 @@
+name: Browser Activation Replay
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  suno-fresh-session-replay:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.head_ref == 'agent/browser-runtime-activation-02e' ||
+      github.head_ref == 'agent/browser-runtime-promote-02f'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install governed browser runtime
+        run: python -m pip install -e ".[browser]"
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Replay registered Suno profile in fresh session
+        run: python scripts/browser_activation_replay.py
