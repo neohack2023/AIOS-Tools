@@ -17,5 +17,6 @@
   "expected_terminal_states": [
     "SUCCEEDED"
   ],
-  "verification_method": "exact_origin_plus_exact_path_digest"
+  "verification_method": "exact_origin_plus_exact_path_digest",
+  "resource_origin_allowlist": []
 }
