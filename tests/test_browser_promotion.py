@@ -90,3 +90,16 @@ def test_download_auto_promotion_rehashes_quarantine(tmp_path):
     (manager.quarantine_root / record.quarantine_name).write_bytes(b"changed")
     with pytest.raises(DownloadPromotionError, match="changed"):
         manager.promote(record, _rules())
+
+
+def test_download_auto_promotion_rejects_symlinked_quarantine_entry(tmp_path):
+    manager, _, _ = _manager(tmp_path, body=b"audio")
+    source = manager.quarantine_root / "download-test.quarantine"
+    real = manager.quarantine_root / "real.quarantine"
+    source.replace(real)
+    try:
+        source.symlink_to(real)
+    except (OSError, NotImplementedError):
+        return
+    with pytest.raises(DownloadPromotionError, match="symlink|reparse"):
+        manager.promote(_record(b"audio"), _rules())
