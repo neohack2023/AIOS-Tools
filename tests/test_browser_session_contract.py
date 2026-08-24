@@ -33,23 +33,22 @@ def _descriptor() -> SessionDescriptor:
     )
 
 
-def test_02c_a_policy_is_fail_closed_for_real_auth_state():
+def test_02e_auth_policy_admits_production_session_path_without_weakening_secret_law():
     policy = json.loads(AUTH_POLICY.read_text(encoding="utf-8"))
-    assert policy["policy_version"] == "browser-auth-policy/0.3-candidate"
-    assert policy["session_reuse_enabled"] is False
-    assert policy["real_auth_state_capture_enabled"] is False
-    assert policy["production_user_takeover_enabled"] is False
+    assert policy["policy_version"] == "browser-auth-policy/1.0-candidate"
+    assert policy["session_reuse_enabled"] is True
+    assert policy["real_auth_state_capture_enabled"] is True
+    assert policy["production_user_takeover_enabled"] is True
     assert policy["production_persistent_profiles_enabled"] is False
     assert policy["authority_transfer"] is False
     assert policy["protected_store"]["plaintext_fallback"] is False
-    assert policy["protected_store"]["admitted_production_backends"] == []
+    assert policy["protected_store"]["admitted_production_backends"] == ["os-keyring"]
     assert policy["protected_store"]["synthetic_backend_test_only"] is True
     assert policy["validation"]["exact_origin_required"] is True
     assert policy["validation"]["identity_context_fingerprint_required"] is True
     assert policy["validation"]["expiry_required"] is True
     assert policy["validation"]["exclusive_lease_required"] is True
     assert policy["validation"]["post_takeover_verification_required"] is True
-    assert policy["takeover"]["synthetic_test_enabled"] is True
     assert policy["takeover"]["explicit_timeout_required"] is True
     assert policy["takeover"]["timeout_zero_allowed"] is False
     assert policy["takeover"]["debug_pause_allowed"] is False
@@ -58,6 +57,7 @@ def test_02c_a_policy_is_fail_closed_for_real_auth_state():
     assert policy["takeover"]["cancelled_partial_state_reusable"] is False
     assert policy["takeover"]["failed_partial_state_reusable"] is False
     assert policy["takeover"]["privilege_or_risk_change_requires_reauth"] is True
+    assert policy["takeover"]["secret_entry_model_visible"] is False
     assert policy["automation_profiles"]["runtime_owned_root_required"] is True
     assert policy["automation_profiles"]["caller_controlled_path_allowed"] is False
     assert policy["automation_profiles"]["personal_default_profile_allowed"] is False
