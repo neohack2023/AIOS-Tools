@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 import mimetypes
+import os
 from pathlib import Path
 import re
 import stat
