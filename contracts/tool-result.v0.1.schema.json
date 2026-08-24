@@ -3,51 +3,280 @@
   "$id": "https://aios.local/contracts/tool-result.v0.1.schema.json",
   "title": "AIOS Tool Execution Receipt v0.1",
   "type": "object",
-  "required": ["receipt_id", "request_id", "tool", "tool_version", "scope", "mode", "effect_class", "status", "started_at", "completed_at", "registry_version", "policy_version", "requested_by", "authority_context", "output", "errors", "provenance", "cognition_receipt", "external_effects", "authority_transfer"],
+  "required": [
+    "receipt_id",
+    "request_id",
+    "tool",
+    "tool_version",
+    "scope",
+    "mode",
+    "effect_class",
+    "status",
+    "started_at",
+    "completed_at",
+    "registry_version",
+    "policy_version",
+    "requested_by",
+    "authority_context",
+    "output",
+    "errors",
+    "provenance",
+    "cognition_receipt",
+    "external_effects",
+    "authority_transfer"
+  ],
   "properties": {
-    "receipt_id": {"type": "string", "minLength": 1},
-    "request_id": {"type": "string", "minLength": 1},
-    "tool": {"type": "string", "minLength": 1},
-    "tool_version": {"type": "string", "minLength": 1},
-    "scope": {"type": "string", "minLength": 1},
-    "mode": {"type": "string", "minLength": 1},
-    "effect_class": {
-      "enum": ["UNKNOWN", "NO_EXTERNAL_EFFECT", "LOCAL_DURABLE_WRITE", "READ_NETWORK", "REMOTE_MUTATION_REVERSIBLE", "REMOTE_MUTATION_HIGH_IMPACT"]
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1
     },
-    "status": {"enum": ["COMPLETED", "FAILED", "BLOCKED", "APPROVAL_REQUIRED"]},
-    "started_at": {"type": "string", "format": "date-time"},
-    "completed_at": {"type": "string", "format": "date-time"},
-    "registry_version": {"type": "string", "minLength": 1},
-    "policy_version": {"type": "string", "minLength": 1},
-    "requested_by": {"type": "object"},
-    "authority_context": {"type": "object"},
-    "output": {"type": "object"},
-    "errors": {"type": "array", "items": {"type": "object"}},
-    "provenance": {"type": "array", "items": {"type": "object"}},
-    "cognition_receipt": {"type": "object"},
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "effect_class": {
+      "enum": [
+        "UNKNOWN",
+        "NO_EXTERNAL_EFFECT",
+        "LOCAL_DURABLE_WRITE",
+        "READ_NETWORK",
+        "REMOTE_MUTATION_REVERSIBLE",
+        "REMOTE_MUTATION_HIGH_IMPACT"
+      ]
+    },
+    "status": {
+      "enum": [
+        "COMPLETED",
+        "FAILED",
+        "BLOCKED",
+        "APPROVAL_REQUIRED"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "registry_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requested_by": {
+      "type": "object"
+    },
+    "authority_context": {
+      "type": "object"
+    },
+    "output": {
+      "type": "object"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "cognition_receipt": {
+      "type": "object"
+    },
     "external_effects": {
       "type": "array",
       "maxItems": 1,
       "items": {
-        "type": "object",
-        "required": ["effect_class", "capability_id", "target_origin", "request_count", "websocket_count", "terminal_status"],
-        "properties": {
-          "effect_class": {"const": "READ_NETWORK"},
-          "capability_id": {"const": "cap:browser-control"},
-          "target_origin": {"type": "string", "pattern": "^https?://"},
-          "request_count": {"type": "integer", "minimum": 0},
-          "websocket_count": {"type": "integer", "minimum": 0},
-          "terminal_status": {"type": "string", "minLength": 1}
-        },
-        "additionalProperties": false
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "effect_class",
+              "capability_id",
+              "target_origin",
+              "request_count",
+              "websocket_count",
+              "terminal_status"
+            ],
+            "properties": {
+              "effect_class": {
+                "const": "READ_NETWORK"
+              },
+              "capability_id": {
+                "const": "cap:browser-control"
+              },
+              "target_origin": {
+                "type": "string",
+                "pattern": "^https?://"
+              },
+              "request_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "websocket_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "terminal_status": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "effect_class",
+              "capability_id",
+              "target_origin",
+              "mutation_count",
+              "method",
+              "terminal_status"
+            ],
+            "properties": {
+              "effect_class": {
+                "enum": [
+                  "REMOTE_MUTATION_REVERSIBLE",
+                  "REMOTE_MUTATION_HIGH_IMPACT"
+                ]
+              },
+              "capability_id": {
+                "const": "cap:browser-control"
+              },
+              "target_origin": {
+                "type": "string",
+                "pattern": "^https?://"
+              },
+              "mutation_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "method": {
+                "enum": [
+                  "POST",
+                  "PUT",
+                  "PATCH",
+                  "DELETE",
+                  "UNKNOWN"
+                ]
+              },
+              "terminal_status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rollback_attempted": {
+                "type": "boolean"
+              },
+              "rollback_verified": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
       }
     },
-    "authority_transfer": {"const": false}
+    "authority_transfer": {
+      "const": false
+    }
   },
   "allOf": [
     {
-      "if": {"properties": {"effect_class": {"enum": ["UNKNOWN", "NO_EXTERNAL_EFFECT", "LOCAL_DURABLE_WRITE"]}}},
-      "then": {"properties": {"external_effects": {"maxItems": 0}}}
+      "if": {
+        "properties": {
+          "effect_class": {
+            "enum": [
+              "UNKNOWN",
+              "NO_EXTERNAL_EFFECT",
+              "LOCAL_DURABLE_WRITE"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "external_effects": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "effect_class": {
+            "const": "READ_NETWORK"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "external_effects": {
+            "items": {
+              "properties": {
+                "effect_class": {
+                  "const": "READ_NETWORK"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "effect_class": {
+            "enum": [
+              "REMOTE_MUTATION_REVERSIBLE",
+              "REMOTE_MUTATION_HIGH_IMPACT"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "external_effects": {
+            "items": {
+              "properties": {
+                "effect_class": {
+                  "enum": [
+                    "REMOTE_MUTATION_REVERSIBLE",
+                    "REMOTE_MUTATION_HIGH_IMPACT"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "unevaluatedProperties": false
