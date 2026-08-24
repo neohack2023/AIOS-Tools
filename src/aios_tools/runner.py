@@ -74,7 +74,30 @@ def _receipt(
 
 
 def _browser_external_effects(tool: str, effect_class: str, output: dict[str, Any]) -> list[dict[str, Any]]:
-    if tool != "browser.inspect" or effect_class != "READ_NETWORK":
+    if not tool.startswith("browser."):
+        return []
+    if effect_class in {"REMOTE_MUTATION_REVERSIBLE", "REMOTE_MUTATION_HIGH_IMPACT"}:
+        target_origin = output.get("target_origin")
+        terminal_status = output.get("terminal_status")
+        method = output.get("method")
+        if not isinstance(target_origin, str) or not isinstance(terminal_status, str):
+            return []
+        mutation_count = output.get("mutation_count", 1 if output.get("response_status") is not None else 0)
+        if not isinstance(mutation_count, int):
+            mutation_count = 0
+        result = {
+            "effect_class": effect_class,
+            "capability_id": "cap:browser-control",
+            "target_origin": target_origin,
+            "mutation_count": mutation_count,
+            "method": method if isinstance(method, str) else "UNKNOWN",
+            "terminal_status": terminal_status,
+        }
+        if effect_class == "REMOTE_MUTATION_REVERSIBLE":
+            result["rollback_attempted"] = bool(output.get("rollback_attempted"))
+            result["rollback_verified"] = bool(output.get("rollback_verified"))
+        return [result]
+    if effect_class != "READ_NETWORK":
         return []
     evidence = output.get("evidence")
     if not isinstance(evidence, dict):
@@ -82,7 +105,10 @@ def _browser_external_effects(tool: str, effect_class: str, output: dict[str, An
     network = evidence.get("network")
     if not isinstance(network, list):
         network = []
-    request_count = sum(1 for item in network if isinstance(item, dict) and item.get("event") == "request")
+    request_count = sum(
+        1 for item in network
+        if isinstance(item, dict) and item.get("event") == "request"
+    )
     budget_used = output.get("budget_used")
     if not isinstance(budget_used, dict):
         budget_used = {}
@@ -101,7 +127,6 @@ def _browser_external_effects(tool: str, effect_class: str, output: dict[str, An
         "websocket_count": websocket_count,
         "terminal_status": terminal_status,
     }]
-
 
 def _write_approval_error(authority_context: dict[str, Any], *, tool: str, scope: str) -> ToolError | None:
     approval = authority_context.get("approval")
