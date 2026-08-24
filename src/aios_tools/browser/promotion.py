@@ -7,9 +7,10 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 from uuid import uuid4
 
-from .downloads import DownloadRecord
+from .downloads import DownloadRecord, _is_reparse_point
 
 
 _EXECUTABLE_EXTENSIONS = frozenset({
@@ -116,26 +117,53 @@ class DownloadPromotionManager:
         if extension not in {item.lower() for item in rules.allowed_extensions}:
             raise DownloadPromotionError("download extension is not admitted")
 
-        source = (self.quarantine_root / record.quarantine_name).resolve(strict=True)
+        source_entry = self.quarantine_root / record.quarantine_name
+        if _is_reparse_point(source_entry):
+            raise DownloadPromotionError("quarantine source may not be a symlink or reparse point")
+        source = source_entry.resolve(strict=True)
         source.relative_to(self.quarantine_root)
-        if not source.is_file() or source.is_symlink():
+        if not source.is_file():
             raise DownloadPromotionError("quarantine source is not a regular file")
-        observed_hash, observed_bytes = _rehash(source)
-        if observed_hash != record.sha256 or observed_bytes != record.observed_bytes:
-            raise DownloadPromotionError("quarantine evidence changed before promotion")
+        before = source.stat()
 
         token = uuid4().hex
         relative = Path("browser-downloads") / f"{token}-{display_name}"
         target = self.artifact_root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        with source.open("rb") as src, target.open("xb") as dst:
-            shutil.copyfileobj(src, dst, length=1024 * 1024)
-            dst.flush()
-            os.fsync(dst.fileno())
-        target_hash, target_bytes = _rehash(target)
-        if target_hash != observed_hash or target_bytes != observed_bytes:
+        digest = sha256()
+        observed_bytes = 0
+        try:
+            with source.open("rb") as src, target.open("xb") as dst:
+                opened = os.fstat(src.fileno())
+                if not stat.S_ISREG(opened.st_mode) or not os.path.samestat(before, opened):
+                    raise DownloadPromotionError("quarantine source changed before promotion")
+                while True:
+                    chunk = src.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    observed_bytes += len(chunk)
+                    if observed_bytes > rules.max_bytes:
+                        raise DownloadPromotionError("download size changed beyond promotion budget")
+                    digest.update(chunk)
+                    dst.write(chunk)
+                dst.flush()
+                os.fsync(dst.fileno())
+            after = source.stat()
+            if (
+                not os.path.samestat(opened, after)
+                or getattr(before, "st_mtime_ns", None) != getattr(after, "st_mtime_ns", None)
+                or before.st_size != after.st_size
+            ):
+                raise DownloadPromotionError("quarantine source changed during promotion")
+            observed_hash = "sha256:" + digest.hexdigest()
+            if observed_hash != record.sha256 or observed_bytes != record.observed_bytes:
+                raise DownloadPromotionError("quarantine evidence changed before promotion")
+            target_hash, target_bytes = _rehash(target)
+            if target_hash != observed_hash or target_bytes != observed_bytes:
+                raise DownloadPromotionError("promoted artifact verification failed")
+        except Exception:
             target.unlink(missing_ok=True)
-            raise DownloadPromotionError("promoted artifact verification failed")
+            raise
 
         artifact_ref = f"artifact:browser-download:{token}"
         try:
