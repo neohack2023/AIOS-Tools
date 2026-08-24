@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import base64
+import hashlib
 import json
 from typing import Any
 
@@ -141,6 +142,24 @@ class KeyringProtectedSessionStore:
             raise SessionValidationError("AUTH_STATE_CORRUPT", "protected browser session record is corrupt")
         return value
 
+    def _index_username(self, origin: str, identity_context_fingerprint: str) -> str:
+        material = f"{origin}\0{identity_context_fingerprint}".encode("utf-8")
+        return "index:" + hashlib.sha256(material).hexdigest()
+
+    def resolve_ref(self, *, origin: str, identity_context_fingerprint: str) -> OpaqueSessionRef | None:
+        self._assert_usable()
+        username = self._index_username(origin, identity_context_fingerprint)
+        try:
+            raw = self._keyring_module.get_password(self._service_name, username)
+        except Exception as exc:
+            raise ProtectedBackendUnavailable() from exc
+        if raw is None:
+            return None
+        try:
+            return OpaqueSessionRef(raw)
+        except ValueError as exc:
+            raise SessionValidationError("AUTH_STATE_CORRUPT", "protected session index is corrupt") from exc
+
     def _write_record(self, session_ref: OpaqueSessionRef, record: dict[str, Any]) -> None:
         self._assert_usable()
         try:
@@ -166,6 +185,18 @@ class KeyringProtectedSessionStore:
                 "payload_b64": base64.b64encode(sealed_payload).decode("ascii"),
             },
         )
+        try:
+            self._keyring_module.set_password(
+                self._service_name,
+                self._index_username(descriptor.origin, descriptor.identity_context_fingerprint),
+                session_ref.value,
+            )
+        except Exception as exc:
+            try:
+                self._keyring_module.delete_password(self._service_name, session_ref.value)
+            except Exception:
+                pass
+            raise ProtectedBackendUnavailable() from exc
 
     def open_sealed(self, session_ref: OpaqueSessionRef) -> bytes:
         record = self._read_record(session_ref)
@@ -215,10 +246,18 @@ class KeyringProtectedSessionStore:
 
     def delete(self, session_ref: OpaqueSessionRef) -> bool:
         self._assert_usable()
-        if self._read_record(session_ref) is None:
+        record = self._read_record(session_ref)
+        if record is None:
             return False
+        descriptor_raw = record.get("descriptor")
+        descriptor = _descriptor_from_dict(descriptor_raw) if isinstance(descriptor_raw, dict) else None
         try:
             self._keyring_module.delete_password(self._service_name, session_ref.value)
+            if descriptor is not None:
+                index_name = self._index_username(descriptor.origin, descriptor.identity_context_fingerprint)
+                current = self._keyring_module.get_password(self._service_name, index_name)
+                if current == session_ref.value:
+                    self._keyring_module.delete_password(self._service_name, index_name)
         except Exception as exc:
             if type(exc).__name__ == "PasswordDeleteError":
                 return False
