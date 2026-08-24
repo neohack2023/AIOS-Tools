@@ -16,8 +16,12 @@ def _quarantine(tmp_path: Path, **overrides) -> DownloadQuarantine:
         max_downloads=overrides.get("max_downloads", 2),
         max_file_bytes=overrides.get("max_file_bytes", 1024),
         max_aggregate_bytes=overrides.get("max_aggregate_bytes", 2048),
+        max_elapsed_seconds=overrides.get("max_elapsed_seconds", 60.0),
     )
-    return DownloadQuarantine(tmp_path, limits, id_factory=overrides.get("id_factory"))
+    kwargs = {"id_factory": overrides.get("id_factory")}
+    if "clock" in overrides:
+        kwargs["clock"] = overrides["clock"]
+    return DownloadQuarantine(tmp_path, limits, **kwargs)
 
 
 def test_download_quarantine_hash_and_no_promotion(tmp_path):
