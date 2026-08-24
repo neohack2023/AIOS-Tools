@@ -10,6 +10,7 @@ from aios_tools.browser.uploads import (
     ArtifactRef,
     ArtifactResolutionError,
     SyntheticArtifactResolver,
+    ManifestArtifactResolver,
     UnavailableArtifactResolver,
     UploadIntake,
     UploadLimits,
@@ -238,3 +239,53 @@ def test_upload_intake_rejects_mismatched_descriptor_from_any_resolver(tmp_path)
     )
     with pytest.raises(ArtifactResolutionError, match="mismatched"):
         intake.prepare(requested.value)
+
+
+def test_manifest_artifact_resolver_uses_operator_relative_paths(tmp_path):
+    root = tmp_path / "artifacts"
+    root.mkdir()
+    body = b"manifest-body"
+    target = root / "nested"
+    target.mkdir()
+    path = target / "file.bin"
+    path.write_bytes(body)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        __import__("json").dumps({
+            "version": "1",
+            "artifacts": {
+                "artifact:test:manifest": {
+                    "path": "nested/file.bin",
+                    "sha256": _digest(body),
+                    "media_type": "application/octet-stream",
+                    "display_name": "file.bin"
+                }
+            }
+        }),
+        encoding="utf-8",
+    )
+    resolver = ManifestArtifactResolver(artifact_root=root, manifest_path=manifest)
+    descriptor = resolver.resolve(ArtifactRef("artifact:test:manifest"))
+    assert descriptor.runtime_path == path
+    assert descriptor.expected_sha256 == _digest(body)
+
+
+@pytest.mark.parametrize("relative", ["/etc/passwd", "../escape.bin", "a/../b.bin"])
+def test_manifest_artifact_resolver_rejects_unsafe_paths(tmp_path, relative):
+    root = tmp_path / "artifacts"
+    root.mkdir()
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        __import__("json").dumps({
+            "artifacts": {
+                "artifact:test:unsafe": {
+                    "path": relative,
+                    "sha256": _digest(b"x")
+                }
+            }
+        }),
+        encoding="utf-8",
+    )
+    resolver = ManifestArtifactResolver(artifact_root=root, manifest_path=manifest)
+    with pytest.raises(ArtifactResolutionError):
+        resolver.resolve(ArtifactRef("artifact:test:unsafe"))
