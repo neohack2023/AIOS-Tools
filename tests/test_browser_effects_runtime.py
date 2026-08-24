@@ -52,7 +52,7 @@ class _Handler(BaseHTTPRequestHandler):
             body = b"""<!doctype html>
 <html><body>
 <label for="fixture-file">Fixture file</label>
-<input id="fixture-file" type="file">
+<input id="fixture-file" type="file" style="display:none">
 <script>
 document.getElementById('fixture-file').addEventListener('change', async () => {
   const file = document.getElementById('fixture-file').files[0];
@@ -72,7 +72,7 @@ document.getElementById('fixture-file').addEventListener('change', async () => {
             body = b"""<!doctype html>
 <html><body>
 <label for="fixture-file">Fixture file</label>
-<input id="fixture-file" type="file">
+<input id="fixture-file" type="file" style="display:none">
 <script>
 document.getElementById('fixture-file').addEventListener('change', async () => {
   const file = document.getElementById('fixture-file').files[0];
