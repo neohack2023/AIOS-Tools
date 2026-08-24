@@ -85,6 +85,15 @@
       "authority_transfer": false
     },
     {
+      "name": "browser.session.capture",
+      "version": "0.1.0",
+      "mode": "WRITE",
+      "effect_class": "REMOTE_MUTATION_HIGH_IMPACT",
+      "reversibility": "PARTIAL",
+      "blast_radius": "EXPLICIT_AUTH_ORIGINS",
+      "authority_transfer": false
+    },
+    {
       "name": "browser.download.promote",
       "version": "0.1.0",
       "mode": "WRITE",
