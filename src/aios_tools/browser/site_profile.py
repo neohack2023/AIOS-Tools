@@ -63,7 +63,10 @@ async def replay_site_profile_async(profile_id: str) -> dict[str, Any]:
         "url": entrypoint,
         "visible_text_chars": int(profile.get("validation_visible_text_chars", 4000)),
         "elapsed_seconds": int(profile.get("validation_elapsed_seconds", 60)),
-    }, allowed_resource_origins=normalized_resources)
+    },
+        allowed_resource_origins=normalized_resources,
+        blocked_cross_origin_subresources_fatal=False,
+    )
     path_match = result.get("final_path_digest") == expected["path_digest"]
     origin_match = result.get("final_origin") == expected_origin
     success = bool(
