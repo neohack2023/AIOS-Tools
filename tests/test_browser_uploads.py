@@ -181,3 +181,35 @@ def test_upload_resolver_reference_mismatch_blocks(tmp_path):
     intake = UploadIntake(resolver, artifact_root=root, limits=UploadLimits(max_file_bytes=100))
     with pytest.raises(ArtifactResolutionError, match="mismatched"):
         intake.prepare(requested.value)
+
+
+def test_upload_intake_exposes_no_live_page_effect_surface():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "aios_tools"
+        / "browser"
+        / "uploads.py"
+    ).read_text(encoding="utf-8")
+    for forbidden in (
+        ".set_input_files(",
+        ".click(",
+        ".goto(",
+        ".press(",
+        ".evaluate(",
+        "page.",
+        "locator.",
+    ):
+        assert forbidden not in source
+
+
+def test_upload_filesystem_identity_guard_is_present():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "aios_tools"
+        / "browser"
+        / "uploads.py"
+    ).read_text(encoding="utf-8")
+    assert "os.path.samestat(before, opened_stat)" in source
+    assert "os.path.samestat(opened_stat, after)" in source
