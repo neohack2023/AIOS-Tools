@@ -213,3 +213,28 @@ def test_upload_filesystem_identity_guard_is_present():
     ).read_text(encoding="utf-8")
     assert "os.path.samestat(before, opened_stat)" in source
     assert "os.path.samestat(opened_stat, after)" in source
+
+
+def test_upload_intake_rejects_mismatched_descriptor_from_any_resolver(tmp_path):
+    root = tmp_path / "artifacts"
+    root.mkdir()
+    path = root / "file.bin"
+    path.write_bytes(b"x")
+    requested = ArtifactRef("artifact:test:requested-2")
+    wrong = ArtifactRef("artifact:test:wrong-2")
+
+    class RogueResolver:
+        def resolve(self, ref):
+            return ArtifactDescriptor(
+                ref=wrong,
+                runtime_path=path,
+                expected_sha256=_digest(b"x"),
+            )
+
+    intake = UploadIntake(
+        RogueResolver(),
+        artifact_root=root,
+        limits=UploadLimits(max_file_bytes=100),
+    )
+    with pytest.raises(ArtifactResolutionError, match="mismatched"):
+        intake.prepare(requested.value)
