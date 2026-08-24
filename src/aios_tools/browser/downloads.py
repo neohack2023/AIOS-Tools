@@ -229,7 +229,7 @@ class DownloadQuarantine:
                     quarantine_name=None,
                     reason="DOWNLOAD_AGGREGATE_SIZE_BUDGET_EXHAUSTED",
                 )
-        if self.downloads_used >= self.limits.max_downloads:
+        if self._clock() >= self._deadline:\n            return self._record(\n                state="BLOCKED",\n                source_origin=source_origin,\n                source_path_digest=source_path_digest,\n                suggested_filename=safe_name,\n                content_type=content_type,\n                declared_size=declared_size,\n                observed_bytes=0,\n                digest=None,\n                quarantine_name=None,\n                reason="DOWNLOAD_ELAPSED_BUDGET_EXHAUSTED",\n            )\n        if self.downloads_used >= self.limits.max_downloads:
             return self._record(
                 state="BLOCKED",
                 source_origin=source_origin,
