@@ -18,7 +18,7 @@ from .mutation import (
 )
 from .origin import NormalizedOrigin, OriginValidationError, assert_public_origin
 from .secret_store import default_protected_session_store
-from .session import OpaqueSessionRef, SessionLeaseRegistry
+from .session import OpaqueSessionRef, SessionLeaseRegistry, SessionValidationError
 from .storage_state import StorageStateSealer
 from .uploads import UploadIntake, UploadLimits, default_artifact_resolver
 
@@ -146,15 +146,33 @@ async def _new_context(
         raise ValueError("session must be an object")
     raw_ref = session.get("session_ref")
     identity = session.get("identity_context_fingerprint")
-    if not isinstance(raw_ref, str) or not isinstance(identity, str):
-        raise ValueError("session requires opaque session_ref and identity fingerprint")
+    if not isinstance(identity, str):
+        raise ValueError("session requires identity_context_fingerprint")
     required = session.get("required_capabilities", [])
     if not isinstance(required, list) or not all(isinstance(item, str) for item in required):
         raise ValueError("session required_capabilities must be a list of strings")
     store = default_protected_session_store()
+    if isinstance(raw_ref, str):
+        session_ref = OpaqueSessionRef(raw_ref)
+    else:
+        resolver = getattr(store, "resolve_ref", None)
+        if resolver is None:
+            raise SessionValidationError(
+                "AUTH_STATE_UNAVAILABLE",
+                "protected browser session lookup by identity is unavailable",
+            )
+        session_ref = resolver(
+            origin=NormalizedOrigin.parse(target_url).serialize(),
+            identity_context_fingerprint=identity,
+        )
+        if session_ref is None:
+            raise SessionValidationError(
+                "AUTH_STATE_UNAVAILABLE",
+                "browser authentication state is unavailable",
+            )
     validator = SessionValidator(store=store, leases=_SESSION_LEASES)
     validated = validator.validate_for_restore(
-        OpaqueSessionRef(raw_ref),
+        session_ref,
         target_url=target_url,
         identity_context_fingerprint=identity,
         owner_execution_id=owner_execution_id,
