@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import stat
+from time import monotonic
 from typing import Callable, Iterable, Iterator
 from uuid import uuid4
 
@@ -27,9 +28,15 @@ class DownloadLimits:
     max_downloads: int
     max_file_bytes: int
     max_aggregate_bytes: int
+    max_elapsed_seconds: float = 60.0
 
     def __post_init__(self) -> None:
-        if self.max_downloads < 1 or self.max_file_bytes < 1 or self.max_aggregate_bytes < 1:
+        if (
+            self.max_downloads < 1
+            or self.max_file_bytes < 1
+            or self.max_aggregate_bytes < 1
+            or self.max_elapsed_seconds <= 0
+        ):
             raise ValueError("download limits must be positive")
         if self.max_file_bytes > self.max_aggregate_bytes:
             raise ValueError("per-file download limit cannot exceed aggregate limit")
@@ -55,7 +62,10 @@ class DownloadRecord:
 
 
 _WINDOWS_DEVICE_NAMES = {
-    "CON", "PRN", "AUX", "NUL",
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
     *(f"COM{i}" for i in range(1, 10)),
     *(f"LPT{i}" for i in range(1, 10)),
 }
@@ -79,16 +89,12 @@ def _assert_runtime_root(root: Path) -> Path:
 
 
 def _inspect_suggested_filename(raw: str | None) -> tuple[str, str | None]:
-    value = (raw or "download.bin").strip()
-    if not value:
-        value = "download.bin"
+    value = (raw or "download.bin").strip() or "download.bin"
     unsafe = None
     if "/" in value or "\\" in value or ".." in value or re.match(r"^[A-Za-z]:", value):
         unsafe = "SUGGESTED_FILENAME_PATH_TRAVERSAL"
     leaf = value.replace("\\", "/").split("/")[-1]
-    leaf = _SAFE_CHARS.sub("_", leaf).strip(" .")
-    if not leaf:
-        leaf = "download.bin"
+    leaf = _SAFE_CHARS.sub("_", leaf).strip(" .") or "download.bin"
     stem = leaf.split(".", 1)[0].upper()
     if stem in _WINDOWS_DEVICE_NAMES:
         unsafe = unsafe or "SUGGESTED_FILENAME_DEVICE_NAME"
@@ -117,8 +123,8 @@ def _source_summary(source_url: str) -> tuple[str, str]:
 class DownloadQuarantine:
     """Runtime-owned hostile-byte quarantine.
 
-    This class never promotes a file. It owns destination naming and exposes no
-    caller-selected output path. The suggested filename is evidence only.
+    Destination naming is owned by the runtime, the page-suggested filename is
+    evidence only, and this primitive never promotes a file.
     """
 
     def __init__(
@@ -127,10 +133,13 @@ class DownloadQuarantine:
         limits: DownloadLimits,
         *,
         id_factory: Callable[[], str] | None = None,
+        clock: Callable[[], float] = monotonic,
     ) -> None:
         self.root = _assert_runtime_root(root)
         self.limits = limits
         self._id_factory = id_factory or (lambda: uuid4().hex)
+        self._clock = clock
+        self._deadline = self._clock() + limits.max_elapsed_seconds
         self.downloads_used = 0
         self.aggregate_bytes_used = 0
 
@@ -200,6 +209,7 @@ class DownloadQuarantine:
                 quarantine_name=None,
                 reason=unsafe_reason,
             )
+
         if declared_size is not None:
             if declared_size < 0:
                 raise ValueError("declared download size cannot be negative")
@@ -229,7 +239,22 @@ class DownloadQuarantine:
                     quarantine_name=None,
                     reason="DOWNLOAD_AGGREGATE_SIZE_BUDGET_EXHAUSTED",
                 )
-        if self._clock() >= self._deadline:\n            return self._record(\n                state="BLOCKED",\n                source_origin=source_origin,\n                source_path_digest=source_path_digest,\n                suggested_filename=safe_name,\n                content_type=content_type,\n                declared_size=declared_size,\n                observed_bytes=0,\n                digest=None,\n                quarantine_name=None,\n                reason="DOWNLOAD_ELAPSED_BUDGET_EXHAUSTED",\n            )\n        if self.downloads_used >= self.limits.max_downloads:
+
+        if self._clock() >= self._deadline:
+            return self._record(
+                state="BLOCKED",
+                source_origin=source_origin,
+                source_path_digest=source_path_digest,
+                suggested_filename=safe_name,
+                content_type=content_type,
+                declared_size=declared_size,
+                observed_bytes=0,
+                digest=None,
+                quarantine_name=None,
+                reason="DOWNLOAD_ELAPSED_BUDGET_EXHAUSTED",
+            )
+
+        if self.downloads_used >= self.limits.max_downloads:
             return self._record(
                 state="BLOCKED",
                 source_origin=source_origin,
@@ -255,6 +280,10 @@ class DownloadQuarantine:
                 if _is_reparse_point(partial):
                     raise DownloadQuarantineError("quarantine destination became a reparse point")
                 for chunk in chunks:
+                    if self._clock() >= self._deadline:
+                        reason = "DOWNLOAD_ELAPSED_BUDGET_EXHAUSTED"
+                        state = "INCOMPLETE"
+                        break
                     if not isinstance(chunk, (bytes, bytearray, memoryview)):
                         raise TypeError("download chunks must be bytes")
                     data = bytes(chunk)
@@ -275,7 +304,7 @@ class DownloadQuarantine:
         except DownloadTransferCancelled:
             state = "INCOMPLETE"
             reason = "DOWNLOAD_CANCELLED"
-        except BaseException:
+        except Exception:
             state = "INCOMPLETE"
             reason = "DOWNLOAD_TRANSFER_FAILED"
 
@@ -287,7 +316,7 @@ class DownloadQuarantine:
                 os.replace(partial, final)
                 final.resolve(strict=True).relative_to(self.root)
                 return self._record(
-                    state=state,
+                    state="QUARANTINED",
                     source_origin=source_origin,
                     source_path_digest=source_path_digest,
                     suggested_filename=safe_name,
@@ -302,7 +331,7 @@ class DownloadQuarantine:
         partial_name = partial.name if partial.exists() else None
         partial_digest = "sha256:" + digest.hexdigest() if observed else None
         return self._record(
-            state=state,
+            state="INCOMPLETE",
             source_origin=source_origin,
             source_path_digest=source_path_digest,
             suggested_filename=safe_name,
