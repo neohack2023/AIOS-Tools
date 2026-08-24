@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import os
 from pathlib import Path
+import json
 import re
 import sqlite3
 from typing import Any
@@ -48,6 +49,14 @@ def _fingerprint(value: str) -> str:
     return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+
+def mutation_contract_fingerprint(value: Any) -> str:
+    try:
+        encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise MutationPolicyError("MUTATION_INPUT_INVALID", "mutation contract is not JSON serializable") from exc
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
+
 def _parse_expiry(value: Any, *, now: datetime) -> datetime:
     if not isinstance(value, str):
         raise MutationPolicyError("APPROVAL_INVALID", "remote mutation approval requires expires_at")
@@ -77,6 +86,7 @@ class MutationGrant:
     approval_id: str
     approved_by: str
     expires_at: datetime
+    rollback_fingerprint: str | None = None
     _consumed: bool = False
 
     def consume(self, *, target_url: str, method: str, idempotency_key: str, now: datetime | None = None) -> None:
@@ -104,6 +114,7 @@ class MutationGrant:
             "effect_class": self.effect_class,
             "idempotency_key_fingerprint": _fingerprint(self.idempotency_key),
             "expires_at": self.expires_at.isoformat(),
+            "rollback_fingerprint": self.rollback_fingerprint,
             "one_shot": True,
             "authority_transfer": False,
         }
@@ -156,6 +167,14 @@ def build_mutation_grant(
         raise MutationPolicyError("APPROVAL_INVALID", "remote mutation approval must be one-shot")
     if effect_class == "REMOTE_MUTATION_HIGH_IMPACT" and approval.get("high_impact_ack") is not True:
         raise MutationPolicyError("APPROVAL_REQUIRED", "high-impact remote mutation requires explicit acknowledgement")
+    rollback_fingerprint = None
+    if effect_class == "REMOTE_MUTATION_REVERSIBLE":
+        rollback = payload.get("rollback")
+        if not isinstance(rollback, dict):
+            raise MutationPolicyError("ROLLBACK_REQUIRED", "reversible mutation requires rollback contract")
+        rollback_fingerprint = mutation_contract_fingerprint(rollback)
+        if approval.get("rollback_fingerprint") != rollback_fingerprint:
+            raise MutationPolicyError("APPROVAL_SCOPE_MISMATCH", "approval does not cover the rollback contract")
     now_value = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     expiry = _parse_expiry(approval.get("expires_at"), now=now_value)
     return MutationGrant(
@@ -169,6 +188,7 @@ def build_mutation_grant(
         approval_id=approval_id,
         approved_by=approved_by,
         expires_at=expiry,
+        rollback_fingerprint=rollback_fingerprint,
     )
 
 
