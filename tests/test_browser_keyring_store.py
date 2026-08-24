@@ -65,6 +65,10 @@ def test_keyring_store_roundtrip_and_terminal_secret_purge():
     descriptor = _descriptor(store)
     store.put_sealed(descriptor.session_ref, b'{"cookies":[]}', descriptor)
     assert store.open_sealed(descriptor.session_ref) == b'{"cookies":[]}'
+    assert store.resolve_ref(
+        origin=descriptor.origin,
+        identity_context_fingerprint=descriptor.identity_context_fingerprint,
+    ) == descriptor.session_ref
     assert store.metadata(descriptor.session_ref).origin == "https://example.com"
     assert store.mark_lifecycle(descriptor.session_ref, SessionLifecycle.REVOKED) is True
     with pytest.raises(Exception):
