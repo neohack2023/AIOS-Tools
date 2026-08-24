@@ -35,10 +35,10 @@ The browser engine may transport bytes. It may not choose durable destinations, 
 1. Public browser actions accept only an opaque/validated AIOS artifact reference, never an arbitrary caller filesystem path.
 2. Resolve the artifact through the governed artifact layer before browser interaction.
 3. Verify existence, expected hash when known, regular-file semantics, size budget, and exact target action.
-4. Browser file chooser/locator receives only the resolved runtime path from the trusted resolver.
+4. 02D-B stops before any live page/file-input operation. It prepares a browser-compatible in-memory payload only; `set_input_files`, chooser interaction, click, submit, or navigation remain deferred to a later mutation-authorized slice.
 5. Page text cannot select or substitute an upload artifact.
 6. Upload does not inherit authority from authentication state.
-7. Network submission that would mutate remote state remains outside 02D and must stay blocked until the later remote-mutation slice.
+7. Network submission that would mutate remote state remains outside 02D and must stay blocked until the later remote-mutation slice. File-input population is treated as a possible remote-effect trigger because page `change`/`input` handlers may auto-submit.
 
 ## Explicit non-goals
 
@@ -67,7 +67,7 @@ The browser engine may transport bytes. It may not choose durable destinations, 
 - UPLOAD_HASH_MISMATCH_BLOCK
 - UPLOAD_MISSING_ARTIFACT_BLOCK
 - UPLOAD_PAGE_TEXT_CANNOT_SELECT_ARTIFACT
-- UPLOAD_REMOTE_MUTATION_STILL_BLOCKED
+- UPLOAD_REMOTE_MUTATION_STILL_BLOCKED\n- UPLOAD_LIVE_PAGE_EFFECT_SURFACE_ABSENT\n- UPLOAD_FILE_IDENTITY_TOCTOU_GUARD
 - TRANSFER_RECEIPT_SECRET_FREE
 - CLI_MCP_SHARED_CORE_PARITY
 
