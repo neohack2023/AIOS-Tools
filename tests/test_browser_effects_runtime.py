@@ -11,6 +11,8 @@ from urllib.parse import urlsplit
 
 import pytest
 
+pytest.importorskip("playwright")
+
 from aios_tools.browser.effects_runtime import mutate_request_async, mutate_reversible_async, upload_execute_async
 from aios_tools.browser.mutation import MutationLedger, build_mutation_grant, mutation_contract_fingerprint
 from aios_tools.browser.uploads import (
