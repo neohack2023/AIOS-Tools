@@ -194,7 +194,7 @@ def test_browser_inspect_public_payload_still_has_no_download_path_surface():
 
 
 def test_download_elapsed_budget_blocks_and_never_expands(tmp_path):
-    ticks = iter([0.0, 0.5, 1.1])
+    ticks = iter([0.0, 0.2, 0.5, 1.1])
     last = [0.0]
 
     def clock():
