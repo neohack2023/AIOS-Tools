@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "browser-upload-artifact-ref.v0.1",
+  "title": "Governed Browser Upload Artifact Reference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["artifact_ref"],
+  "properties": {
+    "artifact_ref": {
+      "type": "string",
+      "pattern": "^artifact:[A-Za-z0-9][A-Za-z0-9_.-]{0,63}:[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$",
+      "maxLength": 202
+    }
+  }
+}

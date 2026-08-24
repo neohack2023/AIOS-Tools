@@ -1,5 +1,5 @@
 {
-  "policy_version": "browser-policy/0.2",
+  "policy_version": "browser-policy/0.4",
   "capability_id": "cap:browser-control",
   "effect_class": "READ_NETWORK",
   "admitted_tools": {
@@ -8,17 +8,38 @@
       "effect_class": "READ_NETWORK"
     }
   },
-  "allowed_schemes": ["https", "http"],
-  "allowed_http_methods": ["GET", "HEAD"],
+  "allowed_schemes": [
+    "https",
+    "http"
+  ],
+  "allowed_http_methods": [
+    "GET",
+    "HEAD"
+  ],
   "public_network_only": true,
   "service_workers": "block",
   "websocket_policy": "block",
   "downloads": "block",
+  "download_quarantine": {
+    "status": "INTERNAL_CANDIDATE_NOT_ACTIVE",
+    "promotion": "separate_explicit_step",
+    "max_downloads": 10,
+    "max_file_bytes": 52428800,
+    "max_aggregate_bytes": 104857600
+  },
   "budgets": {
     "elapsed_seconds": 60,
     "network_requests": 80,
     "pages": 1,
     "websockets": 8,
     "visible_text_chars": 50000
+  },
+  "upload_intake": {
+    "status": "INTERNAL_CANDIDATE_NOT_ACTIVE",
+    "public_identity": "governed_artifact_ref_only",
+    "caller_filesystem_paths": false,
+    "in_memory_playwright_payload": true,
+    "remote_submission_authorized": false,
+    "max_file_bytes": 52428800
   }
 }
