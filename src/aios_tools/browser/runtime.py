@@ -120,6 +120,7 @@ async def inspect_async(
     resolver: Callable[..., list[tuple]] = socket.getaddrinfo,
     allow_private_fixture: bool = False,
     allowed_resource_origins: tuple[str, ...] = (),
+    blocked_cross_origin_subresources_fatal: bool = True,
 ) -> dict[str, Any]:
     policy = load_browser_policy()
     raw_url, visible_limit, elapsed = _validated_payload(payload, policy)
@@ -202,7 +203,8 @@ async def inspect_async(
             destination = NormalizedOrigin.parse(request.url)
             if destination != allowed_origin and destination not in resource_origins:
                 evidence.block(channel="http", url=request.url, reason="ORIGIN_NOT_ADMITTED")
-                blocked_event.set()
+                if blocked_cross_origin_subresources_fatal or request.resource_type == "document":
+                    blocked_event.set()
                 await route.abort("blockedbyclient")
                 return
             if policy["public_network_only"] and not allow_private_fixture:
