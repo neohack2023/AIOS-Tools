@@ -158,6 +158,8 @@ class UploadIntake:
     def prepare(self, artifact_ref: str) -> PreparedUpload:
         ref = ArtifactRef(artifact_ref)
         descriptor = self.resolver.resolve(ref)
+        if descriptor.ref != ref:
+            raise ArtifactResolutionError("artifact resolver returned mismatched reference")
 
         original = descriptor.runtime_path
         if _is_reparse_point(original):
