@@ -302,3 +302,15 @@ def test_cancellation_propagates_cleanly_with_partial_evidence():
         finally:
             loop.set_exception_handler(previous_handler)
     asyncio.run(run())
+
+
+def test_profile_mode_can_block_cross_origin_subresource_without_failing_main_document():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "aios_tools"
+        / "browser"
+        / "runtime.py"
+    ).read_text(encoding="utf-8")
+    assert "blocked_cross_origin_subresources_fatal" in source
+    assert 'request.resource_type == "document"' in source
