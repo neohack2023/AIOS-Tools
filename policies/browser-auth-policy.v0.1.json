@@ -1,16 +1,24 @@
 {
-  "policy_version": "browser-auth-policy/0.3-candidate",
+  "policy_version": "browser-auth-policy/1.0-candidate",
   "capability_id": "cap:browser-control",
-  "session_reuse_enabled": false,
-  "real_auth_state_capture_enabled": false,
-  "production_user_takeover_enabled": false,
+  "session_reuse_enabled": true,
+  "real_auth_state_capture_enabled": true,
+  "production_user_takeover_enabled": true,
   "production_persistent_profiles_enabled": false,
   "authority_transfer": false,
   "protected_store": {
     "require_available": true,
     "require_protected": true,
     "plaintext_fallback": false,
-    "admitted_production_backends": [],
+    "admitted_production_backends": [
+      "os-keyring"
+    ],
+    "allowed_backend_prefixes": [
+      "keyring.backends.Windows.",
+      "keyring.backends.macOS.",
+      "keyring.backends.SecretService.",
+      "keyring.backends.kwallet."
+    ],
     "synthetic_backend": "synthetic-memory-test",
     "synthetic_backend_test_only": true
   },
@@ -32,7 +40,9 @@
     "explicit_transition_origins_required": true,
     "cancelled_partial_state_reusable": false,
     "failed_partial_state_reusable": false,
-    "privilege_or_risk_change_requires_reauth": true
+    "privilege_or_risk_change_requires_reauth": true,
+    "production_headed_browser_required": true,
+    "secret_entry_model_visible": false
   },
   "automation_profiles": {
     "runtime_owned_root_required": true,
@@ -45,14 +55,23 @@
     "generic_cdp_attachment_allowed": false
   },
   "capabilities": {
-    "restorable_in_02c_a": ["cookies", "local_storage", "indexed_db"],
+    "restorable": [
+      "cookies",
+      "local_storage",
+      "indexed_db"
+    ],
     "session_storage_requires_adapter": true,
     "virtual_webauthn_real_user_persistence": "block"
   },
   "lifecycle": {
     "reusable_state": "AVAILABLE",
     "in_use_state": "IN_USE",
-    "terminal_unusable_states": ["EXPIRED", "REVOKED", "INVALID", "PURGED"],
+    "terminal_unusable_states": [
+      "EXPIRED",
+      "REVOKED",
+      "INVALID",
+      "PURGED"
+    ],
     "takeover_states": [
       "AUTH_REQUIRED",
       "TAKEOVER_PENDING",
