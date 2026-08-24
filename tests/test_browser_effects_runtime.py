@@ -11,8 +11,8 @@ from urllib.parse import urlsplit
 
 import pytest
 
-from aios_tools.browser.effects_runtime import mutate_request_async, upload_execute_async
-from aios_tools.browser.mutation import MutationLedger, build_mutation_grant
+from aios_tools.browser.effects_runtime import mutate_request_async, mutate_reversible_async, upload_execute_async
+from aios_tools.browser.mutation import MutationLedger, build_mutation_grant, mutation_contract_fingerprint
 from aios_tools.browser.uploads import (
     ArtifactDescriptor,
     ArtifactRef,
@@ -96,6 +96,10 @@ document.getElementById('fixture-file').addEventListener('change', async () => {
             self.rfile.read(length)
         if path == "/mutate":
             self.state.value += 1
+            self._json(200, {"ok": True})
+            return
+        if path == "/rollback":
+            self.state.value = 0
             self._json(200, {"ok": True})
             return
         if path == "/upload-target":
@@ -301,3 +305,78 @@ def test_live_upload_second_mutation_is_blocked(tmp_path):
         assert result["terminal_status"] == "MUTATION_STATE_UNKNOWN"
         assert server.state.uploads == 1
         assert server.state.extra_mutations == 0
+
+
+def test_reversible_mutation_rolls_back_and_verifies(tmp_path):
+    with _Server() as server:
+        url = server.origin + "/mutate"
+        rollback = {
+            "url": server.origin + "/rollback",
+            "method": "POST",
+            "json": {"restore": 0},
+            "expected_status": 200,
+            "postcheck": {
+                "url": server.origin + "/state",
+                "expected_status": 200,
+                "expected_json_subset": {"value": 0},
+            },
+        }
+        now = datetime.now(timezone.utc)
+        key = "idem-reversible"
+        effect = "REMOTE_MUTATION_REVERSIBLE"
+        authority = {
+            "approval": {
+                "approved": True,
+                "approved_by": "fixture-operator",
+                "approval_id": "approval-reversible",
+                "tool": "browser.mutate.reversible",
+                "scope": "global-working-memory",
+                "effect_class": effect,
+                "target_url": url,
+                "method": "POST",
+                "idempotency_key": key,
+                "one_shot": True,
+                "rollback_fingerprint": mutation_contract_fingerprint(rollback),
+                "expires_at": (now + timedelta(minutes=5)).isoformat(),
+            }
+        }
+        payload = {
+            "url": url,
+            "method": "POST",
+            "idempotency_key": key,
+            "json": {"value": 1},
+            "precheck": {
+                "url": server.origin + "/state",
+                "expected_status": 200,
+                "expected_json_subset": {"value": 0},
+            },
+            "postcheck": {
+                "url": server.origin + "/state",
+                "expected_status": 200,
+                "expected_json_subset": {"value": 1},
+            },
+            "expected_status": 200,
+            "timeout_seconds": 10,
+            "rollback": rollback,
+        }
+        payload["_aios_mutation_grant"] = build_mutation_grant(
+            request_id="request-reversible",
+            tool="browser.mutate.reversible",
+            scope="global-working-memory",
+            effect_class=effect,
+            payload=payload,
+            authority_context=authority,
+            now=now,
+        )
+        ledger = MutationLedger(tmp_path / "reversible.sqlite3")
+        result = asyncio.run(
+            mutate_reversible_async(
+                payload,
+                allow_private_fixture=True,
+                ledger=ledger,
+            )
+        )
+        assert result["terminal_status"] == "ROLLED_BACK"
+        assert result["rollback_verified"] is True
+        assert server.state.value == 0
+        assert ledger.status(key) == "ROLLED_BACK"
