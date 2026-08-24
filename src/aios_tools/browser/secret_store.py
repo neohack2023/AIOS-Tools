@@ -159,5 +159,25 @@ class InMemorySyntheticProtectedSessionStore:
 
 
 def default_protected_session_store() -> ProtectedSessionStore:
-    """Fail closed until a separately governed protected OS backend is admitted."""
-    return UnavailableProtectedSessionStore()
+    """Use an admitted OS keyring when production session reuse is enabled."""
+    import json
+    from pathlib import Path
+
+    policy_path = Path(__file__).resolve().parents[3] / "policies" / "browser-auth-policy.v0.1.json"
+    try:
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return UnavailableProtectedSessionStore()
+    protected = policy.get("protected_store")
+    if (
+        policy.get("session_reuse_enabled") is not True
+        or not isinstance(protected, dict)
+        or "os-keyring" not in protected.get("admitted_production_backends", [])
+    ):
+        return UnavailableProtectedSessionStore()
+    prefixes = protected.get("allowed_backend_prefixes")
+    if not isinstance(prefixes, list) or not prefixes or not all(isinstance(item, str) and item for item in prefixes):
+        return UnavailableProtectedSessionStore()
+    from .keyring_store import KeyringProtectedSessionStore
+
+    return KeyringProtectedSessionStore(allowed_backend_prefixes=tuple(prefixes))
