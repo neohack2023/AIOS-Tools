@@ -119,6 +119,12 @@ def browser_upload_execute(payload: dict[str, Any]) -> dict[str, Any]:
     return run_upload_execute(payload)
 
 
+def browser_session_capture(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.session_capture import run_session_capture
+
+    return run_session_capture(payload)
+
+
 def browser_download_promote(payload: dict[str, Any]) -> dict[str, Any]:
     from .browser.downloads import DownloadRecord
     from .browser.promotion import DownloadPromotionManager, DownloadPromotionRules
@@ -207,6 +213,7 @@ HANDLERS = {
     "browser.mutate.request": browser_mutate_request,
     "browser.mutate.reversible": browser_mutate_reversible,
     "browser.upload.execute": browser_upload_execute,
+    "browser.session.capture": browser_session_capture,
     "browser.download.promote": browser_download_promote,
     "browser.runtime.status": browser_runtime_status,
 }
