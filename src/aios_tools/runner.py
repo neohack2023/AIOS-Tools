@@ -329,14 +329,23 @@ def invoke(
             }
         status = "COMPLETED"
         errors: list[ToolError] = []
+    except MutationPolicyError as exc:
+        output = {}
+        status = "APPROVAL_REQUIRED" if exc.code.startswith("APPROVAL_") else "BLOCKED"
+        errors = [ToolError(code=exc.code, message=str(exc))]
     except (TypeError, ValueError) as exc:
         output = {}
         status = "FAILED"
         errors = [ToolError(code="INVALID_INPUT", message=str(exc))]
-    except Exception:
+    except Exception as exc:
+        code = getattr(exc, "code", None)
         output = {}
-        status = "FAILED"
-        errors = [ToolError(code="INTERNAL_ERROR", message="tool execution failed unexpectedly")]
+        if isinstance(code, str):
+            status = "BLOCKED" if code.endswith("_BLOCKED") or code in {"TARGET_BLOCKED", "UPLOAD_BLOCKED"} else "FAILED"
+            errors = [ToolError(code=code, message=str(exc))]
+        else:
+            status = "FAILED"
+            errors = [ToolError(code="INTERNAL_ERROR", message="tool execution failed unexpectedly")]
 
     external_effects = _browser_external_effects(tool, effect_class, output)
     return _receipt(
