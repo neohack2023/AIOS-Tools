@@ -698,7 +698,7 @@ async def upload_execute_async(
             }
 
         file_locator = _locator(page, payload.get("file_locator"))
-        if await file_locator.count() != 1 or not await file_locator.is_visible():
+        if await file_locator.count() != 1 or not await file_locator.is_enabled():
             mutation_ledger.mark(key, "FAILED_NO_EFFECT")
             raise BrowserEffectExecutionError("UPLOAD_BLOCKED", "file input pre-state assertion failed")
         input_type = await file_locator.get_attribute("type")
