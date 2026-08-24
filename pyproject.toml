@@ -19,6 +19,7 @@ dev = [
 ]
 browser = [
   "playwright==1.62.0",
+  "keyring==25.7.0",
 ]
 
 [project.scripts]
