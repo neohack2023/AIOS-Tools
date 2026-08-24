@@ -246,6 +246,8 @@ async def capture_session_async(
     context = None
     outcome = None
     created_at = datetime.now(timezone.utc)
+    mutation_count = 0
+    blocked_event = asyncio.Event()
     checkpoint = UserTakeoverCheckpoint(
         target_origin=grant.target_origin,
         timeout_seconds=timeout_seconds,
@@ -253,14 +255,24 @@ async def capture_session_async(
     )
 
     async def route_guard(route: Any, request: Any) -> None:
+        nonlocal mutation_count
         try:
             checkpoint.origin_gate.observe(request.url)
         except Exception:
+            blocked_event.set()
             await route.abort("blockedbyclient")
             return
-        if request.method.upper() not in _ALLOWED_AUTH_METHODS:
+        method = request.method.upper()
+        if method not in _ALLOWED_AUTH_METHODS:
+            blocked_event.set()
             await route.abort("blockedbyclient")
             return
+        if method == "POST":
+            mutation_count += 1
+            if mutation_count > 20:
+                blocked_event.set()
+                await route.abort("blockedbyclient")
+                return
         await route.continue_()
 
     async def ws_guard(ws: Any) -> None:
@@ -298,6 +310,8 @@ async def capture_session_async(
             if fixture_user_action is not None:
                 await fixture_user_action(page)
             while True:
+                if blocked_event.is_set():
+                    raise SessionCapturePolicyError("AUTH_FLOW_BLOCKED", "authentication flow exceeded its admitted boundary")
                 if await verified_page() is not None:
                     return
                 await asyncio.sleep(0.2)
@@ -323,6 +337,8 @@ async def capture_session_async(
                 "terminal_status": outcome.state.value,
                 "semantic_success": False,
                 "target_origin": grant.target_origin,
+                "method": "AUTH_FLOW",
+                "mutation_count": mutation_count,
                 "takeover": outcome.public_receipt(),
                 "grant": grant.public_receipt(),
                 "authority_transfer": False,
@@ -342,6 +358,8 @@ async def capture_session_async(
             "terminal_status": "SESSION_AVAILABLE",
             "semantic_success": True,
             "target_origin": grant.target_origin,
+            "method": "AUTH_FLOW",
+            "mutation_count": mutation_count,
             "session": descriptor.public_receipt(),
             "takeover": outcome.public_receipt(),
             "grant": grant.public_receipt(),
