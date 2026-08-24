@@ -47,11 +47,23 @@ async def replay_site_profile_async(profile_id: str) -> dict[str, Any]:
     if not isinstance(expected_origin, str) or NormalizedOrigin.parse(entrypoint).serialize() != expected_origin:
         raise BrowserSiteProfileError("site profile validation origin is inconsistent")
     expected = minimize_url(entrypoint)
+    resource_origins = profile.get("resource_origin_allowlist", [])
+    if (
+        not isinstance(resource_origins, list)
+        or len(resource_origins) > 8
+        or not all(isinstance(item, str) for item in resource_origins)
+    ):
+        raise BrowserSiteProfileError("site profile resource-origin allowlist is invalid")
+    normalized_resources = tuple(sorted({
+        NormalizedOrigin.parse(item).serialize()
+        for item in resource_origins
+        if NormalizedOrigin.parse(item).serialize() != expected_origin
+    }))
     result = await inspect_async({
         "url": entrypoint,
         "visible_text_chars": int(profile.get("validation_visible_text_chars", 4000)),
         "elapsed_seconds": int(profile.get("validation_elapsed_seconds", 60)),
-    })
+    }, allowed_resource_origins=normalized_resources)
     path_match = result.get("final_path_digest") == expected["path_digest"]
     origin_match = result.get("final_origin") == expected_origin
     success = bool(
