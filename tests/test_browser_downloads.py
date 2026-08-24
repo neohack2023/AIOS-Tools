@@ -191,3 +191,30 @@ def test_browser_inspect_public_payload_still_has_no_download_path_surface():
     assert public_fields in source
     for forbidden in ("download_dir", "download_path", "output_dir", "destination_path"):
         assert forbidden not in public_fields
+
+
+def test_download_elapsed_budget_blocks_and_never_expands(tmp_path):
+    ticks = iter([0.0, 0.5, 1.1])
+    last = [0.0]
+
+    def clock():
+        try:
+            last[0] = next(ticks)
+        except StopIteration:
+            pass
+        return last[0]
+
+    quarantine = _quarantine(
+        tmp_path,
+        max_elapsed_seconds=1.0,
+        clock=clock,
+    )
+    record = quarantine.quarantine_chunks(
+        [b"a", b"b"],
+        source_url="https://example.com/time",
+        suggested_filename="time.bin",
+    )
+    assert record.state == "INCOMPLETE"
+    assert record.reason == "DOWNLOAD_ELAPSED_BUDGET_EXHAUSTED"
+    assert record.promoted is False
+    assert record.observed_bytes == 1
