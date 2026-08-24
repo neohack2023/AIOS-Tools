@@ -45,7 +45,7 @@
       "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"
     }
   },
-  "downloads": "quarantine_only",
+  "downloads": "block",
   "download_quarantine": {
     "status": "ACTIVE_CANDIDATE",
     "promotion": "separate_profile_governed_local_write",
@@ -84,5 +84,10 @@
     "mutations": 1,
     "uploads": 1,
     "downloads": 10
-  }
+  },
+  "effect_class": "READ_NETWORK",
+  "allowed_http_methods": [
+    "GET",
+    "HEAD"
+  ]
 }
