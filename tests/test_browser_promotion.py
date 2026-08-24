@@ -123,3 +123,20 @@ def test_download_promotion_rejects_symlinked_manifest(tmp_path):
             artifact_root=artifacts,
             manifest_path=manifest,
         )
+
+
+def test_download_promotion_rejects_non_runtime_quarantine_name(tmp_path):
+    manager, _, _ = _manager(tmp_path, body=b"audio")
+    record = _record(b"audio")
+    record = __import__("dataclasses").replace(record, quarantine_name="user-file.quarantine")
+    with pytest.raises(DownloadPromotionError, match="runtime-owned"):
+        manager.promote(record, _rules())
+
+
+def test_download_promotion_manifest_lock_fails_closed(tmp_path):
+    manager, manifest, _ = _manager(tmp_path, body=b"audio")
+    lock = manifest.with_name(manifest.name + ".lock")
+    lock.write_text("other-process\n", encoding="utf-8")
+    with pytest.raises(DownloadPromotionError, match="locked"):
+        manager.promote(_record(b"audio"), _rules())
+    assert lock.exists()
