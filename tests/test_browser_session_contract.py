@@ -33,7 +33,7 @@ def _descriptor() -> SessionDescriptor:
     )
 
 
-def test_02e_auth_policy_admits_production_session_path_without_weakening_secret_law():
+def test_02c_a_policy_is_fail_closed_for_real_auth_state():
     policy = json.loads(AUTH_POLICY.read_text(encoding="utf-8"))
     assert policy["policy_version"] == "browser-auth-policy/1.0-candidate"
     assert policy["session_reuse_enabled"] is True
