@@ -4,6 +4,7 @@ from typing import Any
 from uuid import uuid4
 
 from .browser.policy import BrowserConfigurationError, browser_network_tool_admitted
+from .browser.mutation import MutationPolicyError, build_mutation_grant
 from .config import ConfigurationError, load_policy, load_registry, validate_request
 from .envelope import ExecutionReceipt, ToolError, utc_now
 from .runtime_cognition import build_execution_cognition_receipt
