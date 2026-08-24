@@ -186,7 +186,7 @@ async def inspect_async(
         try:
             ledger.consume("network_requests")
             method = request.method.upper()
-            if method not in policy["allowed_http_methods"]:
+            if method not in policy["read_http_methods"]:
                 evidence.block(channel="http", url=request.url, reason="HTTP_METHOD_NOT_ADMITTED")
                 blocked_event.set()
                 await route.abort("blockedbyclient")
