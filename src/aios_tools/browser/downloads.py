@@ -270,6 +270,7 @@ class DownloadQuarantine:
 
         partial, final, final_name = self._allocate()
         self.downloads_used += 1
+        aggregate_before = self.aggregate_bytes_used
         observed = 0
         digest = sha256()
         reason = None
@@ -329,7 +330,15 @@ class DownloadQuarantine:
                 )
 
         partial_name = partial.name if partial.exists() else None
-        partial_digest = "sha256:" + digest.hexdigest() if observed else None
+        if partial.exists():
+            retained = partial.read_bytes()
+            observed = len(retained)
+            partial_digest = "sha256:" + sha256(retained).hexdigest() if retained else None
+            self.aggregate_bytes_used = aggregate_before + observed
+        else:
+            observed = 0
+            partial_digest = None
+            self.aggregate_bytes_used = aggregate_before
         return self._record(
             state="INCOMPLETE",
             source_origin=source_origin,
@@ -356,19 +365,31 @@ class DownloadQuarantine:
         path = source_path.resolve(strict=True)
         if _is_reparse_point(source_path) or not path.is_file():
             raise DownloadQuarantineError("download source must be a regular non-reparse file")
+        before = path.stat()
 
-        def read_chunks() -> Iterator[bytes]:
-            with path.open("rb") as handle:
+        with path.open("rb") as handle:
+            opened_stat = os.fstat(handle.fileno())
+            if not stat.S_ISREG(opened_stat.st_mode):
+                raise DownloadQuarantineError("download source handle must be a regular file")
+            if not os.path.samestat(before, opened_stat):
+                raise DownloadQuarantineError("download source changed before it could be opened safely")
+
+            def read_chunks() -> Iterator[bytes]:
                 while True:
                     chunk = handle.read(chunk_size)
                     if not chunk:
                         return
                     yield chunk
 
-        return self.quarantine_chunks(
-            read_chunks(),
-            source_url=source_url,
-            suggested_filename=suggested_filename,
-            content_type=content_type,
-            declared_size=declared_size,
-        )
+            result = self.quarantine_chunks(
+                read_chunks(),
+                source_url=source_url,
+                suggested_filename=suggested_filename,
+                content_type=content_type,
+                declared_size=declared_size,
+            )
+
+        after = path.stat()
+        if not os.path.samestat(opened_stat, after):
+            raise DownloadQuarantineError("download source path changed while being quarantined")
+        return result
