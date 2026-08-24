@@ -103,3 +103,23 @@ def test_download_auto_promotion_rejects_symlinked_quarantine_entry(tmp_path):
         return
     with pytest.raises(DownloadPromotionError, match="symlink|reparse"):
         manager.promote(_record(b"audio"), _rules())
+
+
+def test_download_promotion_rejects_symlinked_manifest(tmp_path):
+    quarantine = tmp_path / "q"
+    artifacts = tmp_path / "artifacts"
+    quarantine.mkdir()
+    artifacts.mkdir()
+    real_manifest = tmp_path / "real-manifest.json"
+    real_manifest.write_text('{"artifacts": {}}', encoding="utf-8")
+    manifest = tmp_path / "manifest.json"
+    try:
+        manifest.symlink_to(real_manifest)
+    except (OSError, NotImplementedError):
+        return
+    with pytest.raises(DownloadPromotionError, match="symlink|reparse"):
+        DownloadPromotionManager(
+            quarantine_root=quarantine,
+            artifact_root=artifacts,
+            manifest_path=manifest,
+        )
