@@ -51,7 +51,17 @@ class BrowserEvidence:
         self.network.append({"event": "response", "origin": origin, "path_digest": _digest(path), "status": int(status), "at": time()})
 
     def block(self, *, channel: str, url: str, reason: str) -> None:
-        self.blocked.append({"channel": channel, "url_digest": _digest(url), "reason": reason, "at": time()})
+        try:
+            origin = NormalizedOrigin.parse(url).serialize()
+        except Exception:
+            origin = None
+        self.blocked.append({
+            "channel": channel,
+            "origin": origin,
+            "url_digest": _digest(url),
+            "reason": reason,
+            "at": time(),
+        })
 
     def console_event(self, kind: str, text: str) -> None:
         self.console.append({"type": kind, "text_digest": _digest(text), "at": time()})
