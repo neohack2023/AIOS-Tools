@@ -158,7 +158,13 @@ class ManifestArtifactResolver:
             raise ArtifactResolutionError("governed artifact reference was not found")
         relative = raw.get("path")
         digest = raw.get("sha256")
-        if not isinstance(relative, str) or not relative or Path(relative).is_absolute():
+        if (
+            not isinstance(relative, str)
+            or not relative
+            or relative.startswith(("/", "\\"))
+            or re.match(r"^[A-Za-z]:", relative)
+            or Path(relative).is_absolute()
+        ):
             raise ArtifactResolutionError("artifact manifest path must be relative")
         parts = Path(relative).parts
         if any(part in {"", ".", ".."} for part in parts):
