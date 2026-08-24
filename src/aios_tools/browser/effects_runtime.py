@@ -725,6 +725,10 @@ async def upload_execute_async(
                 "grant": grant.public_receipt(),
                 "authority_transfer": False,
             }
+        try:
+            await asyncio.wait_for(blocked_event.wait(), timeout=0.35)
+        except TimeoutError:
+            pass
         if blocked_event.is_set() or mutation_count != 1 or mutation_response_status != expected_status:
             mutation_ledger.mark(key, "MUTATION_STATE_UNKNOWN" if mutation_started else "FAILED_NO_EFFECT")
             return {
