@@ -1,5 +1,5 @@
 {
-  "policy_version": "browser-policy/0.2",
+  "policy_version": "browser-policy/0.3",
   "capability_id": "cap:browser-control",
   "effect_class": "READ_NETWORK",
   "admitted_tools": {
@@ -14,6 +14,13 @@
   "service_workers": "block",
   "websocket_policy": "block",
   "downloads": "block",
+  "download_quarantine": {
+    "status": "INTERNAL_CANDIDATE_NOT_ACTIVE",
+    "promotion": "separate_explicit_step",
+    "max_downloads": 10,
+    "max_file_bytes": 52428800,
+    "max_aggregate_bytes": 104857600
+  },
   "budgets": {
     "elapsed_seconds": 60,
     "network_requests": 80,
