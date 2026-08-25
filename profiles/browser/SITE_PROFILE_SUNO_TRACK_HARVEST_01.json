@@ -1,6 +1,6 @@
 {
   "profile_id": "SITE_PROFILE_SUNO_TRACK_HARVEST_01",
-  "version": "0.1",
+  "version": "0.2",
   "origin": "https://suno.com",
   "intent": "validation_replay_only",
   "mode": "REPLAY",
@@ -9,6 +9,7 @@
   "validation_entrypoint": "https://suno.com/song/1b63dccf-443f-43ce-a6dc-11034a94c5f9",
   "validation_visible_text_chars": 4000,
   "validation_elapsed_seconds": 60,
+  "validation_network_requests": 200,
   "optional_visible_marker": "Index the Drift",
   "auth_requirements": "none_for_activation_replay",
   "mutation_rules": "none",
@@ -18,5 +19,8 @@
     "SUCCEEDED"
   ],
   "verification_method": "exact_origin_plus_exact_path_digest",
-  "resource_origin_allowlist": []
+  "resource_origin_allowlist": [
+    "https://auth.suno.com",
+    "https://cdn1.suno.ai"
+  ]
 }
