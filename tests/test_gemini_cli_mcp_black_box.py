@@ -20,6 +20,10 @@ EXPECTED_MCP_TOOLS = {
     "browser_mutate_reversible",
     "browser_upload_execute",
     "browser_session_capture",
+    "browser_session_open",
+    "browser_session_observe",
+    "browser_session_act",
+    "browser_session_close",
     "browser_download_promote",
 }
 

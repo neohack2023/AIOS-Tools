@@ -4,6 +4,7 @@ import aios_tools.browser.policy as browser_policy
 import aios_tools.runner as runner
 from aios_tools.config import load_policy
 from aios_tools.tools import HANDLERS
+from aios_tools.browser.interactive import _url_crosses_risk_boundary, shutdown_interactive_runtime
 
 
 def test_global_network_switch_stays_false():
@@ -16,12 +17,15 @@ def test_browser_policy_preserves_read_boundary_and_explicit_effect_admission():
     policy = browser_policy.load_browser_policy()
     assert policy["effect_class"] == "READ_NETWORK"
     assert policy["runtime_state"] == "ACTIVE"
-    assert policy["policy_version"] == "browser-policy/1.0"
+    assert policy["policy_version"] == "browser-policy/1.1-candidate"
     assert policy["admitted_tools"]["browser.inspect"] == {
         "mode": "READ_ONLY",
         "effect_class": "READ_NETWORK",
     }
     assert policy["admitted_tools"]["browser.profile.replay"]["effect_class"] == "READ_NETWORK"
+    assert policy["admitted_tools"]["browser.session.open"]["effect_class"] == "READ_NETWORK"
+    assert policy["admitted_tools"]["browser.session.observe"]["effect_class"] == "READ_NETWORK"
+    assert policy["admitted_tools"]["browser.session.act"]["effect_class"] == "READ_NETWORK"
     assert policy["admitted_tools"]["browser.mutate.request"]["effect_class"] == "REMOTE_MUTATION_HIGH_IMPACT"
     assert policy["admitted_tools"]["browser.mutate.reversible"]["effect_class"] == "REMOTE_MUTATION_REVERSIBLE"
     assert policy["admitted_tools"]["browser.upload.execute"]["effect_class"] == "REMOTE_MUTATION_HIGH_IMPACT"
@@ -35,6 +39,9 @@ def test_browser_policy_preserves_read_boundary_and_explicit_effect_admission():
     assert policy["download_quarantine"]["status"] == "ACTIVE"
     assert policy["upload_intake"]["status"] == "ACTIVE"
     assert policy["mutation"]["status"] == "ACTIVE"
+    assert policy["interactive"]["action_batch"] == 8
+    assert policy["interactive"]["session_seconds"] == 300
+    assert policy["interactive"]["max_sessions"] == 4
 
 
 def test_unrelated_network_tool_never_reaches_handler(monkeypatch):
@@ -71,3 +78,19 @@ def test_private_target_is_browser_block_not_internal_error():
     assert receipt["output"]["terminal_status"] == "TARGET_BLOCKED"
     assert receipt["output"]["semantic_success"] is False
     assert receipt["output"]["evidence"]["blocked"]
+
+
+def test_interactive_private_target_is_blocked_before_browser_launch():
+    try:
+        receipt = runner.invoke("browser.session.open", {"url": "http://127.0.0.1/"})
+        assert receipt["status"] == "COMPLETED"
+        assert receipt["output"]["terminal_status"] == "TARGET_BLOCKED"
+        assert receipt["output"]["authority_transfer"] is False
+    finally:
+        shutdown_interactive_runtime()
+
+
+def test_interactive_risk_url_filter_uses_tokens_not_substrings():
+    assert _url_crosses_risk_boundary("https://example.com/account/delete-account") is True
+    assert _url_crosses_risk_boundary("https://example.com/sign-out") is True
+    assert _url_crosses_risk_boundary("https://example.com/news/updates") is False

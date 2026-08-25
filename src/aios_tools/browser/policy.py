@@ -45,6 +45,7 @@ def load_browser_policy() -> dict[str, Any]:
         "upload_intake",
         "mutation",
         "budgets",
+        "interactive",
     }
     missing = sorted(required - policy.keys())
     if missing:
@@ -126,6 +127,23 @@ def load_browser_policy() -> dict[str, Any]:
         value = policy["budgets"].get(key)
         if not isinstance(value, int) or value <= 0:
             raise BrowserConfigurationError(f"browser budget {key} must be a positive integer")
+    interactive = policy["interactive"]
+    if not isinstance(interactive, dict):
+        raise BrowserConfigurationError("browser interactive policy is invalid")
+    interactive_limits = {
+        "max_sessions": 16,
+        "session_seconds": 900,
+        "network_requests": 240,
+        "actions": 80,
+        "observations": 80,
+        "action_batch": 12,
+        "visible_text_chars": 50000,
+        "max_elements": 200,
+    }
+    for key, maximum in interactive_limits.items():
+        value = interactive.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or not (1 <= value <= maximum):
+            raise BrowserConfigurationError(f"browser interactive budget {key} is invalid")
     return policy
 
 

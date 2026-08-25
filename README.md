@@ -21,6 +21,12 @@ See [Authority Boundaries](docs/AUTHORITY_BOUNDARIES.md) and [Architecture](docs
 | `system.health` | READ_ONLY | Report server, registry, and policy state |
 | `canonical.hash_json` | READ_ONLY | Produce a deterministic SHA-256 digest for JSON-compatible data |
 | `schema.validate` | READ_ONLY | Validate an instance with JSON Schema Draft 2020-12 |
+| `browser.inspect` | READ_ONLY | Inspect one explicit public origin |
+| `browser.profile.replay` | READ_ONLY | Replay one registered read-only site profile |
+| `browser.session.open` | READ_ONLY | Open an ephemeral LLM-controlled browser session |
+| `browser.session.observe` | READ_ONLY | Read a compact untrusted page observation |
+| `browser.session.act` | READ_ONLY | Run a bounded batch of typed read-only actions |
+| `browser.session.close` | READ_ONLY | Close the ephemeral process-local session |
 
 Every result is wrapped in an execution receipt with requester identity, authority context, registry and policy versions, provenance, `authority_transfer: false`, and explicit external-effect reporting.
 
@@ -83,4 +89,8 @@ Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [Developmen
 
 ## Current status
 
-Slice 0 implementation and executable-governance repair are under governed review. Hosted deployment, authentication, direct Notion/Drive adapters, Tier 1 control-envelope migration, and write-capable tools remain deferred.
+Browser Runtime 1.0 is active in the shared core. Browser reads, governed
+session capture, quarantined downloads, explicit uploads, and exact approved
+mutation handlers are implemented behind capability-specific policy. Hosted
+deployment, direct Notion/Drive adapters, and automatic approvals remain
+deferred.

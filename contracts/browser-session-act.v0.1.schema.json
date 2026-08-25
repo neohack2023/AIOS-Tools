@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/browser-session-act.v0.1.schema.json",
+  "title": "AIOS Interactive Browser Session Action Batch v0.1",
+  "type": "object",
+  "required": ["session_id", "actions"],
+  "properties": {
+    "session_id": {"type": "string", "pattern": "^browser-session-[a-f0-9]{32}$"},
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["type", "element_ref"],
+            "properties": {
+              "type": {"const": "click"},
+              "element_ref": {"type": "string", "pattern": "^g[1-9][0-9]*-e[1-9][0-9]*$"}
+            },
+            "unevaluatedProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["type", "element_ref", "value"],
+            "properties": {
+              "type": {"enum": ["fill", "select"]},
+              "element_ref": {"type": "string", "pattern": "^g[1-9][0-9]*-e[1-9][0-9]*$"},
+              "value": {"type": "string", "maxLength": 1000}
+            },
+            "unevaluatedProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["type", "element_ref", "key"],
+            "properties": {
+              "type": {"const": "press"},
+              "element_ref": {"type": "string", "pattern": "^g[1-9][0-9]*-e[1-9][0-9]*$"},
+              "key": {"enum": ["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "End", "Escape", "Home", "PageDown", "PageUp", "Shift+Tab", "Tab"]}
+            },
+            "unevaluatedProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["type", "delta_y"],
+            "properties": {
+              "type": {"const": "scroll"},
+              "delta_y": {"type": "integer", "minimum": -2000, "maximum": 2000, "not": {"const": 0}}
+            },
+            "unevaluatedProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["type", "url"],
+            "properties": {
+              "type": {"const": "navigate"},
+              "url": {"type": "string", "format": "uri"}
+            },
+            "unevaluatedProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["type"],
+            "properties": {"type": {"const": "back"}},
+            "unevaluatedProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["type", "milliseconds"],
+            "properties": {
+              "type": {"const": "wait"},
+              "milliseconds": {"type": "integer", "minimum": 1, "maximum": 3000}
+            },
+            "unevaluatedProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "unevaluatedProperties": false
+}

@@ -1,5 +1,5 @@
 {
-  "registry_version": "0.4.0",
+  "registry_version": "0.5.0-candidate",
   "default_mode": "READ_ONLY",
   "portable_repo_required": false,
   "tools": [
@@ -55,6 +55,42 @@
       "effect_class": "READ_NETWORK",
       "reversibility": "FULL",
       "blast_radius": "EXPLICIT_PROFILE_ORIGIN",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.session.open",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "READ_NETWORK",
+      "reversibility": "FULL",
+      "blast_radius": "EXPLICIT_PUBLIC_ORIGIN",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.session.observe",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "READ_NETWORK",
+      "reversibility": "FULL",
+      "blast_radius": "OPAQUE_PROCESS_LOCAL_SESSION",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.session.act",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "READ_NETWORK",
+      "reversibility": "FULL",
+      "blast_radius": "OPAQUE_PROCESS_LOCAL_SESSION",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.session.close",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "NO_EXTERNAL_EFFECT",
+      "reversibility": "FULL",
+      "blast_radius": "OPAQUE_PROCESS_LOCAL_SESSION",
       "authority_transfer": false
     },
     {
