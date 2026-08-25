@@ -111,7 +111,8 @@ async def _profile_browser_replay(
         method = request.method.upper()
         if method not in _READ_METHODS:
             evidence.block(channel="http", url=request.url, reason="HTTP_METHOD_NOT_ADMITTED")
-            fatal.set()
+            if request.resource_type == "document":
+                fatal.set()
             await route.abort("blockedbyclient")
             return
         try:
