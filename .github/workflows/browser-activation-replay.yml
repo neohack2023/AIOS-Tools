@@ -12,6 +12,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.head_ref == 'agent/browser-runtime-activation-02e' ||
+      github.head_ref == 'agent/browser-runtime-activate-02e' ||
       github.head_ref == 'agent/browser-runtime-promote-02f'
     runs-on: ubuntu-latest
     timeout-minutes: 10

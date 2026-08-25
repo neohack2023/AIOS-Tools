@@ -33,9 +33,9 @@ def _descriptor() -> SessionDescriptor:
     )
 
 
-def test_02c_a_policy_is_fail_closed_for_real_auth_state():
+def test_active_auth_policy_keeps_fail_closed_secret_boundaries():
     policy = json.loads(AUTH_POLICY.read_text(encoding="utf-8"))
-    assert policy["policy_version"] == "browser-auth-policy/1.0-candidate"
+    assert policy["policy_version"] == "browser-auth-policy/1.0"
     assert policy["session_reuse_enabled"] is True
     assert policy["real_auth_state_capture_enabled"] is True
     assert policy["production_user_takeover_enabled"] is True
@@ -87,44 +87,18 @@ def test_public_auth_receipt_matches_secret_free_contract():
 
 def test_session_restore_api_accepts_no_raw_storage_or_profile_path():
     parameters = inspect.signature(SessionValidator.validate_for_restore).parameters
-    forbidden = {
-        "storage_state",
-        "storage_state_path",
-        "cookie",
-        "cookies",
-        "token",
-        "password",
-        "mfa_code",
-        "user_data_dir",
-        "profile_path",
-        "cdp_endpoint",
-    }
+    forbidden = {"storage_state", "storage_state_path", "cookie", "cookies", "token", "password", "mfa_code", "user_data_dir", "profile_path", "cdp_endpoint"}
     assert forbidden.isdisjoint(parameters)
 
 
 def test_takeover_api_exposes_no_secret_input_channel():
     parameters = inspect.signature(UserTakeoverCheckpoint.run).parameters
-    forbidden = {
-        "password",
-        "mfa_code",
-        "otp",
-        "recovery_code",
-        "passkey",
-        "private_key",
-        "cookie",
-        "token",
-        "storage_state",
-    }
+    forbidden = {"password", "mfa_code", "otp", "recovery_code", "passkey", "private_key", "cookie", "token", "storage_state"}
     assert forbidden.isdisjoint(parameters)
 
 
 def test_fixture_secret_does_not_escape_into_runtime_policy_contract_or_plan_files():
-    protected_roots = [
-        ROOT / "src" / "aios_tools" / "browser",
-        ROOT / "policies",
-        ROOT / "contracts",
-        ROOT / "docs" / "plans",
-    ]
+    protected_roots = [ROOT / "src" / "aios_tools" / "browser", ROOT / "policies", ROOT / "contracts", ROOT / "docs" / "plans"]
     leaks = []
     for root in protected_roots:
         for path in root.rglob("*"):
