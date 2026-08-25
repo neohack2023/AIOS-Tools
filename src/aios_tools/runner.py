@@ -4,6 +4,8 @@ from typing import Any
 from uuid import uuid4
 
 from .browser.policy import BrowserConfigurationError, browser_network_tool_admitted
+from .browser.mutation import MutationPolicyError, build_mutation_grant
+from .browser.session_capture import SessionCapturePolicyError, build_session_capture_grant
 from .config import ConfigurationError, load_policy, load_registry, validate_request
 from .envelope import ExecutionReceipt, ToolError, utc_now
 from .runtime_cognition import build_execution_cognition_receipt
@@ -73,7 +75,30 @@ def _receipt(
 
 
 def _browser_external_effects(tool: str, effect_class: str, output: dict[str, Any]) -> list[dict[str, Any]]:
-    if tool != "browser.inspect" or effect_class != "READ_NETWORK":
+    if not tool.startswith("browser."):
+        return []
+    if effect_class in {"REMOTE_MUTATION_REVERSIBLE", "REMOTE_MUTATION_HIGH_IMPACT"}:
+        target_origin = output.get("target_origin")
+        terminal_status = output.get("terminal_status")
+        method = output.get("method")
+        if not isinstance(target_origin, str) or not isinstance(terminal_status, str):
+            return []
+        mutation_count = output.get("mutation_count", 1 if output.get("response_status") is not None else 0)
+        if not isinstance(mutation_count, int):
+            mutation_count = 0
+        result = {
+            "effect_class": effect_class,
+            "capability_id": "cap:browser-control",
+            "target_origin": target_origin,
+            "mutation_count": mutation_count,
+            "method": method if isinstance(method, str) else "UNKNOWN",
+            "terminal_status": terminal_status,
+        }
+        if effect_class == "REMOTE_MUTATION_REVERSIBLE":
+            result["rollback_attempted"] = bool(output.get("rollback_attempted"))
+            result["rollback_verified"] = bool(output.get("rollback_verified"))
+        return [result]
+    if effect_class != "READ_NETWORK":
         return []
     evidence = output.get("evidence")
     if not isinstance(evidence, dict):
@@ -81,7 +106,10 @@ def _browser_external_effects(tool: str, effect_class: str, output: dict[str, An
     network = evidence.get("network")
     if not isinstance(network, list):
         network = []
-    request_count = sum(1 for item in network if isinstance(item, dict) and item.get("event") == "request")
+    request_count = sum(
+        1 for item in network
+        if isinstance(item, dict) and item.get("event") == "request"
+    )
     budget_used = output.get("budget_used")
     if not isinstance(budget_used, dict):
         budget_used = {}
@@ -100,7 +128,6 @@ def _browser_external_effects(tool: str, effect_class: str, output: dict[str, An
         "websocket_count": websocket_count,
         "terminal_status": terminal_status,
     }]
-
 
 def _write_approval_error(authority_context: dict[str, Any], *, tool: str, scope: str) -> ToolError | None:
     approval = authority_context.get("approval")
@@ -242,6 +269,62 @@ def invoke(
                 errors=[approval_error],
             )
 
+    handler_payload = dict(payload)
+    if tool in {"browser.mutate.request", "browser.mutate.reversible", "browser.upload.execute"}:
+        try:
+            handler_payload["_aios_mutation_grant"] = build_mutation_grant(
+                request_id=request_id,
+                tool=tool,
+                scope=scope,
+                effect_class=effect_class,
+                payload=payload,
+                authority_context=authority_context,
+            )
+        except (MutationPolicyError, SessionCapturePolicyError) as exc:
+            approval_codes = {
+                "APPROVAL_REQUIRED",
+                "APPROVAL_INVALID",
+                "APPROVAL_EXPIRED",
+                "APPROVAL_SCOPE_MISMATCH",
+                "APPROVAL_TARGET_MISMATCH",
+                "APPROVAL_METHOD_MISMATCH",
+                "APPROVAL_IDEMPOTENCY_MISMATCH",
+            }
+            return _receipt(
+                request_id=request_id, tool=tool, tool_version=tool_version, scope=scope, mode=mode,
+                effect_class=effect_class,
+                status="APPROVAL_REQUIRED" if exc.code in approval_codes else "BLOCKED",
+                started_at=started_at, registry_version=registry_version, policy_version=policy_version,
+                requested_by=requested_by, authority_context=authority_context, provenance=provenance,
+                errors=[ToolError(code=exc.code, message=str(exc))],
+            )
+
+    if tool == "browser.session.capture":
+        try:
+            handler_payload["_aios_session_capture_grant"] = build_session_capture_grant(
+                request_id=request_id,
+                tool=tool,
+                scope=scope,
+                effect_class=effect_class,
+                payload=payload,
+                authority_context=authority_context,
+            )
+        except SessionCapturePolicyError as exc:
+            approval_codes = {
+                "APPROVAL_REQUIRED",
+                "APPROVAL_INVALID",
+                "APPROVAL_EXPIRED",
+                "APPROVAL_SCOPE_MISMATCH",
+            }
+            return _receipt(
+                request_id=request_id, tool=tool, tool_version=tool_version, scope=scope, mode=mode,
+                effect_class=effect_class,
+                status="APPROVAL_REQUIRED" if exc.code in approval_codes else "BLOCKED",
+                started_at=started_at, registry_version=registry_version, policy_version=policy_version,
+                requested_by=requested_by, authority_context=authority_context, provenance=provenance,
+                errors=[ToolError(code=exc.code, message=str(exc))],
+            )
+
     handler = HANDLERS.get(tool)
     if handler is None:
         return _receipt(
@@ -253,7 +336,7 @@ def invoke(
         )
 
     try:
-        output = handler(payload)
+        output = handler(handler_payload)
         if tool == "system.health":
             output = {
                 **output,
@@ -273,14 +356,23 @@ def invoke(
             }
         status = "COMPLETED"
         errors: list[ToolError] = []
+    except MutationPolicyError as exc:
+        output = {}
+        status = "APPROVAL_REQUIRED" if exc.code.startswith("APPROVAL_") else "BLOCKED"
+        errors = [ToolError(code=exc.code, message=str(exc))]
     except (TypeError, ValueError) as exc:
         output = {}
         status = "FAILED"
         errors = [ToolError(code="INVALID_INPUT", message=str(exc))]
-    except Exception:
+    except Exception as exc:
+        code = getattr(exc, "code", None)
         output = {}
-        status = "FAILED"
-        errors = [ToolError(code="INTERNAL_ERROR", message="tool execution failed unexpectedly")]
+        if isinstance(code, str):
+            status = "BLOCKED" if code.endswith("_BLOCKED") or code in {"TARGET_BLOCKED", "UPLOAD_BLOCKED"} else "FAILED"
+            errors = [ToolError(code=code, message=str(exc))]
+        else:
+            status = "FAILED"
+            errors = [ToolError(code="INTERNAL_ERROR", message="tool execution failed unexpectedly")]
 
     external_effects = _browser_external_effects(tool, effect_class, output)
     return _receipt(

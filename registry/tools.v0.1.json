@@ -1,12 +1,115 @@
 {
-  "registry_version": "0.3.0",
+  "registry_version": "0.4.0",
   "default_mode": "READ_ONLY",
   "portable_repo_required": false,
   "tools": [
-    {"name": "system.health", "version": "0.1.0", "mode": "READ_ONLY", "effect_class": "NO_EXTERNAL_EFFECT", "reversibility": "FULL", "blast_radius": "NONE", "authority_transfer": false},
-    {"name": "canonical.hash_json", "version": "0.1.0", "mode": "READ_ONLY", "effect_class": "NO_EXTERNAL_EFFECT", "reversibility": "FULL", "blast_radius": "NONE", "authority_transfer": false},
-    {"name": "schema.validate", "version": "0.1.0", "mode": "READ_ONLY", "effect_class": "NO_EXTERNAL_EFFECT", "reversibility": "FULL", "blast_radius": "NONE", "authority_transfer": false},
-    {"name": "audio.demucs.separate", "version": "0.1.0", "mode": "WRITE", "effect_class": "LOCAL_DURABLE_WRITE", "reversibility": "PARTIAL", "blast_radius": "LOCAL_FILES", "authority_transfer": false},
-    {"name": "browser.inspect", "version": "0.1.0", "mode": "READ_ONLY", "effect_class": "READ_NETWORK", "reversibility": "FULL", "blast_radius": "EXPLICIT_PUBLIC_ORIGIN", "authority_transfer": false}
+    {
+      "name": "system.health",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "NO_EXTERNAL_EFFECT",
+      "reversibility": "FULL",
+      "blast_radius": "NONE",
+      "authority_transfer": false
+    },
+    {
+      "name": "canonical.hash_json",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "NO_EXTERNAL_EFFECT",
+      "reversibility": "FULL",
+      "blast_radius": "NONE",
+      "authority_transfer": false
+    },
+    {
+      "name": "schema.validate",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "NO_EXTERNAL_EFFECT",
+      "reversibility": "FULL",
+      "blast_radius": "NONE",
+      "authority_transfer": false
+    },
+    {
+      "name": "audio.demucs.separate",
+      "version": "0.1.0",
+      "mode": "WRITE",
+      "effect_class": "LOCAL_DURABLE_WRITE",
+      "reversibility": "PARTIAL",
+      "blast_radius": "LOCAL_FILES",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.inspect",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "READ_NETWORK",
+      "reversibility": "FULL",
+      "blast_radius": "EXPLICIT_PUBLIC_ORIGIN",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.profile.replay",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "READ_NETWORK",
+      "reversibility": "FULL",
+      "blast_radius": "EXPLICIT_PROFILE_ORIGIN",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.mutate.request",
+      "version": "0.1.0",
+      "mode": "WRITE",
+      "effect_class": "REMOTE_MUTATION_HIGH_IMPACT",
+      "reversibility": "NONE",
+      "blast_radius": "EXACT_APPROVED_REMOTE_TARGET",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.mutate.reversible",
+      "version": "0.1.0",
+      "mode": "WRITE",
+      "effect_class": "REMOTE_MUTATION_REVERSIBLE",
+      "reversibility": "VERIFIED_ROLLBACK",
+      "blast_radius": "EXACT_APPROVED_REMOTE_TARGET",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.upload.execute",
+      "version": "0.1.0",
+      "mode": "WRITE",
+      "effect_class": "REMOTE_MUTATION_HIGH_IMPACT",
+      "reversibility": "NONE",
+      "blast_radius": "EXACT_APPROVED_REMOTE_TARGET",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.session.capture",
+      "version": "0.1.0",
+      "mode": "WRITE",
+      "effect_class": "REMOTE_MUTATION_HIGH_IMPACT",
+      "reversibility": "PARTIAL",
+      "blast_radius": "EXPLICIT_AUTH_ORIGINS",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.download.promote",
+      "version": "0.1.0",
+      "mode": "WRITE",
+      "effect_class": "LOCAL_DURABLE_WRITE",
+      "reversibility": "PARTIAL",
+      "blast_radius": "GOVERNED_ARTIFACT_ROOT",
+      "authority_transfer": false
+    },
+    {
+      "name": "browser.runtime.status",
+      "version": "0.1.0",
+      "mode": "READ_ONLY",
+      "effect_class": "NO_EXTERNAL_EFFECT",
+      "reversibility": "FULL",
+      "blast_radius": "NONE",
+      "authority_transfer": false
+    }
   ]
 }

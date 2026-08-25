@@ -51,6 +51,116 @@ def browser_inspect(
     )
 
 
+@mcp.tool()
+def browser_profile_replay(
+    profile_id: str,
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Replay one registered read-only browser site profile in a fresh session."""
+    return invoke(
+        "browser.profile.replay",
+        {"profile_id": profile_id},
+        scope=scope,
+        requested_by=MCP_REQUESTER,
+    )
+
+
+@mcp.tool()
+def browser_runtime_status(scope: str = "global-working-memory") -> dict[str, Any]:
+    """Read the governed browser runtime activation and protected-store state."""
+    return invoke(
+        "browser.runtime.status",
+        {},
+        scope=scope,
+        requested_by=MCP_REQUESTER,
+    )
+
+
+@mcp.tool()
+def browser_mutate_request(
+    payload: dict[str, Any],
+    authority_context: dict[str, Any],
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Execute one exact approved remote HTTP mutation with fresh readback."""
+    return invoke(
+        "browser.mutate.request",
+        payload,
+        scope=scope,
+        mode="WRITE",
+        requested_by=MCP_REQUESTER,
+        authority_context=authority_context,
+    )
+
+
+@mcp.tool()
+def browser_mutate_reversible(
+    payload: dict[str, Any],
+    authority_context: dict[str, Any],
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Execute one exact approved reversible mutation and verify rollback."""
+    return invoke(
+        "browser.mutate.reversible",
+        payload,
+        scope=scope,
+        mode="WRITE",
+        requested_by=MCP_REQUESTER,
+        authority_context=authority_context,
+    )
+
+
+@mcp.tool()
+def browser_upload_execute(
+    payload: dict[str, Any],
+    authority_context: dict[str, Any],
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Populate one governed file input under an exact remote mutation permit."""
+    return invoke(
+        "browser.upload.execute",
+        payload,
+        scope=scope,
+        mode="WRITE",
+        requested_by=MCP_REQUESTER,
+        authority_context=authority_context,
+    )
+
+
+@mcp.tool()
+def browser_session_capture(
+    payload: dict[str, Any],
+    authority_context: dict[str, Any],
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Open a headed human-controlled authentication takeover and seal verified state."""
+    return invoke(
+        "browser.session.capture",
+        payload,
+        scope=scope,
+        mode="WRITE",
+        requested_by=MCP_REQUESTER,
+        authority_context=authority_context,
+    )
+
+
+@mcp.tool()
+def browser_download_promote(
+    payload: dict[str, Any],
+    authority_context: dict[str, Any],
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Promote one verified quarantined download under registered profile rules."""
+    return invoke(
+        "browser.download.promote",
+        payload,
+        scope=scope,
+        mode="WRITE",
+        requested_by=MCP_REQUESTER,
+        authority_context=authority_context,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="aios-tools-mcp")
     parser.add_argument("--transport", choices=["streamable-http", "stdio"], default="streamable-http")

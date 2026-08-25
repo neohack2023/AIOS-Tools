@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
+import json
 import mimetypes
 import os
 from pathlib import Path
@@ -117,6 +118,80 @@ class SyntheticArtifactResolver:
             raise ArtifactResolutionError("artifact resolver returned mismatched reference")
         return descriptor
 
+
+
+class ManifestArtifactResolver:
+    """Production resolver backed by an operator-owned runtime manifest.
+
+    Public requests still carry only ArtifactRef values. Filesystem paths come
+    from this trusted manifest and must remain relative to the configured root.
+    """
+
+    def __init__(self, *, artifact_root: Path, manifest_path: Path) -> None:
+        self.artifact_root = artifact_root.resolve(strict=True)
+        if not self.artifact_root.is_dir() or _is_reparse_point(artifact_root):
+            raise ArtifactResolutionError("configured artifact root is not a real directory")
+        if _is_reparse_point(manifest_path):
+            raise ArtifactResolutionError("artifact manifest may not be a symlink or reparse point")
+        self.manifest_path = manifest_path.resolve(strict=True)
+        if not self.manifest_path.is_file():
+            raise ArtifactResolutionError("artifact manifest is unavailable")
+        try:
+            document = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ArtifactResolutionError("artifact manifest is invalid") from exc
+        if not isinstance(document, dict) or not isinstance(document.get("artifacts"), dict):
+            raise ArtifactResolutionError("artifact manifest must contain artifacts")
+        self._artifacts = document["artifacts"]
+
+    @classmethod
+    def from_environment(cls) -> "ManifestArtifactResolver":
+        root = os.environ.get("AIOS_ARTIFACT_ROOT")
+        manifest = os.environ.get("AIOS_ARTIFACT_MANIFEST")
+        if not root or not manifest:
+            raise ArtifactResolutionError("production artifact resolver is not configured")
+        return cls(artifact_root=Path(root).expanduser(), manifest_path=Path(manifest).expanduser())
+
+    def resolve(self, ref: ArtifactRef) -> ArtifactDescriptor:
+        raw = self._artifacts.get(ref.value)
+        if not isinstance(raw, dict):
+            raise ArtifactResolutionError("governed artifact reference was not found")
+        relative = raw.get("path")
+        digest = raw.get("sha256")
+        if (
+            not isinstance(relative, str)
+            or not relative
+            or relative.startswith(("/", "\\"))
+            or re.match(r"^[A-Za-z]:", relative)
+            or Path(relative).is_absolute()
+        ):
+            raise ArtifactResolutionError("artifact manifest path must be relative")
+        parts = Path(relative).parts
+        if any(part in {"", ".", ".."} for part in parts):
+            raise ArtifactResolutionError("artifact manifest path is unsafe")
+        if digest is not None and (
+            not isinstance(digest, str)
+            or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest)
+        ):
+            raise ArtifactResolutionError("artifact manifest hash is invalid")
+        path = self.artifact_root.joinpath(*parts)
+        media_type = raw.get("media_type")
+        display_name = raw.get("display_name")
+        if media_type is not None and not isinstance(media_type, str):
+            raise ArtifactResolutionError("artifact media_type is invalid")
+        if display_name is not None and not isinstance(display_name, str):
+            raise ArtifactResolutionError("artifact display_name is invalid")
+        return ArtifactDescriptor(
+            ref=ref,
+            runtime_path=path,
+            expected_sha256=digest,
+            media_type=media_type,
+            display_name=display_name,
+        )
+
+
+def default_artifact_resolver() -> GovernedArtifactResolver:
+    return ManifestArtifactResolver.from_environment()
 
 def _is_reparse_point(path: Path) -> bool:
     info = path.lstat()

@@ -14,6 +14,13 @@ EXPECTED_MCP_TOOLS = {
     "canonical_hash_json",
     "validate_json_schema",
     "browser_inspect",
+    "browser_profile_replay",
+    "browser_runtime_status",
+    "browser_mutate_request",
+    "browser_mutate_reversible",
+    "browser_upload_execute",
+    "browser_session_capture",
+    "browser_download_promote",
 }
 
 
