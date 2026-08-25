@@ -176,7 +176,7 @@ async def _profile_browser_replay(
             page.on("pageerror", lambda exc: evidence.page_error(str(exc)))
             context.on("response", lambda response: evidence.response(url=response.url, status=response.status))
             response = await page.goto(entrypoint, wait_until="domcontentloaded", timeout=elapsed * 1000)
-            await page.wait_for_timeout(750)
+            await asyncio.sleep(0.75)
             main_status = response.status if response is not None else None
             final_url = page.url
             final_summary = minimize_url(final_url)
