@@ -15,7 +15,8 @@ def test_global_network_switch_stays_false():
 def test_browser_policy_preserves_read_boundary_and_explicit_effect_admission():
     policy = browser_policy.load_browser_policy()
     assert policy["effect_class"] == "READ_NETWORK"
-    assert policy["runtime_state"] == "ACTIVATION_CANDIDATE"
+    assert policy["runtime_state"] == "ACTIVE"
+    assert policy["policy_version"] == "browser-policy/1.0"
     assert policy["admitted_tools"]["browser.inspect"] == {
         "mode": "READ_ONLY",
         "effect_class": "READ_NETWORK",
@@ -31,6 +32,9 @@ def test_browser_policy_preserves_read_boundary_and_explicit_effect_admission():
     assert policy["allowed_http_methods"] == ["GET", "HEAD"]
     assert policy["mutation_http_methods"] == ["POST", "PUT", "PATCH", "DELETE"]
     assert policy["mutation"]["ambiguous_state_retry"] is False
+    assert policy["download_quarantine"]["status"] == "ACTIVE"
+    assert policy["upload_intake"]["status"] == "ACTIVE"
+    assert policy["mutation"]["status"] == "ACTIVE"
 
 
 def test_unrelated_network_tool_never_reaches_handler(monkeypatch):
