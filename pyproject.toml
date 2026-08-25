@@ -25,6 +25,8 @@ browser = [
 [project.scripts]
 aios-tools = "aios_tools.cli:main"
 aios-tools-mcp = "aios_tools.mcp_server:main"
+aios-browser-mcp = "aios_tools.browser_mcp_server:main"
+aios-browser-mcp-alpic = "aios_tools.browser_mcp_server:alpic_main"
 aios-cartography-render = "aios_tools.cartography.render_cli:main"
 aios-bench = "aios_tools.benchmarks.cli:main"
 

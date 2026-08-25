@@ -34,4 +34,8 @@ Adapters must not implement divergent business logic. All callers receive the sa
 
 ## Current constraint
 
-Slice 0 is read-only. Hosted deployment, authentication, direct connectors, durable writes, and automatic approvals are deferred.
+The browser-only MCP deployment adapter is a candidate execution surface. It
+contains no divergent browser logic and exposes only the four read-only
+interactive session tools through the shared core. Hosted activation,
+authentication, direct connectors, durable writes, and automatic approvals
+remain separately governed and are not implied by deployment configuration.

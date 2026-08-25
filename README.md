@@ -65,6 +65,22 @@ aios-tools-mcp --transport stdio
 
 Streamable HTTP is served at `/mcp` by default.
 
+### Browser-only MCP endpoint
+
+Use the browser-only adapter when an ordinary LLM should receive the governed
+interactive browser loop without importing unrelated or write-capable tools:
+
+```bash
+aios-browser-mcp
+aios-browser-mcp --transport stdio
+```
+
+It advertises exactly `browser_session_open`, `browser_session_observe`,
+`browser_session_act`, and `browser_session_close`, with explicit read-only
+MCP annotations. `alpic.json` provides the candidate hosted build and stdio
+start commands; a deployment is not considered available until its Chromium
+runtime and multi-call session continuity are verified.
+
 ## Validation
 
 ```bash
@@ -92,5 +108,6 @@ Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [Developmen
 Browser Runtime 1.0 is active in the shared core. Browser reads, governed
 session capture, quarantined downloads, explicit uploads, and exact approved
 mutation handlers are implemented behind capability-specific policy. Hosted
-deployment, direct Notion/Drive adapters, and automatic approvals remain
-deferred.
+activation, direct Notion/Drive adapters, and automatic approvals remain
+deferred. A browser-only MCP deployment adapter is implemented as a candidate
+surface and does not itself prove a live endpoint.
