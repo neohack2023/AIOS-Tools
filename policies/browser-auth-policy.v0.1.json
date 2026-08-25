@@ -1,5 +1,5 @@
 {
-  "policy_version": "browser-auth-policy/1.0-candidate",
+  "policy_version": "browser-auth-policy/1.0",
   "capability_id": "cap:browser-control",
   "session_reuse_enabled": true,
   "real_auth_state_capture_enabled": true,
@@ -10,9 +10,7 @@
     "require_available": true,
     "require_protected": true,
     "plaintext_fallback": false,
-    "admitted_production_backends": [
-      "os-keyring"
-    ],
+    "admitted_production_backends": ["os-keyring"],
     "allowed_backend_prefixes": [
       "keyring.backends.Windows.",
       "keyring.backends.macOS.",
@@ -55,23 +53,14 @@
     "generic_cdp_attachment_allowed": false
   },
   "capabilities": {
-    "restorable": [
-      "cookies",
-      "local_storage",
-      "indexed_db"
-    ],
+    "restorable": ["cookies", "local_storage", "indexed_db"],
     "session_storage_requires_adapter": true,
     "virtual_webauthn_real_user_persistence": "block"
   },
   "lifecycle": {
     "reusable_state": "AVAILABLE",
     "in_use_state": "IN_USE",
-    "terminal_unusable_states": [
-      "EXPIRED",
-      "REVOKED",
-      "INVALID",
-      "PURGED"
-    ],
+    "terminal_unusable_states": ["EXPIRED", "REVOKED", "INVALID", "PURGED"],
     "takeover_states": [
       "AUTH_REQUIRED",
       "TAKEOVER_PENDING",
