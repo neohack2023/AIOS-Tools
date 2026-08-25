@@ -4,6 +4,7 @@ import asyncio
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from pathlib import Path
 from urllib.parse import urlsplit
 import threading
 import time
