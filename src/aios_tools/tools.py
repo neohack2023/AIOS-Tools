@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
@@ -94,29 +94,65 @@ def browser_inspect(payload: dict[str, Any]) -> dict[str, Any]:
     return run_browser_inspect(payload)
 
 
-
 def browser_profile_replay(payload: dict[str, Any]) -> dict[str, Any]:
     from .browser.site_profile import run_site_profile_replay
 
     return run_site_profile_replay(payload)
 
 
+def _mutation_failure_truth(
+    payload: dict[str, Any],
+    operation: Callable[[dict[str, Any]], dict[str, Any]],
+) -> dict[str, Any]:
+    """Preserve durable unknown-state truth if an effect executor raises after mutation begins."""
+    from .browser.mutation import MutationLedger
+    from .browser.origin import NormalizedOrigin
+
+    try:
+        return operation(payload)
+    except Exception:
+        key = payload.get("idempotency_key")
+        if not isinstance(key, str) or not key:
+            raise
+        try:
+            ledger_status = MutationLedger.default().status(key)
+        except Exception:
+            raise
+        if ledger_status not in {"MUTATION_STATE_UNKNOWN", "ROLLBACK_FAILED"}:
+            raise
+        raw_target = payload.get("mutation_url", payload.get("url"))
+        if not isinstance(raw_target, str):
+            raise
+        target_origin = NormalizedOrigin.parse(raw_target).serialize()
+        method = str(payload.get("method", "UNKNOWN")).upper()
+        return {
+            "terminal_status": ledger_status,
+            "semantic_success": False,
+            "target_origin": target_origin,
+            "method": method,
+            "mutation_count": 1,
+            "durable_ledger_state": ledger_status,
+            "executor_exception_sanitized": True,
+            "authority_transfer": False,
+        }
+
+
 def browser_mutate_request(payload: dict[str, Any]) -> dict[str, Any]:
     from .browser.effects_runtime import run_mutation_request
 
-    return run_mutation_request(payload)
+    return _mutation_failure_truth(payload, run_mutation_request)
 
 
 def browser_mutate_reversible(payload: dict[str, Any]) -> dict[str, Any]:
     from .browser.effects_runtime import run_mutation_reversible
 
-    return run_mutation_reversible(payload)
+    return _mutation_failure_truth(payload, run_mutation_reversible)
 
 
 def browser_upload_execute(payload: dict[str, Any]) -> dict[str, Any]:
     from .browser.effects_runtime import run_upload_execute
 
-    return run_upload_execute(payload)
+    return _mutation_failure_truth(payload, run_upload_execute)
 
 
 def browser_session_capture(payload: dict[str, Any]) -> dict[str, Any]:
@@ -202,6 +238,7 @@ def browser_runtime_status(payload: dict[str, Any]) -> dict[str, Any]:
         "global_network_switch_changed": False,
         "authority_transfer": False,
     }
+
 
 HANDLERS = {
     "system.health": system_health,
