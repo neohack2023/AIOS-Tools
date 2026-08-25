@@ -205,8 +205,10 @@ class DownloadPromotionManager:
                 "source_profile_id": rules.profile_id,
             }
             temp = self.manifest_path.with_name(self.manifest_path.name + f".{token}.tmp")
-            temp.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")
-            with temp.open("rb") as manifest_handle:
+            manifest_text = json.dumps(manifest, sort_keys=True, indent=2) + "\n"
+            with temp.open("w", encoding="utf-8", newline="\n") as manifest_handle:
+                manifest_handle.write(manifest_text)
+                manifest_handle.flush()
                 os.fsync(manifest_handle.fileno())
             os.replace(temp, self.manifest_path)
         finally:
