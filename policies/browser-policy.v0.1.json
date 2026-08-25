@@ -1,60 +1,31 @@
 {
-  "policy_version": "browser-policy/1.0-candidate",
-  "runtime_state": "ACTIVATION_CANDIDATE",
+  "policy_version": "browser-policy/1.0",
+  "runtime_state": "ACTIVE",
   "capability_id": "cap:browser-control",
   "public_network_only": true,
   "service_workers": "block",
   "websocket_policy": "block",
-  "allowed_schemes": [
-    "https",
-    "http"
-  ],
-  "read_http_methods": [
-    "GET",
-    "HEAD"
-  ],
-  "mutation_http_methods": [
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE"
-  ],
+  "allowed_schemes": ["https", "http"],
+  "read_http_methods": ["GET", "HEAD"],
+  "mutation_http_methods": ["POST", "PUT", "PATCH", "DELETE"],
   "admitted_tools": {
-    "browser.inspect": {
-      "mode": "READ_ONLY",
-      "effect_class": "READ_NETWORK"
-    },
-    "browser.profile.replay": {
-      "mode": "READ_ONLY",
-      "effect_class": "READ_NETWORK"
-    },
-    "browser.mutate.request": {
-      "mode": "WRITE",
-      "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"
-    },
-    "browser.mutate.reversible": {
-      "mode": "WRITE",
-      "effect_class": "REMOTE_MUTATION_REVERSIBLE"
-    },
-    "browser.upload.execute": {
-      "mode": "WRITE",
-      "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"
-    },
-    "browser.session.capture": {
-      "mode": "WRITE",
-      "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"
-    }
+    "browser.inspect": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"},
+    "browser.profile.replay": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"},
+    "browser.mutate.request": {"mode": "WRITE", "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"},
+    "browser.mutate.reversible": {"mode": "WRITE", "effect_class": "REMOTE_MUTATION_REVERSIBLE"},
+    "browser.upload.execute": {"mode": "WRITE", "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"},
+    "browser.session.capture": {"mode": "WRITE", "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"}
   },
   "downloads": "block",
   "download_quarantine": {
-    "status": "ACTIVE_CANDIDATE",
+    "status": "ACTIVE",
     "promotion": "separate_profile_governed_local_write",
     "max_downloads": 10,
     "max_file_bytes": 52428800,
     "max_aggregate_bytes": 104857600
   },
   "upload_intake": {
-    "status": "ACTIVE_CANDIDATE",
+    "status": "ACTIVE",
     "public_identity": "governed_artifact_ref_only",
     "caller_filesystem_paths": false,
     "in_memory_playwright_payload": true,
@@ -63,7 +34,7 @@
     "max_file_bytes": 52428800
   },
   "mutation": {
-    "status": "ACTIVE_CANDIDATE",
+    "status": "ACTIVE",
     "one_shot_approval_required": true,
     "exact_target_required": true,
     "exact_method_required": true,
@@ -86,8 +57,5 @@
     "downloads": 10
   },
   "effect_class": "READ_NETWORK",
-  "allowed_http_methods": [
-    "GET",
-    "HEAD"
-  ]
+  "allowed_http_methods": ["GET", "HEAD"]
 }
