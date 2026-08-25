@@ -25,6 +25,30 @@ def test_mcp_browser_adapter_routes_to_shared_core(monkeypatch):
     assert observed["scope"] == "global-working-memory"
 
 
+def test_mcp_interactive_session_adapters_route_to_shared_core(monkeypatch):
+    observed = []
+
+    def fake_invoke(tool, payload, *, scope, requested_by):
+        observed.append((tool, payload, scope, requested_by))
+        return {"status": "COMPLETED"}
+
+    monkeypatch.setattr(mcp_server, "invoke", fake_invoke)
+    opened = mcp_server.browser_session_open("https://example.com")
+    acted = mcp_server.browser_session_act(
+        "browser-session-" + "a" * 32,
+        [{"type": "scroll", "delta_y": 500}],
+    )
+    closed = mcp_server.browser_session_close("browser-session-" + "a" * 32)
+    assert opened == acted == closed == {"status": "COMPLETED"}
+    assert [item[0] for item in observed] == [
+        "browser.session.open",
+        "browser.session.act",
+        "browser.session.close",
+    ]
+    assert observed[0][1]["resource_origins"] == []
+    assert observed[1][1]["actions"][0]["type"] == "scroll"
+
+
 def test_mcp_remote_mutation_adapter_routes_write_authority_to_shared_core(monkeypatch):
     observed = {}
 

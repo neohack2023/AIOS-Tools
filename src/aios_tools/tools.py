@@ -73,6 +73,26 @@ def browser_profile_replay(payload: dict[str, Any]) -> dict[str, Any]:
     return run_site_profile_replay(payload)
 
 
+def browser_session_open(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.interactive import run_interactive_open
+    return run_interactive_open(payload)
+
+
+def browser_session_observe(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.interactive import run_interactive_observe
+    return run_interactive_observe(payload)
+
+
+def browser_session_act(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.interactive import run_interactive_act
+    return run_interactive_act(payload)
+
+
+def browser_session_close(payload: dict[str, Any]) -> dict[str, Any]:
+    from .browser.interactive import run_interactive_close
+    return run_interactive_close(payload)
+
+
 def _mutation_failure_truth(payload: dict[str, Any], operation: Callable[[dict[str, Any]], dict[str, Any]]) -> dict[str, Any]:
     """Preserve durable unknown-state truth if an effect executor raises after mutation begins."""
     from .browser.mutation import MutationLedger
@@ -179,6 +199,10 @@ HANDLERS = {
     "audio.demucs.separate": audio_demucs_separate,
     "browser.inspect": browser_inspect,
     "browser.profile.replay": browser_profile_replay,
+    "browser.session.open": browser_session_open,
+    "browser.session.observe": browser_session_observe,
+    "browser.session.act": browser_session_act,
+    "browser.session.close": browser_session_close,
     "browser.mutate.request": browser_mutate_request,
     "browser.mutate.reversible": browser_mutate_reversible,
     "browser.upload.execute": browser_upload_execute,

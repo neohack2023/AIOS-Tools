@@ -29,7 +29,7 @@ def test_health_receipt_is_read_only_independent_and_traced():
     assert receipt["authority_transfer"] is False
     assert receipt["external_effects"] == []
     assert receipt["output"]["portable_repo_required"] is False
-    assert receipt["registry_version"] == "0.4.0"
+    assert receipt["registry_version"] == "0.5.0-candidate"
     assert receipt["policy_version"] == "0.3.0-candidate"
     assert receipt["requested_by"] == {"type": "SERVICE", "id": "aios-tools-python"}
     assert receipt["output"]["policy"]["durable_writes_enabled"] is True

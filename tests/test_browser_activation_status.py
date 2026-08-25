@@ -10,7 +10,7 @@ def test_browser_runtime_status_is_machine_readable_active():
     output = receipt["output"]
     assert output["capability_id"] == "cap:browser-control"
     assert output["runtime_state"] == "ACTIVE"
-    assert output["browser_policy_version"] == "browser-policy/1.0"
+    assert output["browser_policy_version"] == "browser-policy/1.1-candidate"
     assert output["auth_policy_version"] == "browser-auth-policy/1.0"
     assert output["session_reuse_enabled"] is True
     assert output["real_auth_state_capture_enabled"] is True

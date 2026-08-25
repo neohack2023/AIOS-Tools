@@ -1,5 +1,5 @@
 {
-  "policy_version": "browser-policy/1.0",
+  "policy_version": "browser-policy/1.1-candidate",
   "runtime_state": "ACTIVE",
   "capability_id": "cap:browser-control",
   "public_network_only": true,
@@ -11,6 +11,9 @@
   "admitted_tools": {
     "browser.inspect": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"},
     "browser.profile.replay": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"},
+    "browser.session.open": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"},
+    "browser.session.observe": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"},
+    "browser.session.act": {"mode": "READ_ONLY", "effect_class": "READ_NETWORK"},
     "browser.mutate.request": {"mode": "WRITE", "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"},
     "browser.mutate.reversible": {"mode": "WRITE", "effect_class": "REMOTE_MUTATION_REVERSIBLE"},
     "browser.upload.execute": {"mode": "WRITE", "effect_class": "REMOTE_MUTATION_HIGH_IMPACT"},
@@ -55,6 +58,16 @@
     "mutations": 1,
     "uploads": 1,
     "downloads": 10
+  },
+  "interactive": {
+    "max_sessions": 4,
+    "session_seconds": 300,
+    "network_requests": 160,
+    "actions": 24,
+    "observations": 24,
+    "action_batch": 8,
+    "visible_text_chars": 12000,
+    "max_elements": 60
   },
   "effect_class": "READ_NETWORK",
   "allowed_http_methods": ["GET", "HEAD"]

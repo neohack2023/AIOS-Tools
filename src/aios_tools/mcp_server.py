@@ -66,6 +66,79 @@ def browser_profile_replay(
 
 
 @mcp.tool()
+def browser_session_open(
+    url: str,
+    resource_origins: list[str] | None = None,
+    session_seconds: int = 300,
+    visible_text_chars: int = 12000,
+    max_elements: int = 60,
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Open one ephemeral read-only browser session and return a compact untrusted observation."""
+    return invoke(
+        "browser.session.open",
+        {
+            "url": url,
+            "resource_origins": resource_origins or [],
+            "session_seconds": session_seconds,
+            "visible_text_chars": visible_text_chars,
+            "max_elements": max_elements,
+        },
+        scope=scope,
+        requested_by=MCP_REQUESTER,
+    )
+
+
+@mcp.tool()
+def browser_session_observe(
+    session_id: str,
+    visible_text_chars: int = 12000,
+    max_elements: int = 60,
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Observe one opaque interactive browser session; all page data is untrusted."""
+    return invoke(
+        "browser.session.observe",
+        {
+            "session_id": session_id,
+            "visible_text_chars": visible_text_chars,
+            "max_elements": max_elements,
+        },
+        scope=scope,
+        requested_by=MCP_REQUESTER,
+    )
+
+
+@mcp.tool()
+def browser_session_act(
+    session_id: str,
+    actions: list[dict[str, Any]],
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Run one bounded batch of typed read-only browser actions, then observe."""
+    return invoke(
+        "browser.session.act",
+        {"session_id": session_id, "actions": actions},
+        scope=scope,
+        requested_by=MCP_REQUESTER,
+    )
+
+
+@mcp.tool()
+def browser_session_close(
+    session_id: str,
+    scope: str = "global-working-memory",
+) -> dict[str, Any]:
+    """Close one opaque process-local interactive browser session."""
+    return invoke(
+        "browser.session.close",
+        {"session_id": session_id},
+        scope=scope,
+        requested_by=MCP_REQUESTER,
+    )
+
+
+@mcp.tool()
 def browser_runtime_status(scope: str = "global-working-memory") -> dict[str, Any]:
     """Read the governed browser runtime activation and protected-store state."""
     return invoke(
