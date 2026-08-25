@@ -22,7 +22,7 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
 
 
 def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
-    """Run preflight, frozen four-stem inference, manifest freeze, and atomic promotion.
+    """Run preflight, frozen four-stem inference, evidence freeze, and atomic promotion.
 
     This remains an internal runtime function. It does not register or admit the tool.
     """
@@ -45,8 +45,10 @@ def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
             transaction=transaction,
         )
 
+        metrics_path = transaction.artifact_path("analysis/stem-metrics.json")
+        _write_json(metrics_path, inference["metrics"])
         receipt = {
-            "schema_version": "0.1.0",
+            "schema_version": "0.2.0",
             "status": "BASIC_STEM_SPLIT_STAGED",
             "run_id": payload["run_id"],
             "tool_identity": "audio.stem_section_analyze",
@@ -56,6 +58,8 @@ def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
             "slice1_dependency": preflight["slice1_dependency"],
             "model_cache": preflight["model_cache"],
             "stems": inference["stems"],
+            "metrics": inference["metrics"],
+            "output_encoding": "WAV_FLOAT32",
             "elapsed_seconds": round(time.perf_counter() - started, 6),
             "runtime_admission": False,
             "pilot_authorized": False,
@@ -65,7 +69,12 @@ def run_basic_stem_split(payload: dict[str, Any]) -> dict[str, Any]:
         _write_json(receipt_path, receipt)
 
         specs = list(inference["artifact_specs"])
-        specs.append(ArtifactSpec("run-receipt.json", "application/json", "EXECUTION_RECEIPT"))
+        specs.extend(
+            [
+                ArtifactSpec("analysis/stem-metrics.json", "application/json", "QUALITY_PROXY"),
+                ArtifactSpec("run-receipt.json", "application/json", "EXECUTION_RECEIPT"),
+            ]
+        )
         manifest = transaction.build_manifest(specs)
         promoted = transaction.promote()
 
