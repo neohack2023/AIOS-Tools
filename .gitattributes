@@ -1,1 +1,2 @@
 benchmarks/profiles/*.txt text eol=lf
+benchmarks/frontier_eval_01/profiles/*.txt text eol=lf
