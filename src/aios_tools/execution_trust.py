@@ -357,14 +357,16 @@ def run_synthetic_matrix(path: Path = MATRIX_PATH) -> dict[str, Any]:
 
 
 def _file_sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest()
 
 
 def _tool_content_digest(metadata: dict[str, Any], handler: Callable[..., Any]) -> str:
+    source = inspect.getsource(handler).replace("\r\n", "\n").replace("\r", "\n")
     return canonical_sha256(
         {
             "metadata": metadata,
-            "handler_source": inspect.getsource(handler),
+            "handler_source": source,
         }
     )
 
