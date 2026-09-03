@@ -1,0 +1,254 @@
+{
+  "schema": "aios.execution-trust-binding-matrix.v0.1",
+  "contract_id": "AIOS_EXECUTION_TRUST_BINDING_01",
+  "base_binding": {
+    "schema": "aios.execution-trust-binding.v0.1",
+    "execution_id": "etb-base",
+    "scope_key": "global-working-memory",
+    "capability_id": "cap:synthetic-etb",
+    "principal_id": "service:synthetic-etb-harness",
+    "asset_or_tool_identity": {
+      "kind": "TOOL",
+      "stable_id": "system.health",
+      "version_label": "0.1.0",
+      "content_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected_content_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "dependency_manifest_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expected_dependency_manifest_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "catalog_state": {
+      "catalog_revision": "synthetic-catalog/1",
+      "schema_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "expected_schema_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "description_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "expected_description_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "freshness": "FRESH",
+      "discovered_state": "KNOWN"
+    },
+    "policy_state": {
+      "policy_id": "synthetic-policy",
+      "policy_version": "1",
+      "parameter_class": "BOUNDED",
+      "consent": "NOT_REQUIRED",
+      "decision": "ALLOW"
+    },
+    "security_trust": {
+      "scanner_or_validator_id": "synthetic-validator",
+      "result": "PASS",
+      "project_scope": "global-working-memory"
+    },
+    "runtime_topology": {
+      "controller_location": "LOCAL_CONTROLLER",
+      "tool_execution_location": "LOCAL_WORKER",
+      "filesystem_boundary": "EPHEMERAL_SANDBOX",
+      "shell_boundary": "NONE",
+      "credential_audience": "NONE",
+      "network_class": "NO_EXTERNAL_EFFECT",
+      "orchestration_owner": "AIOS",
+      "inference_location": "NONE",
+      "worker_identity": "SYNTHETIC_WORKER",
+      "data_egress_policy_id": "NO_EGRESS"
+    },
+    "extension_binding": {
+      "extension_id": null,
+      "resolved_revision": null,
+      "manifest_digest": null,
+      "backend_scope": null,
+      "browser_context_isolation": "UNKNOWN",
+      "enablement_state": "DISABLED"
+    },
+    "producer_lineage": {
+      "producer_execution_id": null,
+      "source_receipt_ids": []
+    },
+    "semantic_authority": {
+      "authority_class": "RESEARCH_ONLY",
+      "destination_scope": "global-working-memory/research",
+      "canon_or_trusted_promotion_allowed": false
+    },
+    "requested_operation": {
+      "action": "EXECUTE_READ_ONLY",
+      "mode": "READ_ONLY",
+      "effect_class": "NO_EXTERNAL_EFFECT",
+      "artifact_upload": false,
+      "semantic_promotion": false,
+      "skill_installation": false,
+      "authenticated_requests": 0
+    },
+    "artifact_dependencies": [],
+    "runtime_observation": {
+      "topology": {
+        "controller_location": "LOCAL_CONTROLLER",
+        "tool_execution_location": "LOCAL_WORKER",
+        "filesystem_boundary": "EPHEMERAL_SANDBOX",
+        "shell_boundary": "NONE",
+        "credential_audience": "NONE",
+        "network_class": "NO_EXTERNAL_EFFECT",
+        "orchestration_owner": "AIOS",
+        "inference_location": "NONE",
+        "worker_identity": "SYNTHETIC_WORKER",
+        "data_egress_policy_id": "NO_EGRESS"
+      },
+      "egress_enabled": false,
+      "authenticated_request_count": 0
+    },
+    "skill_compounding": {
+      "recurrence_nominated": false,
+      "held_out_validation": "NOT_RUN",
+      "install_authorized": false
+    },
+    "invalidation_events": []
+  },
+  "cases": [
+    {
+      "id": "ETB-01",
+      "label": "NEW_WRITE_TOOL_SYNC",
+      "overlay": {
+        "execution_id": "etb-01-new-write-tool-sync",
+        "asset_or_tool_identity": {"stable_id": "new.write.tool"},
+        "catalog_state": {"discovered_state": "NEW_PENDING_POLICY"},
+        "policy_state": {"consent": "UNKNOWN", "decision": "UNKNOWN"},
+        "requested_operation": {"action": "EXECUTE_WRITE", "mode": "WRITE", "effect_class": "LOCAL_DURABLE_WRITE"}
+      },
+      "expected": {"trust_decision": "PENDING_POLICY", "admitted": false, "reason_codes": ["NEW_TOOL_PENDING_POLICY"]}
+    },
+    {
+      "id": "ETB-02",
+      "label": "READ_TO_WRITE_SCHEMA_DRIFT",
+      "overlay": {
+        "execution_id": "etb-02-read-to-write-schema-drift",
+        "catalog_state": {
+          "schema_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "freshness": "STALE"
+        },
+        "policy_state": {"consent": "GRANTED_BOUND"},
+        "requested_operation": {"action": "EXECUTE_WRITE", "mode": "WRITE", "effect_class": "LOCAL_DURABLE_WRITE"}
+      },
+      "expected": {"trust_decision": "STALE", "admitted": false, "reason_codes": ["READ_TO_WRITE_SCHEMA_DRIFT_CONSENT_INVALIDATED"]}
+    },
+    {
+      "id": "ETB-03",
+      "label": "TRANSITIVE_ASSET_BLOCK",
+      "overlay": {
+        "execution_id": "etb-03-transitive-asset-block",
+        "asset_or_tool_identity": {"kind": "MODEL", "stable_id": "model:parent-pass"},
+        "artifact_dependencies": [
+          {
+            "stable_id": "dependency:denied",
+            "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "approved_digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "security_result": "BLOCK"
+          }
+        ]
+      },
+      "expected": {"trust_decision": "BLOCK", "admitted": false, "reason_codes": ["TRANSITIVE_DEPENDENCY_BLOCKED"]}
+    },
+    {
+      "id": "ETB-04",
+      "label": "SAME_VERSION_DIGEST_DRIFT",
+      "overlay": {
+        "execution_id": "etb-04-same-version-digest-drift",
+        "asset_or_tool_identity": {"content_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+      },
+      "expected": {"trust_decision": "STALE", "admitted": false, "reason_codes": ["SAME_VERSION_DIGEST_DRIFT"]}
+    },
+    {
+      "id": "ETB-05",
+      "label": "REMOTE_CONTROLLER_LOCAL_WORKER",
+      "overlay": {
+        "execution_id": "etb-05-remote-controller-local-worker",
+        "requested_operation": {"effect_class": "READ_NETWORK"},
+        "runtime_topology": {
+          "controller_location": "REMOTE_VENDOR_CONTROL_PLANE",
+          "tool_execution_location": "LOCAL_CUSTOMER_WORKER",
+          "filesystem_boundary": "LOCAL_PROJECT_SANDBOX",
+          "credential_audience": "LOCAL_WORKER_ONLY",
+          "network_class": "DECLARED_VENDOR_MODEL_EGRESS",
+          "orchestration_owner": "REMOTE_VENDOR",
+          "inference_location": "REMOTE_VENDOR_MODEL",
+          "worker_identity": "CUSTOMER_WORKER_01",
+          "data_egress_policy_id": "EGRESS-METADATA-ONLY-01"
+        },
+        "runtime_observation": {
+          "topology": {
+            "controller_location": "REMOTE_VENDOR_CONTROL_PLANE",
+            "tool_execution_location": "LOCAL_CUSTOMER_WORKER",
+            "filesystem_boundary": "LOCAL_PROJECT_SANDBOX",
+            "credential_audience": "LOCAL_WORKER_ONLY",
+            "network_class": "DECLARED_VENDOR_MODEL_EGRESS",
+            "orchestration_owner": "REMOTE_VENDOR",
+            "inference_location": "REMOTE_VENDOR_MODEL",
+            "worker_identity": "CUSTOMER_WORKER_01",
+            "data_egress_policy_id": "EGRESS-METADATA-ONLY-01"
+          }
+        }
+      },
+      "expected": {"trust_decision": "ADMIT", "admitted": true, "reason_codes": ["ALL_MATERIAL_BINDINGS_RESOLVED"]}
+    },
+    {
+      "id": "ETB-06",
+      "label": "EGRESS_DISABLED_ARTIFACT_ATTEMPT",
+      "overlay": {
+        "execution_id": "etb-06-egress-disabled-artifact-attempt",
+        "policy_state": {"consent": "GRANTED_BOUND"},
+        "requested_operation": {
+          "action": "UPLOAD_ARTIFACT",
+          "mode": "WRITE",
+          "effect_class": "REMOTE_MUTATION_HIGH_IMPACT",
+          "artifact_upload": true
+        }
+      },
+      "expected": {"trust_decision": "BLOCK", "admitted": false, "reason_codes": ["EGRESS_DISABLED_ARTIFACT_UPLOAD_BLOCKED"]}
+    },
+    {
+      "id": "ETB-07",
+      "label": "EXTENSION_REVOKED_WHILE_LOADED",
+      "overlay": {
+        "execution_id": "etb-07-extension-revoked-while-loaded",
+        "asset_or_tool_identity": {"kind": "BROWSER_EXTENSION", "stable_id": "extension:synthetic"},
+        "extension_binding": {
+          "extension_id": "extension:synthetic",
+          "resolved_revision": "rev-1",
+          "manifest_digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "backend_scope": "https://example.invalid",
+          "browser_context_isolation": "SAME_CONTEXT",
+          "enablement_state": "REVOKED"
+        },
+        "requested_operation": {"action": "AUTHENTICATED_EXTENSION_REQUEST", "effect_class": "READ_NETWORK", "authenticated_requests": 1},
+        "invalidation_events": ["browser.extension.revoked"]
+      },
+      "expected": {"trust_decision": "BLOCK", "admitted": false, "reason_codes": ["EXTENSION_REVOKED"]}
+    },
+    {
+      "id": "ETB-08",
+      "label": "SECURITY_PASS_RESEARCH_AUTHORITY",
+      "overlay": {
+        "execution_id": "etb-08-security-pass-research-authority",
+        "asset_or_tool_identity": {"kind": "GENERATED_ARTIFACT", "stable_id": "artifact:research-only"},
+        "producer_lineage": {
+          "producer_execution_id": "synthetic-producer-01",
+          "source_receipt_ids": ["synthetic-source-receipt-01"]
+        },
+        "requested_operation": {"action": "CONSUME_RESEARCH_ARTIFACT"}
+      },
+      "expected": {"trust_decision": "ADMIT", "admitted": true, "reason_codes": ["ALL_MATERIAL_BINDINGS_RESOLVED"]}
+    },
+    {
+      "id": "ETB-09",
+      "label": "RECURRING_PROCEDURE_HELD_OUT_FAIL",
+      "overlay": {
+        "execution_id": "etb-09-recurring-procedure-held-out-fail",
+        "asset_or_tool_identity": {"kind": "SKILL", "stable_id": "skill:candidate"},
+        "requested_operation": {"action": "INSTALL_SKILL", "mode": "WRITE", "effect_class": "LOCAL_DURABLE_WRITE", "skill_installation": true},
+        "skill_compounding": {"recurrence_nominated": true, "held_out_validation": "FAIL", "install_authorized": false}
+      },
+      "expected": {"trust_decision": "BLOCK", "admitted": false, "reason_codes": ["HELD_OUT_VALIDATION_FAILED", "SKILL_INSTALLATION_NOT_AUTHORIZED"]}
+    },
+    {
+      "id": "ETB-10",
+      "label": "FULL_PASS_READ_ONLY",
+      "overlay": {"execution_id": "etb-10-full-pass-read-only"},
+      "expected": {"trust_decision": "ADMIT", "admitted": true, "reason_codes": ["ALL_MATERIAL_BINDINGS_RESOLVED"]}
+    }
+  ]
+}
