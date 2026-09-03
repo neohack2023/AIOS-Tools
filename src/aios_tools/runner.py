@@ -8,6 +8,10 @@ from .browser.mutation import MutationPolicyError, build_mutation_grant
 from .browser.session_capture import SessionCapturePolicyError, build_session_capture_grant
 from .config import ConfigurationError, load_policy, load_registry, validate_request
 from .envelope import ExecutionReceipt, ToolError, utc_now
+from .execution_trust import (
+    build_runtime_system_health_binding,
+    evaluate_trust_binding,
+)
 from .runtime_cognition import build_execution_cognition_receipt
 from .tools import HANDLERS
 
@@ -31,6 +35,7 @@ def _receipt(
     provenance: list[dict[str, Any]] | None = None,
     handler_invoked: bool = False,
     external_effects: list[dict[str, Any]] | None = None,
+    trust_binding_receipt: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     completed_at = utc_now()
     requested_by = requested_by or {}
@@ -70,6 +75,7 @@ def _receipt(
         errors=errors,
         provenance=provenance,
         cognition_receipt=cognition_receipt,
+        trust_binding_receipt=trust_binding_receipt or {},
         external_effects=external_effects,
     ).to_dict()
 
@@ -335,6 +341,37 @@ def invoke(
             errors=[ToolError(code="HANDLER_NOT_REGISTERED", message=f"No handler is bound for {tool}")],
         )
 
+    trust_binding_receipt: dict[str, Any] = {}
+    trust_activation = policy["execution_trust_binding"]
+    if tool in trust_activation["enforced_tools"]:
+        try:
+            trust_binding = build_runtime_system_health_binding(
+                request_id=request_id,
+                scope_key=scope,
+                requested_by=requested_by,
+                activation=trust_activation,
+            )
+            if trust_binding["catalog_state"]["catalog_revision"] != registry_version:
+                trust_binding["invalidation_events"].append("tool.catalog.changed")
+            if trust_binding["policy_state"]["policy_version"] != policy_version:
+                trust_binding["invalidation_events"].append("tool.policy.changed")
+            trust_binding_receipt = evaluate_trust_binding(trust_binding)
+        except Exception:
+            trust_binding_receipt = evaluate_trust_binding({"schema": "runtime-binding-failed"})
+        if trust_binding_receipt.get("trust_decision") != trust_activation["required_decision"]:
+            return _receipt(
+                request_id=request_id, tool=tool, tool_version=tool_version, scope=scope, mode=mode,
+                effect_class=effect_class, status="BLOCKED", started_at=started_at,
+                registry_version=registry_version, policy_version=policy_version,
+                requested_by=requested_by, authority_context=authority_context, provenance=provenance,
+                errors=[ToolError(
+                    code="TRUST_BINDING_BLOCKED",
+                    message="active execution trust binding did not admit this invocation",
+                    details={"reason_codes": trust_binding_receipt.get("reason_codes", [])},
+                )],
+                trust_binding_receipt=trust_binding_receipt,
+            )
+
     try:
         output = handler(handler_payload)
         if tool == "system.health":
@@ -352,6 +389,7 @@ def invoke(
                     "approval_required_for": policy["approval_required_for"],
                     "write_scope": policy.get("write_scope"),
                     "effect_policy": policy["effect_policy"],
+                    "execution_trust_binding": policy["execution_trust_binding"],
                 },
             }
         status = "COMPLETED"
@@ -382,4 +420,5 @@ def invoke(
         requested_by=requested_by, authority_context=authority_context, output=output,
         errors=errors, provenance=provenance, handler_invoked=True,
         external_effects=external_effects,
+        trust_binding_receipt=trust_binding_receipt,
     )

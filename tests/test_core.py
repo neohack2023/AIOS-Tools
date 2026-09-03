@@ -30,7 +30,7 @@ def test_health_receipt_is_read_only_independent_and_traced():
     assert receipt["external_effects"] == []
     assert receipt["output"]["portable_repo_required"] is False
     assert receipt["registry_version"] == "0.5.0-candidate"
-    assert receipt["policy_version"] == "0.3.0-candidate"
+    assert receipt["policy_version"] == "0.4.0"
     assert receipt["requested_by"] == {"type": "SERVICE", "id": "aios-tools-python"}
     assert receipt["output"]["policy"]["durable_writes_enabled"] is True
     assert receipt["output"]["policy"]["write_scope"] == "LOCAL_ARTIFACTS_ONLY"
@@ -39,6 +39,11 @@ def test_health_receipt_is_read_only_independent_and_traced():
         "NO_EXTERNAL_EFFECT",
         "LOCAL_DURABLE_WRITE",
     ]
+    trust = receipt["trust_binding_receipt"]
+    assert trust["trust_decision"] == "ADMIT"
+    assert trust["executor_invocation_authorized"] is True
+    assert trust["authority_transfer"] is False
+    assert receipt["output"]["policy"]["execution_trust_binding"]["state"] == "ACTIVE_CANARY"
 
 
 def test_schema_validate_accepts_valid_instance():
@@ -141,6 +146,20 @@ def test_policy_cannot_admit_network_class_while_global_network_is_disabled(monk
     assert "network effect classes cannot be admitted" in receipt["errors"][0]["message"]
 
 
+def test_trust_canary_cannot_be_silently_broadened(monkeypatch, tmp_path):
+    policy = _policy_document()
+    policy["execution_trust_binding"]["enforced_tools"].append("canonical.hash_json")
+    bad_policy = tmp_path / "execution-policy.json"
+    bad_policy.write_text(json.dumps(policy), encoding="utf-8")
+    monkeypatch.setattr(config, "POLICY_PATH", bad_policy)
+
+    receipt = invoke("system.health", {})
+
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["errors"][0]["code"] == "CONFIGURATION_INVALID"
+    assert "limited to system.health" in receipt["errors"][0]["message"]
+
+
 def test_registry_missing_effect_class_fails_closed(monkeypatch, tmp_path):
     registry = _registry_document()
     del registry["tools"][0]["effect_class"]
@@ -202,16 +221,30 @@ def test_registry_handler_drift_fails_closed(monkeypatch):
     assert "missing handlers" in receipt["errors"][0]["message"]
 
 
-def test_unexpected_handler_exception_is_sanitized(monkeypatch):
+def test_system_health_handler_drift_is_blocked_before_invocation(monkeypatch):
+    called = False
+
     def explode(_payload):
+        nonlocal called
+        called = True
         raise RuntimeError("secret internal detail")
 
     monkeypatch.setitem(HANDLERS, "system.health", explode)
     receipt = invoke("system.health", {})
-    assert receipt["status"] == "FAILED"
+    assert receipt["status"] == "BLOCKED"
     assert receipt["effect_class"] == "NO_EXTERNAL_EFFECT"
-    assert receipt["errors"][0]["code"] == "INTERNAL_ERROR"
+    assert receipt["errors"][0]["code"] == "TRUST_BINDING_BLOCKED"
+    assert receipt["trust_binding_receipt"]["trust_decision"] == "STALE"
+    assert "SAME_VERSION_DIGEST_DRIFT" in receipt["trust_binding_receipt"]["reason_codes"]
     assert "secret internal detail" not in receipt["errors"][0]["message"]
+    assert called is False
+
+
+def test_non_canary_tool_remains_outside_trust_enforcement():
+    receipt = invoke("canonical.hash_json", {"value": {"ok": True}})
+
+    assert receipt["status"] == "COMPLETED"
+    assert receipt["trust_binding_receipt"] == {}
 
 
 def test_result_contract_validates_completed_blocked_and_approval_receipts():
