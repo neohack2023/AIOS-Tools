@@ -76,6 +76,19 @@ aios-tools-mcp --help
 
 GitHub Actions runs the same shared-core, CLI, and MCP smoke checks. See [Validation](docs/VALIDATION.md).
 
+## Experimental trust-binding harness
+
+`scripts/run_execution_trust_binding.py` exercises the disposable
+`AIOS_EXECUTION_TRUST_BINDING_01` harness. It is intentionally outside the
+production runner admission path: it evaluates the frozen ETB-01 through
+ETB-10 matrix and can gate one existing read-only `system.health` invocation.
+It does not register a tool, enable a capability, grant semantic authority, or
+admit any new write/network effect.
+
+```bash
+python scripts/run_execution_trust_binding.py --real-read-only
+```
+
 ## Development workflow
 
 1. Start from a recorded base commit.

@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/execution-trust-binding.v0.1.schema.json",
+  "title": "AIOS experimental execution trust binding",
+  "type": "object",
+  "required": [
+    "schema",
+    "execution_id",
+    "scope_key",
+    "capability_id",
+    "principal_id",
+    "asset_or_tool_identity",
+    "catalog_state",
+    "policy_state",
+    "security_trust",
+    "runtime_topology",
+    "extension_binding",
+    "producer_lineage",
+    "semantic_authority",
+    "requested_operation",
+    "artifact_dependencies",
+    "runtime_observation",
+    "skill_compounding",
+    "invalidation_events"
+  ],
+  "properties": {
+    "schema": {"const": "aios.execution-trust-binding.v0.1"},
+    "execution_id": {"type": "string", "minLength": 1},
+    "scope_key": {"type": "string", "minLength": 1},
+    "capability_id": {"type": "string", "minLength": 1},
+    "principal_id": {"type": "string", "minLength": 1},
+    "asset_or_tool_identity": {
+      "type": "object",
+      "required": ["kind", "stable_id", "version_label", "content_digest", "expected_content_digest", "dependency_manifest_digest", "expected_dependency_manifest_digest"],
+      "properties": {
+        "kind": {"enum": ["TOOL", "MCP_SERVER", "SKILL", "PLUGIN", "MODEL", "PROMPT_PACKAGE", "GENERATED_ARTIFACT", "BROWSER_EXTENSION", "EXECUTOR"]},
+        "stable_id": {"type": "string", "minLength": 1},
+        "version_label": {"type": "string", "minLength": 1},
+        "content_digest": {"$ref": "#/$defs/digest"},
+        "expected_content_digest": {"$ref": "#/$defs/digest"},
+        "dependency_manifest_digest": {"$ref": "#/$defs/digest"},
+        "expected_dependency_manifest_digest": {"$ref": "#/$defs/digest"}
+      },
+      "additionalProperties": false
+    },
+    "catalog_state": {
+      "type": "object",
+      "required": ["catalog_revision", "schema_digest", "expected_schema_digest", "description_digest", "expected_description_digest", "freshness", "discovered_state"],
+      "properties": {
+        "catalog_revision": {"type": "string", "minLength": 1},
+        "schema_digest": {"$ref": "#/$defs/digest"},
+        "expected_schema_digest": {"$ref": "#/$defs/digest"},
+        "description_digest": {"$ref": "#/$defs/digest"},
+        "expected_description_digest": {"$ref": "#/$defs/digest"},
+        "freshness": {"enum": ["FRESH", "STALE", "UNKNOWN"]},
+        "discovered_state": {"enum": ["KNOWN", "NEW_PENDING_POLICY", "REMOVED", "UNKNOWN"]}
+      },
+      "additionalProperties": false
+    },
+    "policy_state": {
+      "type": "object",
+      "required": ["policy_id", "policy_version", "parameter_class", "consent", "decision"],
+      "properties": {
+        "policy_id": {"type": "string", "minLength": 1},
+        "policy_version": {"type": "string", "minLength": 1},
+        "parameter_class": {"type": "string", "minLength": 1},
+        "consent": {"enum": ["NOT_REQUIRED", "REQUIRED_PENDING", "GRANTED_BOUND", "DENIED", "UNKNOWN"]},
+        "decision": {"enum": ["ALLOW", "DENY", "UNKNOWN"]}
+      },
+      "additionalProperties": false
+    },
+    "security_trust": {
+      "type": "object",
+      "required": ["scanner_or_validator_id", "result", "project_scope"],
+      "properties": {
+        "scanner_or_validator_id": {"type": "string", "minLength": 1},
+        "result": {"enum": ["PASS", "BLOCK", "UNKNOWN", "NOT_APPLICABLE"]},
+        "project_scope": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "runtime_topology": {"$ref": "#/$defs/topology"},
+    "extension_binding": {
+      "type": "object",
+      "required": ["extension_id", "resolved_revision", "manifest_digest", "backend_scope", "browser_context_isolation", "enablement_state"],
+      "properties": {
+        "extension_id": {"$ref": "#/$defs/nullableString"},
+        "resolved_revision": {"$ref": "#/$defs/nullableString"},
+        "manifest_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "backend_scope": {"$ref": "#/$defs/nullableString"},
+        "browser_context_isolation": {"enum": ["SAME_CONTEXT", "ISOLATED", "UNKNOWN"]},
+        "enablement_state": {"enum": ["DISABLED", "ENABLED", "REVOKED", "UNKNOWN"]}
+      },
+      "additionalProperties": false
+    },
+    "producer_lineage": {
+      "type": "object",
+      "required": ["producer_execution_id", "source_receipt_ids"],
+      "properties": {
+        "producer_execution_id": {"$ref": "#/$defs/nullableString"},
+        "source_receipt_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      },
+      "additionalProperties": false
+    },
+    "semantic_authority": {
+      "type": "object",
+      "required": ["authority_class", "destination_scope", "canon_or_trusted_promotion_allowed"],
+      "properties": {
+        "authority_class": {"type": "string", "minLength": 1},
+        "destination_scope": {"type": "string", "minLength": 1},
+        "canon_or_trusted_promotion_allowed": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "requested_operation": {
+      "type": "object",
+      "required": ["action", "mode", "effect_class", "artifact_upload", "semantic_promotion", "skill_installation", "authenticated_requests"],
+      "properties": {
+        "action": {"type": "string", "minLength": 1},
+        "mode": {"enum": ["READ_ONLY", "WRITE"]},
+        "effect_class": {"enum": ["NO_EXTERNAL_EFFECT", "LOCAL_DURABLE_WRITE", "READ_NETWORK", "REMOTE_MUTATION_REVERSIBLE", "REMOTE_MUTATION_HIGH_IMPACT"]},
+        "artifact_upload": {"type": "boolean"},
+        "semantic_promotion": {"type": "boolean"},
+        "skill_installation": {"type": "boolean"},
+        "authenticated_requests": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "artifact_dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stable_id", "digest", "approved_digest", "security_result"],
+        "properties": {
+          "stable_id": {"type": "string", "minLength": 1},
+          "digest": {"$ref": "#/$defs/digest"},
+          "approved_digest": {"$ref": "#/$defs/digest"},
+          "security_result": {"enum": ["PASS", "BLOCK", "UNKNOWN"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "runtime_observation": {
+      "type": "object",
+      "required": ["topology", "egress_enabled", "authenticated_request_count"],
+      "properties": {
+        "topology": {"$ref": "#/$defs/topology"},
+        "egress_enabled": {"type": "boolean"},
+        "authenticated_request_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "skill_compounding": {
+      "type": "object",
+      "required": ["recurrence_nominated", "held_out_validation", "install_authorized"],
+      "properties": {
+        "recurrence_nominated": {"type": "boolean"},
+        "held_out_validation": {"enum": ["PASS", "FAIL", "NOT_RUN"]},
+        "install_authorized": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "invalidation_events": {
+      "type": "array",
+      "items": {"enum": ["tool.catalog.changed", "tool.policy.changed", "tool.consent.changed", "artifact.digest.changed", "artifact.dependency.changed", "runtime.topology.changed", "runtime.egress_policy.changed", "browser.extension.changed", "browser.extension.revoked", "skill.validation_dependency.changed", "authority.scope.changed"]},
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableString": {"type": ["string", "null"], "minLength": 1},
+    "topology": {
+      "type": "object",
+      "required": ["controller_location", "tool_execution_location", "filesystem_boundary", "shell_boundary", "credential_audience", "network_class", "orchestration_owner", "inference_location", "worker_identity", "data_egress_policy_id"],
+      "properties": {
+        "controller_location": {"type": "string", "minLength": 1},
+        "tool_execution_location": {"type": "string", "minLength": 1},
+        "filesystem_boundary": {"type": "string", "minLength": 1},
+        "shell_boundary": {"type": "string", "minLength": 1},
+        "credential_audience": {"type": "string", "minLength": 1},
+        "network_class": {"type": "string", "minLength": 1},
+        "orchestration_owner": {"type": "string", "minLength": 1},
+        "inference_location": {"type": "string", "minLength": 1},
+        "worker_identity": {"type": "string", "minLength": 1},
+        "data_egress_policy_id": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
