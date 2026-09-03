@@ -71,6 +71,7 @@ def load_policy() -> dict[str, Any]:
         "authority_transfer_allowed",
         "approval_required_for",
         "effect_policy",
+        "execution_trust_binding",
     }
     missing = sorted(required - policy.keys())
     if missing:
@@ -134,6 +135,40 @@ def load_policy() -> dict[str, Any]:
         raise ConfigurationError("remote mutation effect classes must also be network effect classes")
     if allowed & network:
         raise ConfigurationError("network effect classes cannot be admitted while external network effects are disabled")
+
+    trust = policy["execution_trust_binding"]
+    if not isinstance(trust, dict):
+        raise ConfigurationError("execution_trust_binding must be an object")
+    expected_trust = {
+        "contract_id": "AIOS_EXECUTION_TRUST_BINDING_01",
+        "state": "ACTIVE_CANARY",
+        "required_decision": "ADMIT",
+        "fail_behavior": "CLOSED",
+    }
+    for field, expected in expected_trust.items():
+        if trust.get(field) != expected:
+            raise ConfigurationError(f"execution_trust_binding {field} must be {expected}")
+    enforced = _validated_string_set(
+        trust.get("enforced_tools"), field="execution_trust_binding enforced_tools"
+    )
+    if enforced != {"system.health"}:
+        raise ConfigurationError("execution trust canary is limited to system.health")
+    bindings = trust.get("bindings")
+    if not isinstance(bindings, dict) or set(bindings) != enforced:
+        raise ConfigurationError("execution_trust_binding bindings must match enforced_tools")
+    digest_fields = {
+        "content_digest",
+        "dependency_manifest_digest",
+        "request_schema_digest",
+        "description_digest",
+    }
+    for tool, binding in bindings.items():
+        if not isinstance(binding, dict) or not isinstance(binding.get("tool_version"), str):
+            raise ConfigurationError(f"execution trust binding for {tool} is malformed")
+        for field in digest_fields:
+            value = binding.get(field)
+            if not isinstance(value, str) or len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
+                raise ConfigurationError(f"execution trust binding {tool}.{field} must be lowercase sha256")
 
     return policy
 

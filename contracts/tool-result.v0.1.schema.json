@@ -22,6 +22,7 @@
     "errors",
     "provenance",
     "cognition_receipt",
+    "trust_binding_receipt",
     "external_effects",
     "authority_transfer"
   ],
@@ -106,6 +107,9 @@
       }
     },
     "cognition_receipt": {
+      "type": "object"
+    },
+    "trust_binding_receipt": {
       "type": "object"
     },
     "external_effects": {

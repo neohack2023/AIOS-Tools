@@ -1,5 +1,5 @@
 {
-  "policy_version": "0.3.0-candidate",
+  "policy_version": "0.4.0",
   "default_mode": "READ_ONLY",
   "allowed_modes": ["READ_ONLY", "WRITE"],
   "durable_writes_enabled": true,
@@ -28,6 +28,22 @@
       "REMOTE_MUTATION_REVERSIBLE",
       "REMOTE_MUTATION_HIGH_IMPACT"
     ]
+  },
+  "execution_trust_binding": {
+    "contract_id": "AIOS_EXECUTION_TRUST_BINDING_01",
+    "state": "ACTIVE_CANARY",
+    "required_decision": "ADMIT",
+    "fail_behavior": "CLOSED",
+    "enforced_tools": ["system.health"],
+    "bindings": {
+      "system.health": {
+        "tool_version": "0.1.0",
+        "content_digest": "755118f478df7acf5836a18f9bbba13977e5391d90e7c609b62a894bbf91b2d5",
+        "dependency_manifest_digest": "81059fe6210ccee4e3349c0f34c12d180f995150128a913d63b65b7937c6b152",
+        "request_schema_digest": "256fb709a39428b9cee3f53d578c4439adce556b26686b48b7060969bcef915f",
+        "description_digest": "02ffe804118b73fbb3a5c901d1ad8e062cadf84d010752173766d24fb2649428"
+      }
+    }
   },
   "law": "An agent is only as safe as its least reversible action."
 }

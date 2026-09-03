@@ -36,6 +36,7 @@ class ExecutionReceipt:
     errors: list[ToolError] = field(default_factory=list)
     provenance: list[dict[str, Any]] = field(default_factory=list)
     cognition_receipt: dict[str, Any] = field(default_factory=dict)
+    trust_binding_receipt: dict[str, Any] = field(default_factory=dict)
     external_effects: list[dict[str, Any]] = field(default_factory=list)
     authority_transfer: bool = False
     receipt_id: str = field(default_factory=lambda: f"receipt-{uuid4()}")
