@@ -1,0 +1,15 @@
+bundle_id: AIOS_TOOLS_REPOSITORY_GOVERNANCE_BUNDLE_01
+bundle_version: 0.4
+state: STAGING_ACTIVE
+materialized_on: 2026-09-04
+valid_through: 2026-10-04
+normal_repo_work_external_fetch_required: false
+upstream_authority_cutover: false
+repository_autonomy_phase: 4
+native_adapter_state: ACTIVE
+native_skill_state: ACTIVE
+organization_audit_state: ACTIVE
+sync_state: NOT_INSTALLED_PHASE_5
+sync_role: KNOWLEDGE_STEWARD
+freshness_owner: KNOWLEDGE_STEWARD
+freshness_policy: FAIL_CLOSED_AFTER_VALID_THROUGH
