@@ -40,3 +40,26 @@ Phase 5 bounded upstream synchronization remains Knowledge-Steward-owned and rec
 ## Failure semantics
 
 A failure blocks the corresponding Repository Governance obligation for that candidate. It does not itself revoke unrelated authority, merge a change, release software, refresh governance freshness, or modify upstream governance.
+
+## PR 59 verification-step repair
+
+The auditor parses workflow YAML mappings and job-local step sequences with a
+pinned PyYAML development dependency. Duplicate keys, aliases and merge keys
+fail closed. Canonical trigger spelling remains required. Every audited job
+must declare its own checkout and immediately following verifier.
+
+The verifier must explicitly select `bash` or `pwsh` and use the complete,
+ordered command body accepted by `scripts/ci_exact_head_audit.py`. Bash includes
+`set -euo pipefail`; only the governance candidate-env comparison may follow
+the SHA comparison. Extra commands, reordered lines, custom shells, step
+conditions (including `always()`), step environment overrides and unsupported
+step fields fail closed. The effective verification directory must be
+`github.workspace`. Checkout input overrides and conditional checkouts are
+also rejected. Existing job-level activation gates remain independent.
+
+These are structural obligations for the declared workflows, not a sandbox
+against arbitrary repository code or a substitute for current-head review.
+
+The first job step must be candidate checkout. Workflow/job environment is
+limited to the existing directly bound `AIOS_AUDIT_CANDIDATE_SHA`; unreviewed
+shell-startup or Git-directory environment overrides are rejected.

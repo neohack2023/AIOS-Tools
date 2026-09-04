@@ -112,5 +112,94 @@ class ExactHeadAuditTests(unittest.TestCase):
         self.assertEqual(audit.validate_workflow_text(path, good), [])
 
 
+class ExactHeadAdversarialTests(unittest.TestCase):
+    def assert_rejected(self, text):
+        self.assertTrue(audit.validate_workflow_text('x.yml', text))
+
+    def test_complete_body_mutations(self):
+        mutations = [
+            ('          test ', '          actual="$expected"\n          test '),
+            ('          set -euo pipefail\n', ''),
+            ('          test ', '          set +e\n          test '),
+            ('          test ', '          exit 0\n          test '),
+            ('          actual=', '          expected="spoof"\n          actual='),
+            ('        run: |', '        run: >'),
+            ('        shell: bash', '        shell: sh'),
+            ('        shell: bash', '        shell: bash {0} || true'),
+            ('        shell: bash\n', ''),
+            ('          set -euo pipefail', '          : <<\'HIDDEN\'\n          set -euo pipefail'),
+        ]
+        for old, new in mutations:
+            with self.subTest(new=new):
+                self.assert_rejected(GOOD.replace(old, new))
+        self.assert_rejected(GOOD + '          echo success\n')
+        self.assert_rejected(GOOD.replace(
+            '          actual="$(git rev-parse HEAD)"\n          test "$actual" = "$expected"',
+            '          test "$actual" = "$expected"\n          actual="$(git rev-parse HEAD)"'))
+
+    def test_verifier_controls(self):
+        for control in ['if: false', '"if": false', "'if': ${{ false }}",
+                        'if: always()', 'env: {BASH_ENV: spoof.sh}',
+                        'working-directory: other', 'timeout-minutes: 0']:
+            with self.subTest(control=control):
+                self.assert_rejected(GOOD.replace('        shell: bash',
+                                                      f'        {control}\n        shell: bash'))
+
+    def test_structural_bypasses(self):
+        cases = [
+            GOOD.replace('      - name: Verify', '      - if: false\n        name: Verify'),
+            GOOD.replace('      - name: Verify', '      - run: echo intervening\n      - name: Verify'),
+            GOOD.replace('      - name: Verify', '  other:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Verify'),
+            GOOD.replace('        shell: bash', '        "continue-on-error": true\n        shell: bash'),
+            GOOD.replace('    runs-on:', '    "continue-on-error": true\n    runs-on:'),
+            GOOD.replace('        shell: bash', '        shell: sh\n        shell: bash'),
+            GOOD.replace('        shell: bash', '        env: &shared {}\n        shell: bash'),
+            GOOD.replace('        shell: bash', '        <<: {if: false}\n        shell: bash'),
+            GOOD.replace('          persist-credentials:', '          repository: elsewhere/repo\n          persist-credentials:'),
+            GOOD.replace('          persist-credentials:', '          path: other\n          persist-credentials:'),
+            GOOD.replace('        uses: actions/checkout', '        if: false\n        uses: actions/checkout'),
+            GOOD.replace('    runs-on:', '    defaults:\n      run:\n        working-directory: other\n    runs-on:'),
+            GOOD + '  unchecked:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo pass\n',
+        ]
+        for i, case in enumerate(cases):
+            with self.subTest(case=i):
+                self.assert_rejected(case)
+
+    def test_inherited_shell_and_git_environment_is_rejected(self):
+        for key in ["BASH_ENV", "PATH", "GIT_DIR", "GIT_WORK_TREE"]:
+            for location in ["jobs:", "    runs-on: ubuntu-latest"]:
+                indent = "" if location == "jobs:" else "    "
+                bad = GOOD.replace(location, f"{indent}env:\n{indent}  {key}: spoof\n{location}")
+                with self.subTest(key=key, location=location):
+                    self.assert_rejected(bad)
+
+    def test_powershell_complete_body(self):
+        body = '\n'.join([
+            f"$expected = '{audit.EXACT_CANDIDATE_EXPR}'",
+            '$actual = git rev-parse HEAD',
+            'if ($actual -ne $expected) { throw "Checkout mismatch: expected $expected, got $actual" }',
+        ])
+        self.assertTrue(audit._verification_enforces_compare('pwsh', body))
+        for mutation in [body + '\nexit 0', body.replace('if (', '$actual = $expected\nif ('),
+                         'try {\n' + body + '\n} catch {}', body.replace('throw', 'Write-Output')]:
+            self.assertFalse(audit._verification_enforces_compare('pwsh', mutation))
+
+    def test_real_bash_comparison_passes_only_for_checked_out_commit(self):
+        import subprocess
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(['git', 'init', '-q', directory], check=True)
+            subprocess.run(['git', '-C', directory, '-c', 'user.name=Fixture',
+                            '-c', 'user.email=fixture@example.invalid',
+                            'commit', '-qm', 'fixture', '--allow-empty'], check=True)
+            head = subprocess.check_output(['git', '-C', directory, 'rev-parse', 'HEAD'], text=True).strip()
+            body = audit.yaml.load(GOOD, Loader=audit.WorkflowLoader)['jobs']['x']['steps'][1]['run']
+            self.assertTrue(audit._verification_enforces_compare('bash', body))
+            for expected, success in [(head, True), ('0' * 40, False)]:
+                result = subprocess.run(['bash', '-c', body.replace(audit.EXACT_CANDIDATE_EXPR, expected)],
+                                        cwd=directory, capture_output=True)
+                self.assertEqual(result.returncode == 0, success)
+
+
 if __name__ == "__main__":
     unittest.main()

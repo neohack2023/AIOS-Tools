@@ -6,7 +6,9 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKOUT_PIN_RE = re.compile(r"^actions/checkout@[0-9a-f]{40}$")
@@ -21,263 +23,149 @@ WORKFLOW_PATHS = (
 )
 
 
-def _indent(line: str) -> int:
-    return len(line) - len(line.lstrip(" "))
+class WorkflowLoader(yaml.BaseLoader):
+    """Keep Actions scalar spellings; reject ambiguous duplicate mapping keys."""
 
-
-def _mask_block_scalars(lines: List[str]) -> List[str]:
-    masked = list(lines)
-    scalar_indent = None
-    for idx, line in enumerate(lines):
-        if scalar_indent is not None:
-            if line.strip() and _indent(line) <= scalar_indent:
-                scalar_indent = None
-            else:
-                masked[idx] = ""
-                continue
-        if re.match(r"^\s+(run|script):\s*[|>]", line):
-            scalar_indent = _indent(line)
-    return masked
-
-
-def _step_blocks(text: str) -> List[Tuple[int, List[str], List[str]]]:
-    original = text.splitlines()
-    masked = _mask_block_scalars(original)
-    starts: List[Tuple[int, int]] = []
-    for idx, line in enumerate(masked):
-        match = re.match(r"^(\s*)-\s+(name|uses):", line)
-        if match:
-            starts.append((idx, len(match.group(1))))
-    blocks: List[Tuple[int, List[str], List[str]]] = []
-    for pos, (start, indent) in enumerate(starts):
-        end = len(original)
-        for next_start, next_indent in starts[pos + 1 :]:
-            if next_indent == indent:
-                end = next_start
-                break
-        blocks.append((indent, original[start:end], masked[start:end]))
-    return blocks
-
-
-def _direct_map(step_indent: int, lines: List[str]) -> Dict[str, str]:
-    out: Dict[str, str] = {}
-    target_indent = step_indent + 2
-    for line in lines:
-        if not line.strip() or _indent(line) != target_indent:
-            continue
-        stripped = line.strip()
-        if ":" not in stripped:
-            continue
-        key, value = stripped.split(":", 1)
-        out[key.strip()] = value.strip().strip('"').strip("'")
-    first = lines[0].strip() if lines else ""
-    if first.startswith("- ") and ":" in first:
-        key, value = first[2:].split(":", 1)
-        out[key.strip()] = value.strip().strip('"').strip("'")
-    return out
-
-
-def _with_map(step_indent: int, lines: List[str]) -> Dict[str, str]:
-    with_indent = step_indent + 2
-    child_indent = step_indent + 4
-    in_with = False
-    out: Dict[str, str] = {}
-    for line in lines:
-        if not line.strip():
-            continue
-        current = _indent(line)
-        stripped = line.strip()
-        if current == with_indent and stripped == "with:":
-            in_with = True
-            continue
-        if in_with and current <= with_indent:
-            in_with = False
-        if in_with and current == child_indent and ":" in stripped:
-            key, value = stripped.split(":", 1)
-            out[key.strip()] = value.strip().strip('"').strip("'")
-    return out
-
-
-def _run_body(step_indent: int, original_lines: List[str]) -> str:
-    run_indent = step_indent + 2
-    capture = False
-    body: List[str] = []
-    for line in original_lines:
-        if not line.strip():
-            if capture:
-                body.append("")
-            continue
-        current = _indent(line)
-        stripped = line.strip()
-        if current == run_indent and re.match(r"^run:\s*[|>]", stripped):
-            capture = True
-            continue
-        if capture and current <= run_indent:
-            break
-        if capture:
-            body.append(stripped)
-    return "\n".join(body)
-
-
-def _canonical_pull_request_trigger(text: str) -> bool:
-    """Accept only the repository's canonical block-form on/pull_request shape.
-
-    Alternative valid YAML spellings fail closed instead of being mistaken for
-    a non-PR workflow, preventing syntax-only rewrites from bypassing the audit.
-    """
-    lines = _mask_block_scalars(text.splitlines())
-    on_index = None
-    for idx, line in enumerate(lines):
-        if re.fullmatch(r"on:\s*", line):
-            on_index = idx
-            break
-    if on_index is None:
-        return False
-    for line in lines[on_index + 1 :]:
-        if not line.strip():
-            continue
-        current = _indent(line)
-        if current == 0:
-            break
-        if current == 2 and re.fullmatch(r"pull_request:\s*", line.strip()):
-            return True
-    return False
-
-
-def _pull_request_paths(text: str) -> List[str] | None:
-    lines = _mask_block_scalars(text.splitlines())
-    start = None
-    pr_indent = None
-    for idx, line in enumerate(lines):
-        match = re.match(r"^(\s*)pull_request:\s*$", line)
-        if match:
-            start = idx
-            pr_indent = len(match.group(1))
-            break
-    if start is None or pr_indent is None:
-        return None
-    paths_indent = None
-    for idx in range(start + 1, len(lines)):
-        line = lines[idx]
-        if not line.strip():
-            continue
-        current = _indent(line)
-        if current <= pr_indent:
-            break
-        if current == pr_indent + 2 and line.strip() == "paths:":
-            paths_indent = current
-            start = idx
-            break
-    if paths_indent is None:
-        return None
-    paths: List[str] = []
-    for line in lines[start + 1 :]:
-        if not line.strip():
-            continue
-        current = _indent(line)
-        if current <= paths_indent:
-            break
-        if current == paths_indent + 2 and line.strip().startswith("- "):
-            paths.append(line.strip()[2:].strip().strip('"').strip("'"))
-    return paths
-
-
-def _has_nonfatal_continue_on_error(text: str) -> bool:
-    """Fail closed on any effective continue-on-error in audited workflows.
-
-    Acceptance workflows may use literal `continue-on-error: false`, but true,
-    expressions, or any other value are rejected at either step or job scope.
-    """
-    for line in _mask_block_scalars(text.splitlines()):
-        if not line.strip():
-            continue
-        match = re.match(r"^\s*continue-on-error:\s*(.*?)\s*$", line)
-        if match and match.group(1).strip().strip('"').strip("'").lower() != "false":
-            return True
-    return False
+    def construct_mapping(self, node, deep=False):
+        result = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if not isinstance(key, str) or key in result:
+                raise ValueError("duplicate or non-scalar workflow key")
+            result[key] = self.construct_object(value_node, deep=deep)
+        return result
 
 
 def _verification_enforces_compare(shell: str, body: str) -> bool:
-    lines = [line.strip() for line in body.splitlines() if line.strip()]
-    shell = shell.lower()
-    if shell in {"pwsh", "powershell"}:
-        expected_line = f"$expected = '{EXACT_CANDIDATE_EXPR}'"
-        has_expected = expected_line in lines
-        has_actual = any(re.fullmatch(r"\$actual\s*=\s*git\s+rev-parse\s+HEAD", line, re.IGNORECASE) for line in lines)
-        has_reject = any(
-            re.fullmatch(r'if\s*\(\s*\$actual\s+-ne\s+\$expected\s*\)\s*\{\s*throw\s+"[^"]+"\s*\}', line, re.IGNORECASE)
-            for line in lines
-        )
-        return has_expected and has_actual and has_reject
-
-    expected_line = f'expected="{EXACT_CANDIDATE_EXPR}"'
-    has_expected = expected_line in lines
-    has_actual = 'actual="$(git rev-parse HEAD)"' in lines
-    has_exact_test = 'test "$actual" = "$expected"' in lines
-    return has_expected and has_actual and has_exact_test
+    # This is a closed language, not a shell parser. Additional commands,
+    # reordered assignments, folded scalars and custom shells fail closed.
+    if not isinstance(body, str):
+        return False
+    bash = [
+        "set -euo pipefail",
+        f'expected="{EXACT_CANDIDATE_EXPR}"',
+        'actual="$(git rev-parse HEAD)"',
+        'test "$actual" = "$expected"',
+    ]
+    pwsh = [
+        f"$expected = '{EXACT_CANDIDATE_EXPR}'",
+        "$actual = git rev-parse HEAD",
+        'if ($actual -ne $expected) { throw "Checkout mismatch: expected $expected, got $actual" }',
+    ]
+    lines = body.strip("\n").splitlines()
+    if shell == "bash":
+        return lines == bash or lines == bash + ['test "$expected" = "$AIOS_AUDIT_CANDIDATE_SHA"']
+    return shell == "pwsh" and lines == pwsh
 
 
 def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
     errors: List[Dict[str, str]] = []
-    if not _canonical_pull_request_trigger(text):
-        errors.append({
-            "code": "AOS-CI-TRIGGER-SYNTAX",
-            "path": path,
-            "message": "audited workflow must use canonical block-form on: with direct pull_request: child; unsupported trigger syntax fails closed",
-        })
 
-    if re.search(r"^\s*AIOS_CANDIDATE_SHA\s*:", text, re.MULTILINE):
-        errors.append({
-            "code": "AOS-CI-CANDIDATE-SHADOW",
-            "path": path,
-            "message": "AIOS_CANDIDATE_SHA environment indirection is forbidden; checkout must bind directly to immutable GitHub event context",
-        })
+    def fail(code, message):
+        errors.append({"code": code, "path": path, "message": message})
 
-    if _has_nonfatal_continue_on_error(text):
-        errors.append({
-            "code": "AOS-CI-CONTINUE-ON-ERROR",
-            "path": path,
-            "message": "acceptance-relevant workflows may not suppress step or job failure with continue-on-error",
-        })
-
-    pr_paths = _pull_request_paths(text)
-    if pr_paths is not None and path not in pr_paths:
-        errors.append({"code": "AOS-CI-SELF-TRIGGER", "path": path, "message": "path-filtered pull_request workflow must include its own workflow path"})
-
-    steps = _step_blocks(text)
-    checkout_indexes: List[int] = []
-    for idx, (indent, _original, masked) in enumerate(steps):
-        direct = _direct_map(indent, masked)
-        uses = direct.get("uses", "")
-        if uses.startswith("actions/checkout@"):
-            checkout_indexes.append(idx)
-            if not CHECKOUT_PIN_RE.fullmatch(uses):
-                errors.append({"code": "AOS-CI-CHECKOUT-PIN", "path": path, "message": "actions/checkout must be pinned to a full commit SHA"})
-            with_map = _with_map(indent, masked)
-            if with_map.get("ref") != EXACT_CANDIDATE_EXPR:
-                errors.append({"code": "AOS-CI-CHECKOUT-REF", "path": path, "message": f"checkout with.ref must directly equal {EXACT_CANDIDATE_EXPR}"})
-            if with_map.get("persist-credentials", "").lower() != "false":
-                errors.append({"code": "AOS-CI-CHECKOUT-CREDENTIALS", "path": path, "message": "checkout must disable persisted credentials"})
-
-    if not checkout_indexes:
-        errors.append({"code": "AOS-CI-CHECKOUT-MISSING", "path": path, "message": "audited workflow must contain an exact-candidate checkout"})
+    try:
+        # Aliases/merge keys need an additional precedence contract; do not
+        # silently certify them. BaseLoader also avoids YAML 1.1's on -> True.
+        if any(isinstance(token, (yaml.tokens.AnchorToken, yaml.tokens.AliasToken))
+               for token in yaml.scan(text)):
+            raise ValueError("workflow anchors and aliases are unsupported")
+        workflow = yaml.load(text, Loader=WorkflowLoader)
+        if not isinstance(workflow, dict):
+            raise ValueError("workflow must be a mapping")
+    except (yaml.YAMLError, ValueError) as exc:
+        fail("AOS-CI-WORKFLOW-SYNTAX", str(exc))
         return errors
 
-    for idx in checkout_indexes:
-        if idx + 1 >= len(steps):
-            errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "checkout must be followed immediately by an identity verification step"})
+    events = workflow.get("on")
+    if (not isinstance(events, dict) or "pull_request" not in events
+            or not re.search(r"^on:\s*$", text, re.MULTILINE)
+            or not re.search(r"^  pull_request:\s*$", text, re.MULTILINE)):
+        fail("AOS-CI-TRIGGER-SYNTAX", "canonical block-form on/pull_request is required")
+    else:
+        pr = events["pull_request"]
+        if isinstance(pr, dict) and "paths" in pr:
+            paths = pr["paths"]
+            if not isinstance(paths, list) or path not in paths:
+                fail("AOS-CI-SELF-TRIGGER", "path-filtered pull_request workflow must include its own workflow path")
+
+    def inspect_controls(value):
+        if isinstance(value, dict):
+            if "AIOS_CANDIDATE_SHA" in value:
+                fail("AOS-CI-CANDIDATE-SHADOW", "candidate environment indirection is forbidden")
+            if "continue-on-error" in value and value["continue-on-error"] != "false":
+                fail("AOS-CI-CONTINUE-ON-ERROR", "acceptance failure must be fatal")
+            if "<<" in value:
+                fail("AOS-CI-WORKFLOW-SYNTAX", "merge keys are unsupported")
+            for child in value.values():
+                inspect_controls(child)
+        elif isinstance(value, list):
+            for child in value:
+                inspect_controls(child)
+
+    inspect_controls(workflow)
+    def check_identity_environment(scope):
+        env = scope.get("env", {})
+        if (not isinstance(env, dict)
+                or set(env) - {"AIOS_AUDIT_CANDIDATE_SHA"}
+                or (env and env.get("AIOS_AUDIT_CANDIDATE_SHA") != EXACT_CANDIDATE_EXPR)):
+            fail("AOS-CI-IDENTITY-ENV", "inherited identity environment must use the audited candidate-only shape")
+
+    check_identity_environment(workflow)
+    jobs = workflow.get("jobs")
+    if not isinstance(jobs, dict) or not jobs:
+        fail("AOS-CI-CHECKOUT-MISSING", "audited workflow must contain jobs with exact-candidate checkouts")
+        return errors
+    for job in jobs.values():
+        steps = job.get("steps") if isinstance(job, dict) else None
+        if not isinstance(steps, list) or not all(isinstance(step, dict) for step in steps):
+            fail("AOS-CI-WORKFLOW-SYNTAX", "audited jobs must declare a list of step mappings")
             continue
-        indent, original, masked = steps[idx + 1]
-        direct = _direct_map(indent, masked)
-        body = _run_body(indent, original)
-        if "Verify" not in direct.get("name", "") or "checkout identity" not in direct.get("name", "").lower():
-            errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "checkout must be followed immediately by a named checkout identity verification step"})
-            continue
-        if direct.get("continue-on-error", "false").lower() != "false":
-            errors.append({"code": "AOS-CI-CONTINUE-ON-ERROR", "path": path, "message": "checkout identity verification must be fatal on mismatch"})
-            continue
-        if not _verification_enforces_compare(direct.get("shell", "bash"), body):
-            errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "identity verification must use the constrained exact comparison against immutable GitHub candidate context"})
+        check_identity_environment(job)
+        checkouts = [i for i, step in enumerate(steps)
+                     if isinstance(step.get("uses"), str) and step["uses"].startswith("actions/checkout@")]
+        if not checkouts:
+            fail("AOS-CI-CHECKOUT-MISSING", "each audited job must contain an exact-candidate checkout")
+        if checkouts and checkouts[0] != 0:
+            fail("AOS-CI-CHECKOUT-SHAPE", "the first job step must be the candidate checkout")
+        for i in checkouts:
+            checkout = steps[i]
+            if not CHECKOUT_PIN_RE.fullmatch(checkout["uses"]):
+                fail("AOS-CI-CHECKOUT-PIN", "actions/checkout must be pinned to a full commit SHA")
+            inputs = checkout.get("with", {})
+            if not isinstance(inputs, dict):
+                inputs = {}
+            if inputs.get("ref") != EXACT_CANDIDATE_EXPR:
+                fail("AOS-CI-CHECKOUT-REF", "checkout ref must bind directly to GitHub candidate context")
+            if inputs.get("persist-credentials") != "false":
+                fail("AOS-CI-CHECKOUT-CREDENTIALS", "checkout must disable persisted credentials")
+            if (set(checkout) - {"name", "uses", "with", "id", "continue-on-error"}
+                    or set(inputs) - {"ref", "persist-credentials"}):
+                fail("AOS-CI-CHECKOUT-SHAPE", "checkout controls and inputs must use the audited shape")
+            if i + 1 >= len(steps):
+                fail("AOS-CI-IDENTITY-VERIFY", "checkout must be followed immediately by identity verification in the same job")
+                continue
+            verify = steps[i + 1]
+            if "if" in verify:
+                fail("AOS-CI-IDENTITY-CONDITION", "identity verification may not be conditional")
+            allowed = {"name", "shell", "run", "working-directory", "continue-on-error"}
+            name = verify.get("name", "")
+            if (set(verify) - allowed or not isinstance(name, str)
+                    or "Verify" not in name or "checkout identity" not in name.lower()
+                    or not _verification_enforces_compare(verify.get("shell"), verify.get("run"))):
+                fail("AOS-CI-IDENTITY-VERIFY", "identity verification must match a complete audited step and ordered command body")
+            # Resolve inherited run-directory defaults; a neighboring checkout
+            # or a narrower step directory must not provide the comparison.
+            directory = "${{ github.workspace }}"
+            for scope in (workflow, job):
+                defaults = scope.get("defaults", {})
+                if isinstance(defaults, dict) and isinstance(defaults.get("run", {}), dict):
+                    directory = defaults.get("run", {}).get("working-directory", directory)
+                else:
+                    directory = None
+            directory = verify.get("working-directory", directory)
+            if directory != "${{ github.workspace }}":
+                fail("AOS-CI-IDENTITY-DIRECTORY", "identity must be verified in github.workspace")
     return errors
 
 
