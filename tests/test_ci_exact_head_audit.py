@@ -184,7 +184,8 @@ class ExactHeadAdversarialTests(unittest.TestCase):
                          'try {\n' + body + '\n} catch {}', body.replace('throw', 'Write-Output')]:
             self.assertFalse(audit._verification_enforces_compare('pwsh', mutation))
 
-    def test_real_bash_comparison_passes_only_for_checked_out_commit(self):
+    def test_real_native_shell_comparison_passes_only_for_checked_out_commit(self):
+        import os
         import subprocess
         import tempfile
         with tempfile.TemporaryDirectory() as directory:
@@ -194,11 +195,19 @@ class ExactHeadAdversarialTests(unittest.TestCase):
                             'commit', '-qm', 'fixture', '--allow-empty'], check=True)
             head = subprocess.check_output(['git', '-C', directory, 'rev-parse', 'HEAD'], text=True).strip()
             body = audit.yaml.load(GOOD, Loader=audit.WorkflowLoader)['jobs']['x']['steps'][1]['run']
-            self.assertTrue(audit._verification_enforces_compare('bash', body))
+            shell, command = 'bash', ['bash', '-c']
+            if os.name == 'nt':
+                shell, command = 'pwsh', ['pwsh', '-NoProfile', '-NonInteractive', '-Command']
+                body = "\n".join([
+                    f"$expected = '{audit.EXACT_CANDIDATE_EXPR}'",
+                    '$actual = git rev-parse HEAD',
+                    'if ($actual -ne $expected) { throw "Checkout mismatch: expected $expected, got $actual" }',
+                ])
+            self.assertTrue(audit._verification_enforces_compare(shell, body))
             for expected, success in [(head, True), ('0' * 40, False)]:
-                result = subprocess.run(['bash', '-c', body.replace(audit.EXACT_CANDIDATE_EXPR, expected)],
+                result = subprocess.run(command + [body.replace(audit.EXACT_CANDIDATE_EXPR, expected)],
                                         cwd=directory, capture_output=True)
-                self.assertEqual(result.returncode == 0, success)
+                self.assertEqual(result.returncode == 0, success, result.stderr)
 
 
 if __name__ == "__main__":
