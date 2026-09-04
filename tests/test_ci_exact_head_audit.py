@@ -54,6 +54,37 @@ class ExactHeadAuditTests(unittest.TestCase):
         codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
         self.assertIn("AOS-CI-IDENTITY-VERIFY", codes)
 
+    def test_identity_step_continue_on_error_true_fails(self):
+        bad = GOOD.replace(
+            "        shell: bash\n        run: |\n",
+            "        shell: bash\n        continue-on-error: true\n        run: |\n",
+        )
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-CONTINUE-ON-ERROR", codes)
+
+    def test_job_continue_on_error_true_fails(self):
+        bad = GOOD.replace(
+            "    runs-on: ubuntu-latest\n",
+            "    runs-on: ubuntu-latest\n    continue-on-error: true\n",
+        )
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-CONTINUE-ON-ERROR", codes)
+
+    def test_continue_on_error_expression_fails_closed(self):
+        bad = GOOD.replace(
+            "    runs-on: ubuntu-latest\n",
+            "    runs-on: ubuntu-latest\n    continue-on-error: ${{ matrix.experimental }}\n",
+        )
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-CONTINUE-ON-ERROR", codes)
+
+    def test_literal_continue_on_error_false_is_allowed(self):
+        good = GOOD.replace(
+            "        shell: bash\n        run: |\n",
+            "        shell: bash\n        continue-on-error: false\n        run: |\n",
+        )
+        self.assertEqual(audit.validate_workflow_text("x.yml", good), [])
+
     def test_candidate_env_shadow_is_forbidden(self):
         bad = GOOD.replace(
             "    runs-on: ubuntu-latest\n",
