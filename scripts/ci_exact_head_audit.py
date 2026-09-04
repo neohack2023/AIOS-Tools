@@ -118,6 +118,31 @@ def _run_body(step_indent: int, original_lines: List[str]) -> str:
     return "\n".join(body)
 
 
+def _canonical_pull_request_trigger(text: str) -> bool:
+    """Accept only the repository's canonical block-form on/pull_request shape.
+
+    Alternative valid YAML spellings fail closed instead of being mistaken for
+    a non-PR workflow, preventing syntax-only rewrites from bypassing the audit.
+    """
+    lines = _mask_block_scalars(text.splitlines())
+    on_index = None
+    for idx, line in enumerate(lines):
+        if re.fullmatch(r"on:\s*", line):
+            on_index = idx
+            break
+    if on_index is None:
+        return False
+    for line in lines[on_index + 1 :]:
+        if not line.strip():
+            continue
+        current = _indent(line)
+        if current == 0:
+            break
+        if current == 2 and re.fullmatch(r"pull_request:\s*", line.strip()):
+            return True
+    return False
+
+
 def _pull_request_paths(text: str) -> List[str] | None:
     lines = _mask_block_scalars(text.splitlines())
     start = None
@@ -156,10 +181,34 @@ def _pull_request_paths(text: str) -> List[str] | None:
     return paths
 
 
+def _verification_enforces_compare(shell: str, body: str) -> bool:
+    normalized = "\n".join(line.strip() for line in body.splitlines() if line.strip())
+    shell = shell.lower()
+    if shell in {"pwsh", "powershell"}:
+        assigns = re.search(r"\$actual\s*=\s*git\s+rev-parse\s+HEAD", normalized, re.IGNORECASE)
+        rejects = re.search(
+            r"if\s*\(\s*\$actual\s+-ne\s+\$env:AIOS_CANDIDATE_SHA\s*\)\s*\{[^}]*throw",
+            normalized,
+            re.IGNORECASE,
+        )
+        return bool(assigns and rejects)
+    assigns = re.search(r"actual\s*=\s*[\"']?\$\(git\s+rev-parse\s+HEAD\)[\"']?", normalized)
+    rejects = re.search(
+        r"test\s+[\"']?\$actual[\"']?\s*=\s*[\"']?\$AIOS_CANDIDATE_SHA[\"']?",
+        normalized,
+    )
+    return bool(assigns and rejects)
+
+
 def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
     errors: List[Dict[str, str]] = []
-    if "pull_request:" not in text:
-        return errors
+    if not _canonical_pull_request_trigger(text):
+        errors.append({
+            "code": "AOS-CI-TRIGGER-SYNTAX",
+            "path": path,
+            "message": "audited workflow must use canonical block-form on: with direct pull_request: child; unsupported trigger syntax fails closed",
+        })
+
     env_re = re.compile(
         r"^\s*AIOS_CANDIDATE_SHA:\s*\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}\s*$",
         re.MULTILINE,
@@ -187,7 +236,7 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
                 errors.append({"code": "AOS-CI-CHECKOUT-CREDENTIALS", "path": path, "message": "checkout must disable persisted credentials"})
 
     if not checkout_indexes:
-        errors.append({"code": "AOS-CI-CHECKOUT-MISSING", "path": path, "message": "pull_request workflow must contain an exact-candidate checkout"})
+        errors.append({"code": "AOS-CI-CHECKOUT-MISSING", "path": path, "message": "audited workflow must contain an exact-candidate checkout"})
         return errors
 
     for idx in checkout_indexes:
@@ -200,8 +249,8 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
         if "Verify" not in direct.get("name", "") or "checkout identity" not in direct.get("name", "").lower():
             errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "checkout must be followed immediately by a named checkout identity verification step"})
             continue
-        if "git rev-parse HEAD" not in body or "AIOS_CANDIDATE_SHA" not in body:
-            errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "identity verification must compare git HEAD with AIOS_CANDIDATE_SHA"})
+        if not _verification_enforces_compare(direct.get("shell", "bash"), body):
+            errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "identity verification must enforce a failing comparison between git HEAD and AIOS_CANDIDATE_SHA"})
     return errors
 
 
