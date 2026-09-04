@@ -1,8 +1,8 @@
 # AIOS-Tools Agent System
 
-State: `PHASE_4_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_ACTIVE / ORGANIZATION_AUDIT_ACTIVE`
+State: `PHASE_5_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_ACTIVE / ORGANIZATION_AUDIT_ACTIVE / GOVERNANCE_SYNC_ACTIVE`
 
-This directory is the repository-local routing, procedural, and self-audit layer for agent context. It does not replace the repository's existing architecture, authority, development, validation, policy, contract, or security documents.
+This directory is the repository-local routing, procedural, self-audit, and bounded-governance-sync layer for agent context. It does not replace the repository's existing architecture, authority, development, validation, policy, contract, or security documents.
 
 ## Read order for ordinary repository work
 
@@ -34,30 +34,42 @@ Canonical project skills live under `.github/skills/`:
 - `review-pr`
 - `verify-head`
 - `harvest-lesson`
+- `sync-governance`
 
 `ROLE_AND_SKILL_PROFILE.md` records the adaptive role-to-skill binding. `review/REVIEW_RULES.md` routes review law without duplicating department rules. `lessons/` is a candidate-memory lane; review findings do not become law unless explicitly promoted through a separate governed change.
 
-No skill pre-approves shell/bash execution.
+No skill pre-approves shell/bash execution. `prepare-release` remains deferred because no distinct release lane is established.
 
 ## Phase 4 organization audit
 
 - `audit/AUDIT_CONTRACT.md` defines accepted audit obligations.
-- `scripts/agent_system_audit.py` performs the deterministic repository audit.
-- `tests/test_agent_system_audit.py` tests critical failure modes.
+- `scripts/agent_system_audit.py` is the Phase 4 audit foundation.
+- `scripts/agent_system_audit_phase5.py` composes the Phase 4 auditor with Phase 5 skill/lock/handoff expectations.
+- `tests/test_agent_system_audit.py` tests critical audit failure modes.
 - `.github/workflows/repo-governance.yml` remains the owning workflow and uploads the JSON audit receipt.
 - `context/governance-lock.yaml` makes local governance freshness executable and fail-closed after `valid_through`.
 
 The audit checks accepted organization law only. Candidate lessons with `promotion_state: NONE` remain non-binding.
 
+## Phase 5 governance synchronization
+
+- `governance-sync/UPSTREAM_SYNC_PROFILE.md` pins the target-specific stable upstream authority set.
+- `.github/skills/sync-governance/SKILL.md` is the Knowledge Steward procedure.
+- `governance-sync/receipts/*.json` preserves immutable source identities, observed versions, deltas, and freshness decisions.
+- `scripts/governance_sync.py` validates receipt digest/source-set/freshness/authority semantics.
+- `tests/test_governance_sync.py` exercises failure cases.
+
+Current first-sync disposition: `MATERIAL_DELTA_PENDING`. It does not renew `valid_through`; the pending exact-head acceptance delta must be separately adjudicated rather than silently promoted by synchronization.
+
 ## Authority boundary
 
-GitHub remains authoritative for live implementation, branch, pull-request, commit, CI, and tool-version facts. Existing `docs/AUTHORITY_BOUNDARIES.md` remains the canonical repository authority map. Roles, skills, audit results, and CI do not grant merge, release, deployment, capability, verifier, or architecture authority.
+GitHub remains authoritative for live implementation, branch, pull-request, commit, CI, and tool-version facts. Existing `docs/AUTHORITY_BOUNDARIES.md` remains the canonical repository authority map. Roles, skills, audit results, sync results, and CI do not grant merge, release, deployment, capability, verifier, mutation, or architecture authority.
 
 ## Phase map
 
 - Phase 0: adaptation profile complete.
 - Phase 1: local context bundle and semantic handoff live on main.
 - Phase 2: tool/agent adapters and scoped departments live on main.
-- Phase 3: four repository-native skills and candidate learning loop live on main.
+- Phase 3: adaptive repository-native skills and candidate learning loop live on main.
 - Phase 4: adaptive organization audit and governance freshness active on main.
-- Phase 5: bounded upstream governance synchronization, not installed.
+- Phase 5: bounded upstream governance synchronization active on main; first sync has a pending material delta and freshness is not renewed.
