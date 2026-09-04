@@ -1,6 +1,6 @@
 # AIOS-Tools Knowledge Index
 
-State: `PHASE_3_ACTIVE`
+State: `PHASE_4_ACTIVE`
 
 Use this index to route questions to the smallest authoritative repository surface.
 
@@ -11,8 +11,9 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `.github/copilot-instructions.md` — thin Copilot adapter into canonical local context.
 - `docs/AUTHORITY_BOUNDARIES.md` — GitHub vs upstream Notion/Drive authority.
 - `docs/REPO_ADAPTATION_PROFILE.md` — Phase 0 repository-specific rollout decisions.
+- `docs/agent-system/context/governance-lock.yaml` — local governance freshness and Phase 4 state.
 - `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` — role and department routing.
-- `docs/agent-system/ROLE_AND_SKILL_PROFILE.md` — Phase 3 adaptive role/skill binding.
+- `docs/agent-system/ROLE_AND_SKILL_PROFILE.md` — adaptive role/skill binding.
 
 ## Repository-native procedures
 - `.github/skills/plan-feature/SKILL.md`
@@ -21,6 +22,15 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `.github/skills/harvest-lesson/SKILL.md`
 - Review router: `docs/agent-system/review/REVIEW_RULES.md`.
 - Candidate institutional memory: `docs/agent-system/lessons/README.md` and `docs/agent-system/lessons/CANDIDATES.md`.
+
+## Organization audit
+- Audit contract: `docs/agent-system/audit/AUDIT_CONTRACT.md`.
+- Auditor: `scripts/agent_system_audit.py`.
+- Auditor tests: `tests/test_agent_system_audit.py`.
+- Owning workflow: `.github/workflows/repo-governance.yml`.
+- Receipt: `outputs/agent-system-audit.json` in the workflow workspace/artifact.
+
+The audit enforces accepted repository-organization law. Unpromoted candidate lessons remain memory rather than audit obligations.
 
 ## Shared capability and execution core
 - `src/aios_tools/` — live Python implementation.
@@ -66,10 +76,10 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `.github/agents/aios-tools-knowledge-steward.agent.md`
 
 ## Retrieval law
-1. Start with handoff + authority + this index.
+1. Start with handoff + governance lock + authority + this index.
 2. Load the smallest matching path-specific packet and domain evidence.
 3. Load a skill only when the task matches its stable procedure.
 4. Candidate lessons are memory, not enforceable law until explicitly promoted.
-5. Use external Notion/Drive only when explicit escalation triggers apply.
+5. Use external Notion/Drive only when explicit escalation/freshness triggers apply.
 6. Source does not imply authority; historical documents and receipts are evidence, not automatically current law.
-7. Roles, skills, review output, and CI evidence do not grant acceptance, merge, release, deploy, capability, or global-governance authority.
+7. Roles, skills, review output, audit output, and CI evidence do not grant acceptance, merge, release, deploy, capability, or global-governance authority.
