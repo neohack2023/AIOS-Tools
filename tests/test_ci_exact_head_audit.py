@@ -38,6 +38,24 @@ class ExactHeadAuditTests(unittest.TestCase):
         codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
         self.assertIn("AOS-CI-IDENTITY-VERIFY", codes)
 
+    def test_identity_step_must_enforce_comparison(self):
+        bad = GOOD.replace(
+            '          test "$actual" = "$AIOS_CANDIDATE_SHA"\n',
+            '          echo "$actual $AIOS_CANDIDATE_SHA"\n',
+        )
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-IDENTITY-VERIFY", codes)
+
+    def test_flow_style_pull_request_trigger_fails_closed(self):
+        bad = GOOD.replace("on:\n  pull_request:\n", "on: [pull_request]\n")
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-TRIGGER-SYNTAX", codes)
+
+    def test_quoted_pull_request_trigger_fails_closed(self):
+        bad = GOOD.replace("  pull_request:\n", '  "pull_request":\n')
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-TRIGGER-SYNTAX", codes)
+
     def test_path_filtered_workflow_must_trigger_on_itself(self):
         path = ".github/workflows/example.yml"
         bad = GOOD.replace("  pull_request:\n", "  pull_request:\n    paths:\n      - src/**\n")
