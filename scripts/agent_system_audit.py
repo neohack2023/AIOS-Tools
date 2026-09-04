@@ -239,7 +239,7 @@ def audit(root: Path = ROOT, today: date | None = None) -> Dict[str, object]:
     handoff_path = "docs/agent-system/context/REPOSITORY_HANDOFF.md"
     if (root / handoff_path).is_file():
         handoff = read_text(root, handoff_path)
-        if "PHASE_4_ACTIVE" not in handoff or "organization audit" not in handoff.lower():
+        if "PHASE_4_ACTIVE" not in handoff or "ORGANIZATION_AUDIT_ACTIVE" not in handoff:
             errors.append(error("AOS-HANDOFF-PHASE", "handoff does not declare Phase 4 organization audit active", handoff_path))
 
     scan_paths = [root / "AGENTS.md", root / ".github/copilot-instructions.md"]
