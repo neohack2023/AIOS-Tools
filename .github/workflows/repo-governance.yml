@@ -5,9 +5,6 @@ on:
   push:
     branches: [main]
 
-env:
-  AIOS_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-
 permissions:
   contents: read
 
@@ -21,18 +18,16 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify audit checkout identity
         shell: bash
         run: |
           set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          test "$actual" = "$AIOS_CANDIDATE_SHA" || {
-            echo "Audit checkout mismatch: expected $AIOS_CANDIDATE_SHA, got $actual"
-            exit 1
-          }
-          test "$AIOS_CANDIDATE_SHA" = "$AIOS_AUDIT_CANDIDATE_SHA"
+          test "$actual" = "$expected"
+          test "$expected" = "$AIOS_AUDIT_CANDIDATE_SHA"
       - name: Verify required repository surfaces
         shell: bash
         run: |
@@ -78,7 +73,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: aios-tools-governance-audit-${{ github.run_id }}-${{ env.AIOS_CANDIDATE_SHA }}
+          name: aios-tools-governance-audit-${{ github.run_id }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             outputs/agent-system-audit.json
             outputs/governance-sync-validation.json
