@@ -140,9 +140,13 @@ def parse_lesson_blocks(text: str) -> List[Tuple[str, Dict[str, str]]]:
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         fields: Dict[str, str] = {}
         for line in text[start:end].splitlines():
-            m = re.match(r"^- ([a-z0-9_]+):\s*`?([^`\n]+)`?\s*$", line.strip())
-            if m:
-                fields[m.group(1)] = m.group(2).strip()
+            m = re.match(r"^- ([a-z0-9_]+):\s*(.+?)\s*$", line.strip())
+            if not m:
+                continue
+            value = m.group(2).strip()
+            if len(value) >= 2 and value.startswith("`") and value.endswith("`"):
+                value = value[1:-1]
+            fields[m.group(1)] = value
         blocks.append((match.group(1).strip(), fields))
     return blocks
 
