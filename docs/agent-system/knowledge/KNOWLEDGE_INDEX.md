@@ -1,6 +1,6 @@
 # AIOS-Tools Knowledge Index
 
-State: `PHASE_4_ACTIVE`
+State: `PHASE_5_ACTIVE`
 
 Use this index to route questions to the smallest authoritative repository surface.
 
@@ -11,7 +11,7 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `.github/copilot-instructions.md` — thin Copilot adapter into canonical local context.
 - `docs/AUTHORITY_BOUNDARIES.md` — GitHub vs upstream Notion/Drive authority.
 - `docs/REPO_ADAPTATION_PROFILE.md` — Phase 0 repository-specific rollout decisions.
-- `docs/agent-system/context/governance-lock.yaml` — local governance freshness and Phase 4 state.
+- `docs/agent-system/context/governance-lock.yaml` — local governance freshness, Phase 5 state, source-set binding, and last sync receipt digest.
 - `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` — role and department routing.
 - `docs/agent-system/ROLE_AND_SKILL_PROFILE.md` — adaptive role/skill binding.
 
@@ -20,17 +20,29 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `.github/skills/review-pr/SKILL.md`
 - `.github/skills/verify-head/SKILL.md`
 - `.github/skills/harvest-lesson/SKILL.md`
+- `.github/skills/sync-governance/SKILL.md`
 - Review router: `docs/agent-system/review/REVIEW_RULES.md`.
 - Candidate institutional memory: `docs/agent-system/lessons/README.md` and `docs/agent-system/lessons/CANDIDATES.md`.
 
 ## Organization audit
 - Audit contract: `docs/agent-system/audit/AUDIT_CONTRACT.md`.
-- Auditor: `scripts/agent_system_audit.py`.
+- Phase 4 auditor foundation: `scripts/agent_system_audit.py`.
+- Phase 5 audit composition: `scripts/agent_system_audit_phase5.py`.
 - Auditor tests: `tests/test_agent_system_audit.py`.
 - Owning workflow: `.github/workflows/repo-governance.yml`.
-- Receipt: `outputs/agent-system-audit.json` in the workflow workspace/artifact.
+- Receipt: `outputs/agent-system-audit.json` in workflow evidence.
 
 The audit enforces accepted repository-organization law. Unpromoted candidate lessons remain memory rather than audit obligations.
+
+## Governance synchronization
+- Target-specific source set: `docs/agent-system/governance-sync/UPSTREAM_SYNC_PROFILE.md`.
+- Sync router: `docs/agent-system/governance-sync/README.md`.
+- First receipt: `docs/agent-system/governance-sync/receipts/GSYNC-AIOS-TOOLS-20260904-001.json`.
+- Validator: `scripts/governance_sync.py`.
+- Validator tests: `tests/test_governance_sync.py`.
+- Validation output: `outputs/governance-sync-validation.json` in workflow evidence.
+
+Current receipt disposition is `MATERIAL_DELTA_PENDING`; `valid_through` was not renewed.
 
 ## Shared capability and execution core
 - `src/aios_tools/` — live Python implementation.
@@ -80,6 +92,7 @@ The audit enforces accepted repository-organization law. Unpromoted candidate le
 2. Load the smallest matching path-specific packet and domain evidence.
 3. Load a skill only when the task matches its stable procedure.
 4. Candidate lessons are memory, not enforceable law until explicitly promoted.
-5. Use external Notion/Drive only when explicit escalation/freshness triggers apply.
+5. Use external Notion/Drive only when explicit escalation/freshness triggers apply; when syncing, use only the pinned source set.
 6. Source does not imply authority; historical documents and receipts are evidence, not automatically current law.
-7. Roles, skills, review output, audit output, and CI evidence do not grant acceptance, merge, release, deploy, capability, or global-governance authority.
+7. A successful fetch is not a successful sync, and a successful sync is not mutation authority.
+8. Roles, skills, review output, audit output, sync output, and CI evidence do not grant acceptance, merge, release, deploy, capability, mutation, or global-governance authority.
