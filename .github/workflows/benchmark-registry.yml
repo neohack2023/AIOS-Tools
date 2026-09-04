@@ -3,6 +3,7 @@ name: Benchmark Registry
 on:
   pull_request:
     paths:
+      - ".github/workflows/benchmark-registry.yml"
       - "benchmarks/**"
       - "src/aios_tools/benchmarks/**"
       - "tests/test_benchmark_registry.py"
