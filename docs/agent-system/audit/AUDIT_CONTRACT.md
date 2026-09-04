@@ -16,8 +16,8 @@ This contract extends the existing Repository Governance workflow. It audits the
 8. The semantic handoff declares Phase 5 governance synchronization active.
 9. Public repository agent surfaces do not contain private Notion or Google Drive workspace URLs.
 10. The governance workflow binds its own checkout and receipt to the exact candidate SHA it claims to inspect.
-11. Every acceptance-relevant `pull_request` workflow in the declared audit set must derive `AIOS_CANDIDATE_SHA` from `github.event.pull_request.head.sha || github.sha`, use a full-SHA-pinned `actions/checkout` step whose direct `with.ref` equals `${{ env.AIOS_CANDIDATE_SHA }}`, disable persisted checkout credentials, and immediately verify `git rev-parse HEAD` against that candidate identity.
-12. Exact-head binding checks must inspect the constrained YAML step structure; nested or block-scalar text cannot satisfy the direct `with.ref` obligation.
+11. Every acceptance-relevant `pull_request` workflow in the declared audit set must use a full-SHA-pinned `actions/checkout` step whose direct `with.ref` equals `${{ github.event.pull_request.head.sha || github.sha }}`, disable persisted checkout credentials, and immediately verify `git rev-parse HEAD` against that same immutable GitHub event context with a constrained failure-enforcing command shape.
+12. Exact-head binding checks must inspect constrained workflow structure and fail closed on unsupported trigger spellings, nested/block-scalar impersonation, suppressed comparisons, or any `AIOS_CANDIDATE_SHA` environment indirection that could be shadowed at a narrower scope.
 
 ## Exact-head evidence scope
 
@@ -32,7 +32,7 @@ Phase 5 bounded upstream synchronization remains Knowledge-Steward-owned and rec
 ## Receipt
 
 - `scripts/agent_system_audit_phase5.py` emits `outputs/agent-system-audit.json` with schema `AIOS_TOOLS_ORGANIZATION_AUDIT_PHASE5_01`.
-- `scripts/ci_exact_head_audit.py` emits `outputs/ci-exact-head-audit.json` with schema `AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_01`.
+- `scripts/ci_exact_head_audit.py` emits `outputs/ci-exact-head-audit.json` with schema `AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_02`.
 - `scripts/governance_sync.py` validates the latest bounded governance synchronization receipt.
 - `.github/workflows/repo-governance.yml` owns execution and uploads these receipts as exact-candidate workflow evidence.
 
