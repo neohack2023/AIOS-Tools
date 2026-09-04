@@ -8,7 +8,7 @@ audit = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(audit)
 
-GOOD = """name: T\non:\n  pull_request:\nenv:\n  AIOS_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}\njobs:\n  x:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout exact candidate\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        with:\n          ref: ${{ env.AIOS_CANDIDATE_SHA }}\n          persist-credentials: false\n      - name: Verify checkout identity\n        shell: bash\n        run: |\n          actual=\"$(git rev-parse HEAD)\"\n          test \"$actual\" = \"$AIOS_CANDIDATE_SHA\"\n"""
+GOOD = """name: T\non:\n  pull_request:\njobs:\n  x:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout exact candidate\n        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262\n        with:\n          ref: ${{ github.event.pull_request.head.sha || github.sha }}\n          persist-credentials: false\n      - name: Verify checkout identity\n        shell: bash\n        run: |\n          set -euo pipefail\n          expected=\"${{ github.event.pull_request.head.sha || github.sha }}\"\n          actual=\"$(git rev-parse HEAD)\"\n          test \"$actual\" = \"$expected\"\n"""
 
 
 class ExactHeadAuditTests(unittest.TestCase):
@@ -21,14 +21,14 @@ class ExactHeadAuditTests(unittest.TestCase):
         self.assertIn("AOS-CI-CHECKOUT-PIN", codes)
 
     def test_merge_ref_fails(self):
-        bad = GOOD.replace("${{ env.AIOS_CANDIDATE_SHA }}", "${{ github.sha }}", 1)
+        bad = GOOD.replace("${{ github.event.pull_request.head.sha || github.sha }}", "${{ github.sha }}", 1)
         codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
         self.assertIn("AOS-CI-CHECKOUT-REF", codes)
 
     def test_nested_block_scalar_cannot_impersonate_direct_with_ref(self):
         bad = GOOD.replace(
-            "        with:\n          ref: ${{ env.AIOS_CANDIDATE_SHA }}\n          persist-credentials: false\n",
-            "        run: |\n          echo 'with:'\n          echo '  ref: ${{ env.AIOS_CANDIDATE_SHA }}'\n          echo '  persist-credentials: false'\n",
+            "        with:\n          ref: ${{ github.event.pull_request.head.sha || github.sha }}\n          persist-credentials: false\n",
+            "        run: |\n          echo 'with:'\n          echo '  ref: ${{ github.event.pull_request.head.sha || github.sha }}'\n          echo '  persist-credentials: false'\n",
         )
         codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
         self.assertIn("AOS-CI-CHECKOUT-REF", codes)
@@ -38,13 +38,29 @@ class ExactHeadAuditTests(unittest.TestCase):
         codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
         self.assertIn("AOS-CI-IDENTITY-VERIFY", codes)
 
-    def test_identity_step_must_enforce_comparison(self):
+    def test_identity_step_must_enforce_exact_comparison(self):
         bad = GOOD.replace(
-            '          test "$actual" = "$AIOS_CANDIDATE_SHA"\n',
-            '          echo "$actual $AIOS_CANDIDATE_SHA"\n',
+            '          test "$actual" = "$expected"\n',
+            '          echo "$actual $expected"\n',
         )
         codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
         self.assertIn("AOS-CI-IDENTITY-VERIFY", codes)
+
+    def test_suppressed_comparison_fails(self):
+        bad = GOOD.replace(
+            '          test "$actual" = "$expected"\n',
+            '          test "$actual" = "$expected" || true\n',
+        )
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-IDENTITY-VERIFY", codes)
+
+    def test_candidate_env_shadow_is_forbidden(self):
+        bad = GOOD.replace(
+            "    runs-on: ubuntu-latest\n",
+            "    runs-on: ubuntu-latest\n    env:\n      AIOS_CANDIDATE_SHA: ${{ github.sha }}\n",
+        )
+        codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
+        self.assertIn("AOS-CI-CANDIDATE-SHADOW", codes)
 
     def test_flow_style_pull_request_trigger_fails_closed(self):
         bad = GOOD.replace("on:\n  pull_request:\n", "on: [pull_request]\n")
