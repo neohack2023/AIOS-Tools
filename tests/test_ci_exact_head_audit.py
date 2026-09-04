@@ -1,6 +1,5 @@
 from pathlib import Path
 import importlib.util
-import tempfile
 import unittest
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "ci_exact_head_audit.py"
@@ -38,6 +37,14 @@ class ExactHeadAuditTests(unittest.TestCase):
         bad = GOOD.replace("Verify checkout identity", "Run tests")
         codes = {item["code"] for item in audit.validate_workflow_text("x.yml", bad)}
         self.assertIn("AOS-CI-IDENTITY-VERIFY", codes)
+
+    def test_path_filtered_workflow_must_trigger_on_itself(self):
+        path = ".github/workflows/example.yml"
+        bad = GOOD.replace("  pull_request:\n", "  pull_request:\n    paths:\n      - src/**\n")
+        codes = {item["code"] for item in audit.validate_workflow_text(path, bad)}
+        self.assertIn("AOS-CI-SELF-TRIGGER", codes)
+        good = bad.replace("      - src/**\n", f"      - src/**\n      - {path}\n")
+        self.assertEqual(audit.validate_workflow_text(path, good), [])
 
 
 if __name__ == "__main__":
