@@ -1,0 +1,54 @@
+{
+  "authority_boundary": {
+    "mutation_authority_granted_by_sync": false,
+    "normal_repo_work_external_fetch_required": false,
+    "sync_role": "KNOWLEDGE_STEWARD",
+    "upstream_authority_cutover": false
+  },
+  "delta_disposition": "MATERIAL_DELTA_PENDING",
+  "deltas": [
+    {
+      "delta_id": "AIOS-TOOLS-SYNC-001",
+      "state": "RECONCILED",
+      "summary": "The upstream GitHub governed-execution contract defaults to branch/PR delivery and forbids autonomous direct default-branch edits. AIOS-Tools Phases 0-5 used explicit bounded owner-authorized direct-main staging exceptions. Repository law still keeps branch/PR delivery as the default and records those exceptions as non-reusable."
+    },
+    {
+      "delta_id": "AIOS-TOOLS-SYNC-002",
+      "state": "PENDING",
+      "summary": "Upstream verifier-owned acceptance requires exact artifact/head identity for acceptance-owning evidence. AIOS-Tools already preserves this mismatch as LESSON-AIOS-TOOLS-001 because ordinary CI checkout semantics are not yet mechanically proven as exact candidate-head binding. The lesson remains unpromoted, so Phase 5 must not silently convert it into repository law."
+    }
+  ],
+  "freshness": {
+    "previous_valid_through": "2026-10-04",
+    "reason": "MATERIAL_DELTA_PENDING",
+    "renewal_applied": false,
+    "requested_valid_through": "2026-10-04"
+  },
+  "local_bundle_version_after": "0.5",
+  "local_bundle_version_before": "0.4",
+  "local_repository_head_before": "535c64226a4f4938941707b4e700273e85260846",
+  "performed_on": "2026-09-04",
+  "repository": "neohack2023/AIOS-Tools",
+  "schema": "AIOS_TOOLS_GOVERNANCE_SYNC_RECEIPT_01",
+  "source_set": [
+    {
+      "classification": "STABLE_REPOSITORY_ARCHITECTURE_AUTHORITY",
+      "notion_page_id": "3aa43bd4-ae4a-81f6-b295-d0a61bfdc70a",
+      "observed_last_edited_at": "2026-07-27T04:09:43.915Z",
+      "source_id": "AIOS_TOOLS_EXECUTION_LAYER_CONTRACT"
+    },
+    {
+      "classification": "STABLE_REPOSITORY_GOVERNANCE_AUTHORITY",
+      "notion_page_id": "3aa43bd4-ae4a-8125-a453-d4ecd5fad910",
+      "observed_last_edited_at": "2026-07-27T04:20:37.420Z",
+      "source_id": "AIOS_GITHUB_GOVERNED_EXECUTION_CONTRACT_v0.1"
+    },
+    {
+      "classification": "STABLE_VERIFICATION_GOVERNANCE_AUTHORITY",
+      "notion_page_id": "3cc43bd4-ae4a-811f-a48f-ebed755e58cc",
+      "observed_last_edited_at": "2026-08-30T02:35:15.344Z",
+      "source_id": "VERIFIER_OWNED_ACCEPTANCE_01"
+    }
+  ],
+  "sync_id": "GSYNC-AIOS-TOOLS-20260904-001"
+}
