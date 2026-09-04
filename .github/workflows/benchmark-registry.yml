@@ -14,9 +14,6 @@ on:
       - "pyproject.toml"
   workflow_dispatch:
 
-env:
-  AIOS_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-
 permissions:
   contents: read
 
@@ -28,14 +25,15 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify checkout identity
         shell: bash
         run: |
           set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          test "$actual" = "$AIOS_CANDIDATE_SHA"
+          test "$actual" = "$expected"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -104,7 +102,7 @@ jobs:
       - name: Upload readiness evidence
         uses: actions/upload-artifact@v4
         with:
-          name: benchmark-registry-readiness-${{ env.AIOS_CANDIDATE_SHA }}
+          name: benchmark-registry-readiness-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             benchmark-doctor.json
             bfcl-package-status.json
