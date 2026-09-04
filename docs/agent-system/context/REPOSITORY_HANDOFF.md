@@ -1,6 +1,6 @@
 # AIOS-Tools Repository Handoff
 
-State: `PHASE_2_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE`
+State: `PHASE_3_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_CANDIDATE_LANE_ACTIVE`
 
 ## Repository identity
 
@@ -9,6 +9,7 @@ State: `PHASE_2_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE`
 - Frozen Phase 0 input head: `a8b47f74f0d2f7e6bcfaf25399ebc5ce7dd48e20`
 - Phase 0 profile commit: `1550dcb6a5b39ed79f41bb6d124736b2b72c2871`
 - Phase 1 staged head: `335c4e31c53ef3a2f8e4612fa60a7d13178e61ec`
+- Phase 2 staged head: `6c5228d49c297b8268eb761e1e0f250245b57c52`
 
 Resolve current mutable branch/head/PR/CI facts live from GitHub. Historical SHAs above are provenance anchors, not timeless claims about current `main`.
 
@@ -18,15 +19,18 @@ AIOS-Tools is the governed capability and execution layer for AIOS. It provides 
 
 ## Current operating model
 
-Phase 1 made ordinary bootstrap local-first. Phase 2 adds native routing without duplicating doctrine:
+Phase 1 made ordinary bootstrap local-first. Phase 2 added native roles and path departments. Phase 3 adds reusable procedures without duplicating doctrine:
 
-- `AGENTS.md` remains repository operating law;
-- `.github/copilot-instructions.md` routes Copilot into the same local packet;
-- `.github/instructions/*.instructions.md` applies scoped department context to touched paths;
-- `.github/agents/*.agent.md` supplies five bounded specialist roles;
-- `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` records role and department routing.
+- `.github/skills/plan-feature/SKILL.md`
+- `.github/skills/review-pr/SKILL.md`
+- `.github/skills/verify-head/SKILL.md`
+- `.github/skills/harvest-lesson/SKILL.md`
+- `docs/agent-system/ROLE_AND_SKILL_PROFILE.md`
+- `docs/agent-system/review/REVIEW_RULES.md`
+- `docs/agent-system/lessons/README.md`
+- `docs/agent-system/lessons/CANDIDATES.md`
 
-Canonical authority, architecture, development, validation, security, contract, policy, fixture, and test surfaces remain where they already lived.
+`prepare-release` is deferred because no distinct release workflow/Release Steward is established. `sync-governance` remains Phase 5.
 
 ## Phase 2 departments
 
@@ -38,15 +42,21 @@ Canonical authority, architecture, development, validation, security, contract, 
 
 These are context-routing boundaries, not ownership or authorization stores.
 
-## Agent roles
+## Agent/skill binding
 
-- Coordinator: scope and route only.
-- Implementer: bounded implementation only.
-- Reviewer: read-only advisory review.
-- Verifier: execute declared checks; no implementation edits.
-- Knowledge Steward: maintain local semantic routing.
+- Coordinator -> `plan-feature`
+- Reviewer -> `review-pr`
+- Verifier -> `verify-head`
+- Knowledge Steward -> `harvest-lesson`
+- Implementer -> no distinct skill yet; follows repository law + touched-area packet + governing plan
 
-Role identity does not grant merge, release, deploy, capability, verifier-class, or global-governance authority.
+Role identity and skill invocation do not grant merge, release, deploy, capability, verifier-class, or global-governance authority.
+
+## Learning loop
+
+`review/incident/verification finding -> harvest-lesson -> candidate memory -> human/governance adjudication -> smallest promoted rule/test/contract surface OR rejection`
+
+Candidate lessons are not enforceable until explicitly promoted. Phase 3 seeds `LESSON-AIOS-TOOLS-001` from the Phase 0 exact-head evidence-binding risk with promotion state `NONE`.
 
 ## External-fetch triggers
 
@@ -59,14 +69,17 @@ Consult upstream Notion/Drive only when:
 
 External retrieval does not itself authorize mutation.
 
+## Direct-main staging
+
+The owner explicitly authorized continuation on `main` for this Phase 3 staging episode. This is a bounded, non-reusable exception; normal branch/PR delivery remains the default unless separately authorized.
+
 ## Independent risks carried forward
 
-- existing CI checkouts are not yet mechanically bound to an immutable PR candidate head;
+- existing CI checkouts are not yet mechanically bound to an immutable PR candidate head; preserved as `LESSON-AIOS-TOOLS-001`, not yet promoted law;
 - branch protection is currently not enabled on `main`;
-- repository-native skills and review-learning loop are not yet installed;
 - repository self-audit and governance freshness mechanics are not yet installed;
 - capability/network/write authority remains governed independently.
 
 ## Next gate
 
-`PHASE_2_VALIDATE_ON_MAIN / PHASE_3_NOT_YET_AUTHORIZED`.
+`PHASE_3_VALIDATE_ON_MAIN / PHASE_4_NOT_YET_AUTHORIZED`.

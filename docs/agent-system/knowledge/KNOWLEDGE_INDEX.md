@@ -1,6 +1,6 @@
 # AIOS-Tools Knowledge Index
 
-State: `PHASE_2_ACTIVE`
+State: `PHASE_3_ACTIVE`
 
 Use this index to route questions to the smallest authoritative repository surface.
 
@@ -11,7 +11,16 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `.github/copilot-instructions.md` — thin Copilot adapter into canonical local context.
 - `docs/AUTHORITY_BOUNDARIES.md` — GitHub vs upstream Notion/Drive authority.
 - `docs/REPO_ADAPTATION_PROFILE.md` — Phase 0 repository-specific rollout decisions.
-- `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` — Phase 2 role and department routing.
+- `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` — role and department routing.
+- `docs/agent-system/ROLE_AND_SKILL_PROFILE.md` — Phase 3 adaptive role/skill binding.
+
+## Repository-native procedures
+- `.github/skills/plan-feature/SKILL.md`
+- `.github/skills/review-pr/SKILL.md`
+- `.github/skills/verify-head/SKILL.md`
+- `.github/skills/harvest-lesson/SKILL.md`
+- Review router: `docs/agent-system/review/REVIEW_RULES.md`.
+- Candidate institutional memory: `docs/agent-system/lessons/README.md` and `docs/agent-system/lessons/CANDIDATES.md`.
 
 ## Shared capability and execution core
 - `src/aios_tools/` — live Python implementation.
@@ -59,6 +68,8 @@ Use this index to route questions to the smallest authoritative repository surfa
 ## Retrieval law
 1. Start with handoff + authority + this index.
 2. Load the smallest matching path-specific packet and domain evidence.
-3. Use external Notion/Drive only when explicit escalation triggers apply.
-4. Source does not imply authority; historical documents and receipts are evidence, not automatically current law.
-5. Phase 2 roles and adapters do not grant acceptance, merge, release, deploy, capability, or global-governance authority.
+3. Load a skill only when the task matches its stable procedure.
+4. Candidate lessons are memory, not enforceable law until explicitly promoted.
+5. Use external Notion/Drive only when explicit escalation triggers apply.
+6. Source does not imply authority; historical documents and receipts are evidence, not automatically current law.
+7. Roles, skills, review output, and CI evidence do not grant acceptance, merge, release, deploy, capability, or global-governance authority.
