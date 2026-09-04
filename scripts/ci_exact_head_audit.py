@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
-EXACT_CANDIDATE_EXPR = "${{ github.event.pull_request.head.sha || github.sha }}"
 CHECKOUT_PIN_RE = re.compile(r"^actions/checkout@[0-9a-f]{40}$")
 WORKFLOW_PATHS = (
     ".github/workflows/audio-model-dependency-lock.yml",
@@ -119,6 +118,44 @@ def _run_body(step_indent: int, original_lines: List[str]) -> str:
     return "\n".join(body)
 
 
+def _pull_request_paths(text: str) -> List[str] | None:
+    lines = _mask_block_scalars(text.splitlines())
+    start = None
+    pr_indent = None
+    for idx, line in enumerate(lines):
+        match = re.match(r"^(\s*)pull_request:\s*$", line)
+        if match:
+            start = idx
+            pr_indent = len(match.group(1))
+            break
+    if start is None or pr_indent is None:
+        return None
+    paths_indent = None
+    for idx in range(start + 1, len(lines)):
+        line = lines[idx]
+        if not line.strip():
+            continue
+        current = _indent(line)
+        if current <= pr_indent:
+            break
+        if current == pr_indent + 2 and line.strip() == "paths:":
+            paths_indent = current
+            start = idx
+            break
+    if paths_indent is None:
+        return None
+    paths: List[str] = []
+    for line in lines[start + 1 :]:
+        if not line.strip():
+            continue
+        current = _indent(line)
+        if current <= paths_indent:
+            break
+        if current == paths_indent + 2 and line.strip().startswith("- "):
+            paths.append(line.strip()[2:].strip().strip('"').strip("'"))
+    return paths
+
+
 def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
     errors: List[Dict[str, str]] = []
     if "pull_request:" not in text:
@@ -129,6 +166,10 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
     )
     if not env_re.search(text):
         errors.append({"code": "AOS-CI-CANDIDATE-ENV", "path": path, "message": "workflow must define AIOS_CANDIDATE_SHA from PR head SHA with github.sha fallback"})
+
+    pr_paths = _pull_request_paths(text)
+    if pr_paths is not None and path not in pr_paths:
+        errors.append({"code": "AOS-CI-SELF-TRIGGER", "path": path, "message": "path-filtered pull_request workflow must include its own workflow path"})
 
     steps = _step_blocks(text)
     checkout_indexes: List[int] = []
