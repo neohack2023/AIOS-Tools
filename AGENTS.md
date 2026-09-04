@@ -21,9 +21,9 @@ Use checked-in repository context first. Do not fetch Notion or Drive merely to 
 
 This repository is authoritative for live implementation and tool-version facts only. Do not invent or revise AIOS architecture, memory doctrine, or global governance here. Those changes require their authoritative upstream path and governed projections.
 
-`docs/AUTHORITY_BOUNDARIES.md` remains the canonical repository authority map. The local agent-system routing layer, Copilot adapter, path instructions, custom agent profiles, skills, and organization auditor are projections/procedures and do not widen repository authority.
+`docs/AUTHORITY_BOUNDARIES.md` remains the canonical repository authority map. The local agent-system routing layer, Copilot adapter, path instructions, custom agent profiles, skills, organization auditor, and governance-sync receipt are projections/procedures and do not widen repository authority.
 
-## Phase 3 role and skill routing
+## Role and skill routing
 
 Repository-native custom agents live under `.github/agents/`. Reusable procedures live under `.github/skills/<skill-name>/SKILL.md`.
 
@@ -31,21 +31,32 @@ Installed skills:
 - `plan-feature` — Coordinator planning procedure;
 - `review-pr` — Reviewer procedure;
 - `verify-head` — Verifier procedure;
-- `harvest-lesson` — Knowledge Steward candidate-memory procedure.
+- `harvest-lesson` — Knowledge Steward candidate-memory procedure;
+- `sync-governance` — Knowledge Steward bounded upstream synchronization procedure.
 
-`prepare-release` is deferred because no distinct release workflow/Release Steward is established. `sync-governance` remains Phase 5.
+`prepare-release` remains deferred because no distinct release workflow/Release Steward is established.
 
-Role identity and skill invocation do not grant authority. Reviewer is advisory; Verifier PASS is obligation-local; candidate lessons are not promoted law.
+Role identity and skill invocation do not grant authority. Reviewer is advisory; Verifier PASS is obligation-local; candidate lessons are not promoted law; governance synchronization does not grant mutation authority.
 
 ## Phase 4 organization audit
 
-`docs/agent-system/audit/AUDIT_CONTRACT.md` defines the repository-organization obligations enforced by `.github/workflows/repo-governance.yml` through `scripts/agent_system_audit.py`.
+`docs/agent-system/audit/AUDIT_CONTRACT.md` defines the repository-organization obligations enforced by `.github/workflows/repo-governance.yml`. Phase 5 composes the Phase 4 auditor with `scripts/agent_system_audit_phase5.py` and validates governance receipts separately with `scripts/governance_sync.py`.
 
-The audit checks accepted organization law only: skill/frontmatter integrity, role→skill bindings, department instruction packets, governance freshness, lesson provenance/promotion semantics, public-repo leakage, handoff phase state, and its own exact candidate identity.
+The audit checks accepted organization law only: skill/frontmatter integrity, role→skill bindings, department instruction packets, governance freshness, lesson provenance/promotion semantics, public-repo leakage, handoff phase state, and exact audit candidate identity.
 
-`docs/agent-system/context/governance-lock.yaml` expires on its declared `valid_through` date. Expiration fails the organization audit until the repository receives an explicit governance refresh. Phase 5 will automate bounded upstream synchronization; Phase 4 does not.
+Unpromoted lesson candidates do not become audit obligations automatically. `LESSON-AIOS-TOOLS-001` remains candidate memory rather than repository-wide exact-head CI law.
 
-Unpromoted lesson candidates do not become audit obligations automatically. In particular, `LESSON-AIOS-TOOLS-001` remains candidate memory rather than repository-wide exact-head CI law.
+## Phase 5 bounded governance synchronization
+
+`docs/agent-system/governance-sync/UPSTREAM_SYNC_PROFILE.md` pins the stable upstream authority set. Only the Knowledge Steward uses `.github/skills/sync-governance/SKILL.md` when a declared sync trigger applies.
+
+Synchronization law:
+
+`explicit trigger -> pinned upstream sources -> compare delta only -> receipt -> mechanical validation -> optional freshness renewal`
+
+A successful fetch is not a successful sync. Only `NO_MATERIAL_DELTA` or `MATERIAL_DELTA_RECONCILED` may renew `valid_through`. `MATERIAL_DELTA_PENDING` leaves the existing freshness window unchanged or expiring.
+
+The current first sync is `MATERIAL_DELTA_PENDING` because upstream verifier-owned acceptance requires exact artifact/head identity while `LESSON-AIOS-TOOLS-001` still records the ordinary-CI exact-head binding gap as unpromoted candidate knowledge. Phase 5 does not silently adjudicate that lesson.
 
 ## Change rules
 
@@ -58,6 +69,7 @@ Unpromoted lesson candidates do not become audit obligations automatically. In p
 - Never claim a check passed unless its command actually ran and evidence is recorded.
 - Do not add durable writes, credentials, OAuth, network effects, deployment, or auto-merge without a separately governed plan.
 - Review findings may be harvested as lesson candidates, but promotion into rules/tests/contracts requires explicit human/governance adjudication.
+- Governance synchronization may surface material deltas but may not silently repair or promote them.
 
 ## Required validation
 
@@ -69,7 +81,7 @@ aios-tools invoke system.health --input '{}'
 aios-tools-mcp --help
 ```
 
-Also run any matching department-specific validation required by `.github/instructions/*.instructions.md` and the affected workflow/contract. Changes to the repository operating package must also pass Repository Governance / organization audit.
+Also run any matching department-specific validation required by `.github/instructions/*.instructions.md` and the affected workflow/contract. Changes to the repository operating package must pass Repository Governance / organization audit and, when applicable, governance-sync validation.
 
 ## Pull-request evidence
 
