@@ -182,6 +182,21 @@ def _pull_request_paths(text: str) -> List[str] | None:
     return paths
 
 
+def _has_nonfatal_continue_on_error(text: str) -> bool:
+    """Fail closed on any effective continue-on-error in audited workflows.
+
+    Acceptance workflows may use literal `continue-on-error: false`, but true,
+    expressions, or any other value are rejected at either step or job scope.
+    """
+    for line in _mask_block_scalars(text.splitlines()):
+        if not line.strip():
+            continue
+        match = re.match(r"^\s*continue-on-error:\s*(.*?)\s*$", line)
+        if match and match.group(1).strip().strip('"').strip("'").lower() != "false":
+            return True
+    return False
+
+
 def _verification_enforces_compare(shell: str, body: str) -> bool:
     lines = [line.strip() for line in body.splitlines() if line.strip()]
     shell = shell.lower()
@@ -218,6 +233,13 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
             "message": "AIOS_CANDIDATE_SHA environment indirection is forbidden; checkout must bind directly to immutable GitHub event context",
         })
 
+    if _has_nonfatal_continue_on_error(text):
+        errors.append({
+            "code": "AOS-CI-CONTINUE-ON-ERROR",
+            "path": path,
+            "message": "acceptance-relevant workflows may not suppress step or job failure with continue-on-error",
+        })
+
     pr_paths = _pull_request_paths(text)
     if pr_paths is not None and path not in pr_paths:
         errors.append({"code": "AOS-CI-SELF-TRIGGER", "path": path, "message": "path-filtered pull_request workflow must include its own workflow path"})
@@ -251,6 +273,9 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
         if "Verify" not in direct.get("name", "") or "checkout identity" not in direct.get("name", "").lower():
             errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "checkout must be followed immediately by a named checkout identity verification step"})
             continue
+        if direct.get("continue-on-error", "false").lower() != "false":
+            errors.append({"code": "AOS-CI-CONTINUE-ON-ERROR", "path": path, "message": "checkout identity verification must be fatal on mismatch"})
+            continue
         if not _verification_enforces_compare(direct.get("shell", "bash"), body):
             errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "identity verification must use the constrained exact comparison against immutable GitHub candidate context"})
     return errors
@@ -270,7 +295,7 @@ def validate_repository_workflows(root: Path = ROOT) -> List[Dict[str, str]]:
 def audit(root: Path = ROOT) -> Dict[str, object]:
     errors = validate_repository_workflows(root)
     return {
-        "schema": "AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_02",
+        "schema": "AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_03",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "result": "PASS" if not errors else "FAIL",
         "workflows": list(WORKFLOW_PATHS),
