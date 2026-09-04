@@ -5,9 +5,6 @@ on:
   push:
     branches: [main]
 
-env:
-  AIOS_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-
 permissions:
   contents: read
 
@@ -19,14 +16,15 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify checkout identity
         shell: bash
         run: |
           set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          test "$actual" = "$AIOS_CANDIDATE_SHA"
+          test "$actual" = "$expected"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -49,13 +47,14 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify checkout identity
         shell: pwsh
         run: |
+          $expected = '${{ github.event.pull_request.head.sha || github.sha }}'
           $actual = git rev-parse HEAD
-          if ($actual -ne $env:AIOS_CANDIDATE_SHA) { throw "Checkout mismatch: expected $env:AIOS_CANDIDATE_SHA, got $actual" }
+          if ($actual -ne $expected) { throw "Checkout mismatch: expected $expected, got $actual" }
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -78,14 +77,15 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify checkout identity
         shell: bash
         run: |
           set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          test "$actual" = "$AIOS_CANDIDATE_SHA"
+          test "$actual" = "$expected"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -114,15 +114,16 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify checkout identity
         shell: bash
         working-directory: ${{ github.workspace }}
         run: |
           set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          test "$actual" = "$AIOS_CANDIDATE_SHA"
+          test "$actual" = "$expected"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -142,7 +143,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cartography-web-browser-evidence-${{ env.AIOS_CANDIDATE_SHA }}
+          name: cartography-web-browser-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             apps/cartography-web/build.log
             apps/cartography-web/playwright-report
