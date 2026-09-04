@@ -1,6 +1,6 @@
 # AIOS-Tools Knowledge Index
 
-State: `PHASE_1_CANDIDATE`
+State: `PHASE_2_ACTIVE`
 
 Use this index to route questions to the smallest authoritative repository surface.
 
@@ -8,59 +8,57 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `README.md` — product/repository identity and user-facing operation.
 - `SPEC.md` — implementation scope and constraints.
 - `AGENTS.md` — repository agent instructions.
+- `.github/copilot-instructions.md` — thin Copilot adapter into canonical local context.
 - `docs/AUTHORITY_BOUNDARIES.md` — GitHub vs upstream Notion/Drive authority.
 - `docs/REPO_ADAPTATION_PROFILE.md` — Phase 0 repository-specific rollout decisions.
+- `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` — Phase 2 role and department routing.
 
 ## Shared capability and execution core
 - `src/aios_tools/` — live Python implementation.
 - `contracts/` — machine-facing contracts and schemas.
 - `policies/` — execution/policy constraints.
-- `fixtures/` — deterministic fixtures and bounded test evidence inputs.
+- `fixtures/` — deterministic fixtures and bounded evidence inputs.
+- `profiles/` — bounded runtime/profile configuration.
 - `tests/` — executable regression and acceptance-support tests.
-
-## Interfaces and adapters
-- CLI entry point: `aios-tools`.
-- MCP entry point: `aios-tools-mcp`.
-- future adapter/connector surfaces: inspect `src/`, `extensions/`, and the governing contract before changes.
+- Path packet: `.github/instructions/execution-core.instructions.md`.
 
 ## Browser capability lane
-- browser implementation/tests under `src/aios_tools/` and `tests/test_browser_*.py`.
-- `.github/workflows/browser-activation-replay.yml`.
-- browser-core job in `.github/workflows/ci.yml`.
-- use `docs/VALIDATION.md` plus the affected policy/contract/fixture set.
+- `src/aios_tools/browser/` and `tests/test_browser_*.py`.
+- `.github/workflows/browser-activation-replay.yml` and browser-core CI.
+- Path packet: `.github/instructions/browser.instructions.md`.
 
 ## Benchmark lane
-- `benchmarks/`.
+- `benchmarks/` and `src/aios_tools/benchmarks/`.
 - benchmark CLI: `aios-bench`.
 - `.github/workflows/benchmark-registry.yml`.
-- `docs/BENCHMARK_ENVIRONMENT.md` when benchmark environment identity matters.
+- Path packet: `.github/instructions/benchmark.instructions.md`.
 
 ## Audio/model dependency lane
+- `src/aios_tools/audio_*.py`.
 - `.github/workflows/audio-model-dependency-lock.yml`.
 - `.github/workflows/demucs-model-quarantine.yml`.
-- inspect corresponding contracts, policies, fixtures, profiles, and tests before altering model/dependency behavior.
+- Path packet: `.github/instructions/audio-model.instructions.md`.
 
 ## Cartography/web lane
-- `apps/cartography-web/`.
-- cartography renderer CLI: `aios-cartography-render`.
-- cartography-web job in `.github/workflows/ci.yml`.
-- relevant `docs/cartography-slice-*.md` documents describe bounded historical slices; treat GitHub code/tests as live implementation truth.
+- `apps/cartography-web/` and `src/aios_tools/cartography/`.
+- cartography-web CI lane and renderer CLI.
+- Path packet: `.github/instructions/cartography-web.instructions.md`.
 
 ## Repository governance and contribution
 - `.github/workflows/repo-governance.yml`.
 - `.github/pull_request_template.md`.
-- `CONTRIBUTING.md`.
-- `SECURITY.md`.
-- `docs/DEVELOPMENT.md`.
-- `docs/VALIDATION.md`.
+- `CONTRIBUTING.md`, `SECURITY.md`, `docs/DEVELOPMENT.md`, `docs/VALIDATION.md`.
 
-## Semantic resume
-- `docs/agent-system/context/REPOSITORY_HANDOFF.md` — current semantic operating state.
-- resolve mutable head/branch/PR/CI facts live from GitHub instead of copying them forward as timeless context.
+## Native agent roles
+- `.github/agents/aios-tools-coordinator.agent.md`
+- `.github/agents/aios-tools-implementer.agent.md`
+- `.github/agents/aios-tools-reviewer.agent.md`
+- `.github/agents/aios-tools-verifier.agent.md`
+- `.github/agents/aios-tools-knowledge-steward.agent.md`
 
 ## Retrieval law
-
 1. Start with handoff + authority + this index.
-2. Read only the domain-specific implementation, contract, policy, fixture, tests, and workflow required by the task.
-3. Use external Notion/Drive only when the handoff's explicit escalation triggers apply.
-4. Source does not imply authority; a historical document or receipt is evidence, not automatically current law.
+2. Load the smallest matching path-specific packet and domain evidence.
+3. Use external Notion/Drive only when explicit escalation triggers apply.
+4. Source does not imply authority; historical documents and receipts are evidence, not automatically current law.
+5. Phase 2 roles and adapters do not grant acceptance, merge, release, deploy, capability, or global-governance authority.

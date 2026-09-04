@@ -1,61 +1,72 @@
 # AIOS-Tools Repository Handoff
 
-State: `PHASE_1_CANDIDATE / SEMANTIC_HANDOFF_ACTIVE_ON_BRANCH`
+State: `PHASE_2_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE`
 
 ## Repository identity
 
 - Repository: `neohack2023/AIOS-Tools`
 - Default branch: `main`
-- Phase 0 profile commit: `1550dcb6a5b39ed79f41bb6d124736b2b72c2871`
 - Frozen Phase 0 input head: `a8b47f74f0d2f7e6bcfaf25399ebc5ce7dd48e20`
-- Phase 1 candidate branch: `aios/repo-autonomy-phase-1`
+- Phase 0 profile commit: `1550dcb6a5b39ed79f41bb6d124736b2b72c2871`
+- Phase 1 staged head: `335c4e31c53ef3a2f8e4612fa60a7d13178e61ec`
 
-Resolve current mutable branch/head/PR/CI facts live from GitHub. Historical SHAs above identify the Phase 0 input and Phase 1 base only.
+Resolve current mutable branch/head/PR/CI facts live from GitHub. Historical SHAs above are provenance anchors, not timeless claims about current `main`.
 
 ## Mission
 
-AIOS-Tools is the governed capability and execution layer for AIOS. It provides the shared Python core plus CLI, MCP, browser, benchmark, cartography/web, and future connector/tool surfaces while preserving fail-closed policy and evidence boundaries.
+AIOS-Tools is the governed capability and execution layer for AIOS. It provides the shared Python core plus CLI, MCP, browser, benchmark, cartography/web, and connector/tool surfaces while preserving fail-closed policy and evidence boundaries.
 
 ## Current operating model
 
-Repository-local files already carry substantial operating context. Phase 1 therefore reuses rather than duplicates:
+Phase 1 made ordinary bootstrap local-first. Phase 2 adds native routing without duplicating doctrine:
 
-- `AGENTS.md` for repository agent law and validation order;
-- `SPEC.md` for implementation scope;
-- `docs/ARCHITECTURE.md` for system structure;
-- `docs/AUTHORITY_BOUNDARIES.md` for repository/upstream authority separation;
-- `docs/DEVELOPMENT.md` for development rules;
-- `docs/VALIDATION.md` for verification obligations;
-- `CONTRIBUTING.md`, `SECURITY.md`, and `.github/pull_request_template.md` for contribution/security/review evidence.
+- `AGENTS.md` remains repository operating law;
+- `.github/copilot-instructions.md` routes Copilot into the same local packet;
+- `.github/instructions/*.instructions.md` applies scoped department context to touched paths;
+- `.github/agents/*.agent.md` supplies five bounded specialist roles;
+- `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` records role and department routing.
 
-## Active verification surfaces
+Canonical authority, architecture, development, validation, security, contract, policy, fixture, and test surfaces remain where they already lived.
 
-- `.github/workflows/ci.yml`: Linux, Windows, browser-core, and cartography-web lanes.
-- `.github/workflows/repo-governance.yml`: required repository surfaces, authority markers, Python compile check.
-- additional bounded workflows cover benchmark registry, browser replay, audio-model dependency locking, and model quarantine.
+## Phase 2 departments
 
-## Current Phase 1 objective
+1. browser capability;
+2. benchmark registry;
+3. audio/model dependency and quarantine;
+4. cartography/web;
+5. shared execution core and adapters.
 
-Make ordinary repository bootstrap local-first by adding a semantic handoff and knowledge router around the repository's existing canonical documents. Do not install Phase 2 adapters, Phase 3 skills, Phase 4 audit machinery, or Phase 5 governance synchronization in this phase.
+These are context-routing boundaries, not ownership or authorization stores.
+
+## Agent roles
+
+- Coordinator: scope and route only.
+- Implementer: bounded implementation only.
+- Reviewer: read-only advisory review.
+- Verifier: execute declared checks; no implementation edits.
+- Knowledge Steward: maintain local semantic routing.
+
+Role identity does not grant merge, release, deploy, capability, verifier-class, or global-governance authority.
 
 ## External-fetch triggers
 
-Consult upstream Notion/Drive only when one of these conditions is true:
+Consult upstream Notion/Drive only when:
 
 1. a requested change would alter global/cross-repository AIOS architecture, memory doctrine, governance, or authority;
-2. checked-in authority/context sources conflict or are insufficient to resolve a material decision;
-3. a future repository governance lock explicitly declares the local bundle stale or incomplete;
+2. checked-in authority/context sources conflict or are materially insufficient;
+3. a future governance lock declares the local bundle stale or incomplete;
 4. the owner explicitly requests upstream synchronization or evidence retrieval.
 
-External retrieval does not itself authorize a repository mutation.
+External retrieval does not itself authorize mutation.
 
 ## Independent risks carried forward
 
 - existing CI checkouts are not yet mechanically bound to an immutable PR candidate head;
 - branch protection is currently not enabled on `main`;
-- repository self-sufficiency audit and governance freshness mechanics are not yet installed;
-- capability/network/write authority remains governed independently of this documentation layer.
+- repository-native skills and review-learning loop are not yet installed;
+- repository self-audit and governance freshness mechanics are not yet installed;
+- capability/network/write authority remains governed independently.
 
 ## Next gate
 
-`PHASE_1_REVIEW_AND_VALIDATION` before any Phase 2 adapter work.
+`PHASE_2_VALIDATE_ON_MAIN / PHASE_3_NOT_YET_AUTHORIZED`.
