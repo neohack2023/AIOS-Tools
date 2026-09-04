@@ -4,20 +4,26 @@
 
 1. `README.md`
 2. `SPEC.md`
-3. `docs/AUTHORITY_BOUNDARIES.md`
-4. `docs/ARCHITECTURE.md`
-5. `docs/DEVELOPMENT.md`
-6. `docs/VALIDATION.md`
-7. the approved plan for the current task
+3. `docs/agent-system/context/REPOSITORY_HANDOFF.md`
+4. `docs/agent-system/knowledge/KNOWLEDGE_INDEX.md`
+5. `docs/AUTHORITY_BOUNDARIES.md`
+6. `docs/ARCHITECTURE.md`
+7. `docs/DEVELOPMENT.md`
+8. `docs/VALIDATION.md`
+9. the approved plan or governing contract for the current task
+
+Use checked-in repository context first. Do not fetch Notion or Drive merely to reconstruct ordinary repository context when the local packet is sufficient. External retrieval is reserved for cross-repository/global governance changes, unresolved authority conflicts, explicitly stale or incomplete local context, or direct owner instruction.
 
 ## Repository authority
 
 This repository is authoritative for live implementation and tool-version facts only. Do not invent or revise AIOS architecture, memory doctrine, or governance here. Those changes require their authoritative Notion path and governed Drive projections.
 
+`docs/AUTHORITY_BOUNDARIES.md` remains the canonical repository authority map. The local agent-system routing layer is a projection and does not widen repository authority.
+
 ## Change rules
 
 - One coherent concern per branch and pull request.
-- Do not commit directly to `main`.
+- Do not commit directly to `main` without a separate, explicit, bounded owner exception.
 - Do not rename, delete, or move files without explicit approval.
 - Keep the shared core independent from CLI, MCP, and future connector adapters.
 - Add tools through the registry, policy, implementation, contracts, and tests as one bounded unit.
