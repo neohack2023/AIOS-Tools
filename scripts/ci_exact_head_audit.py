@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKOUT_PIN_RE = re.compile(r"^actions/checkout@[0-9a-f]{40}$")
+EXACT_CANDIDATE_EXPR = "${{ github.event.pull_request.head.sha || github.sha }}"
 WORKFLOW_PATHS = (
     ".github/workflows/audio-model-dependency-lock.yml",
     ".github/workflows/benchmark-registry.yml",
@@ -182,22 +183,23 @@ def _pull_request_paths(text: str) -> List[str] | None:
 
 
 def _verification_enforces_compare(shell: str, body: str) -> bool:
-    normalized = "\n".join(line.strip() for line in body.splitlines() if line.strip())
+    lines = [line.strip() for line in body.splitlines() if line.strip()]
     shell = shell.lower()
     if shell in {"pwsh", "powershell"}:
-        assigns = re.search(r"\$actual\s*=\s*git\s+rev-parse\s+HEAD", normalized, re.IGNORECASE)
-        rejects = re.search(
-            r"if\s*\(\s*\$actual\s+-ne\s+\$env:AIOS_CANDIDATE_SHA\s*\)\s*\{[^}]*throw",
-            normalized,
-            re.IGNORECASE,
+        expected_line = f"$expected = '{EXACT_CANDIDATE_EXPR}'"
+        has_expected = expected_line in lines
+        has_actual = any(re.fullmatch(r"\$actual\s*=\s*git\s+rev-parse\s+HEAD", line, re.IGNORECASE) for line in lines)
+        has_reject = any(
+            re.fullmatch(r'if\s*\(\s*\$actual\s+-ne\s+\$expected\s*\)\s*\{\s*throw\s+"[^"]+"\s*\}', line, re.IGNORECASE)
+            for line in lines
         )
-        return bool(assigns and rejects)
-    assigns = re.search(r"actual\s*=\s*[\"']?\$\(git\s+rev-parse\s+HEAD\)[\"']?", normalized)
-    rejects = re.search(
-        r"test\s+[\"']?\$actual[\"']?\s*=\s*[\"']?\$AIOS_CANDIDATE_SHA[\"']?",
-        normalized,
-    )
-    return bool(assigns and rejects)
+        return has_expected and has_actual and has_reject
+
+    expected_line = f'expected="{EXACT_CANDIDATE_EXPR}"'
+    has_expected = expected_line in lines
+    has_actual = 'actual="$(git rev-parse HEAD)"' in lines
+    has_exact_test = 'test "$actual" = "$expected"' in lines
+    return has_expected and has_actual and has_exact_test
 
 
 def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
@@ -209,12 +211,12 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
             "message": "audited workflow must use canonical block-form on: with direct pull_request: child; unsupported trigger syntax fails closed",
         })
 
-    env_re = re.compile(
-        r"^\s*AIOS_CANDIDATE_SHA:\s*\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}\s*$",
-        re.MULTILINE,
-    )
-    if not env_re.search(text):
-        errors.append({"code": "AOS-CI-CANDIDATE-ENV", "path": path, "message": "workflow must define AIOS_CANDIDATE_SHA from PR head SHA with github.sha fallback"})
+    if re.search(r"^\s*AIOS_CANDIDATE_SHA\s*:", text, re.MULTILINE):
+        errors.append({
+            "code": "AOS-CI-CANDIDATE-SHADOW",
+            "path": path,
+            "message": "AIOS_CANDIDATE_SHA environment indirection is forbidden; checkout must bind directly to immutable GitHub event context",
+        })
 
     pr_paths = _pull_request_paths(text)
     if pr_paths is not None and path not in pr_paths:
@@ -222,7 +224,7 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
 
     steps = _step_blocks(text)
     checkout_indexes: List[int] = []
-    for idx, (indent, original, masked) in enumerate(steps):
+    for idx, (indent, _original, masked) in enumerate(steps):
         direct = _direct_map(indent, masked)
         uses = direct.get("uses", "")
         if uses.startswith("actions/checkout@"):
@@ -230,8 +232,8 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
             if not CHECKOUT_PIN_RE.fullmatch(uses):
                 errors.append({"code": "AOS-CI-CHECKOUT-PIN", "path": path, "message": "actions/checkout must be pinned to a full commit SHA"})
             with_map = _with_map(indent, masked)
-            if with_map.get("ref") != "${{ env.AIOS_CANDIDATE_SHA }}":
-                errors.append({"code": "AOS-CI-CHECKOUT-REF", "path": path, "message": "checkout with.ref must directly equal ${{ env.AIOS_CANDIDATE_SHA }}"})
+            if with_map.get("ref") != EXACT_CANDIDATE_EXPR:
+                errors.append({"code": "AOS-CI-CHECKOUT-REF", "path": path, "message": f"checkout with.ref must directly equal {EXACT_CANDIDATE_EXPR}"})
             if with_map.get("persist-credentials", "").lower() != "false":
                 errors.append({"code": "AOS-CI-CHECKOUT-CREDENTIALS", "path": path, "message": "checkout must disable persisted credentials"})
 
@@ -250,7 +252,7 @@ def validate_workflow_text(path: str, text: str) -> List[Dict[str, str]]:
             errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "checkout must be followed immediately by a named checkout identity verification step"})
             continue
         if not _verification_enforces_compare(direct.get("shell", "bash"), body):
-            errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "identity verification must enforce a failing comparison between git HEAD and AIOS_CANDIDATE_SHA"})
+            errors.append({"code": "AOS-CI-IDENTITY-VERIFY", "path": path, "message": "identity verification must use the constrained exact comparison against immutable GitHub candidate context"})
     return errors
 
 
@@ -268,7 +270,7 @@ def validate_repository_workflows(root: Path = ROOT) -> List[Dict[str, str]]:
 def audit(root: Path = ROOT) -> Dict[str, object]:
     errors = validate_repository_workflows(root)
     return {
-        "schema": "AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_01",
+        "schema": "AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_02",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "result": "PASS" if not errors else "FAIL",
         "workflows": list(WORKFLOW_PATHS),
