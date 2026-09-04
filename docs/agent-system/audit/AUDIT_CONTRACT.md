@@ -18,6 +18,7 @@ This contract extends the existing Repository Governance workflow. It audits the
 10. The governance workflow binds its own checkout and receipt to the exact candidate SHA it claims to inspect.
 11. Every acceptance-relevant `pull_request` workflow in the declared audit set must use a full-SHA-pinned `actions/checkout` step whose direct `with.ref` equals `${{ github.event.pull_request.head.sha || github.sha }}`, disable persisted checkout credentials, and immediately verify `git rev-parse HEAD` against that same immutable GitHub event context with a constrained failure-enforcing command shape.
 12. Exact-head binding checks must inspect constrained workflow structure and fail closed on unsupported trigger spellings, nested/block-scalar impersonation, suppressed comparisons, or any `AIOS_CANDIDATE_SHA` environment indirection that could be shadowed at a narrower scope.
+13. Acceptance-relevant workflows may not neutralize verification failure with `continue-on-error` at step or job scope. Literal `continue-on-error: false` is allowed; `true`, expressions, or other values fail closed.
 
 ## Exact-head evidence scope
 
@@ -32,7 +33,7 @@ Phase 5 bounded upstream synchronization remains Knowledge-Steward-owned and rec
 ## Receipt
 
 - `scripts/agent_system_audit_phase5.py` emits `outputs/agent-system-audit.json` with schema `AIOS_TOOLS_ORGANIZATION_AUDIT_PHASE5_01`.
-- `scripts/ci_exact_head_audit.py` emits `outputs/ci-exact-head-audit.json` with schema `AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_02`.
+- `scripts/ci_exact_head_audit.py` emits `outputs/ci-exact-head-audit.json` with schema `AIOS_TOOLS_CI_EXACT_HEAD_AUDIT_03`.
 - `scripts/governance_sync.py` validates the latest bounded governance synchronization receipt.
 - `.github/workflows/repo-governance.yml` owns execution and uploads these receipts as exact-candidate workflow evidence.
 
