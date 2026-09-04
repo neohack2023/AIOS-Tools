@@ -57,15 +57,21 @@ jobs:
           grep -q "live source code" docs/AUTHORITY_BOUNDARIES.md
           grep -q "authority_transfer" README.md
       - name: Compile Python sources
-        run: python -m compileall -q src tests scripts/agent_system_audit.py
+        run: python -m compileall -q src tests scripts/agent_system_audit.py scripts/agent_system_audit_phase5.py scripts/governance_sync.py
       - name: Test organization auditor
         run: python -m unittest discover -s tests -p 'test_agent_system_audit.py'
+      - name: Test governance synchronization
+        run: python -m unittest discover -s tests -p 'test_governance_sync.py'
       - name: Audit repository organization
-        run: python scripts/agent_system_audit.py --output outputs/agent-system-audit.json
-      - name: Upload organization audit receipt
+        run: python scripts/agent_system_audit_phase5.py --output outputs/agent-system-audit.json
+      - name: Validate governance synchronization
+        run: python scripts/governance_sync.py --output outputs/governance-sync-validation.json
+      - name: Upload organization and sync receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: aios-tools-organization-audit-${{ github.run_id }}
-          path: outputs/agent-system-audit.json
+          name: aios-tools-governance-audit-${{ github.run_id }}
+          path: |
+            outputs/agent-system-audit.json
+            outputs/governance-sync-validation.json
           if-no-files-found: error
