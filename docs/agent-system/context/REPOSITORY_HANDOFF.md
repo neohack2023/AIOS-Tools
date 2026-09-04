@@ -1,6 +1,6 @@
 # AIOS-Tools Repository Handoff
 
-State: `PHASE_3_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_CANDIDATE_LANE_ACTIVE`
+State: `PHASE_4_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_ACTIVE / ORGANIZATION_AUDIT_ACTIVE`
 
 ## Repository identity
 
@@ -10,6 +10,7 @@ State: `PHASE_3_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE / NAT
 - Phase 0 profile commit: `1550dcb6a5b39ed79f41bb6d124736b2b72c2871`
 - Phase 1 staged head: `335c4e31c53ef3a2f8e4612fa60a7d13178e61ec`
 - Phase 2 staged head: `6c5228d49c297b8268eb761e1e0f250245b57c52`
+- Phase 3 staged head: `0c339033368b4d26c448041ad03900142d05ba73`
 
 Resolve current mutable branch/head/PR/CI facts live from GitHub. Historical SHAs above are provenance anchors, not timeless claims about current `main`.
 
@@ -19,18 +20,16 @@ AIOS-Tools is the governed capability and execution layer for AIOS. It provides 
 
 ## Current operating model
 
-Phase 1 made ordinary bootstrap local-first. Phase 2 added native roles and path departments. Phase 3 adds reusable procedures without duplicating doctrine:
+Phase 1 made ordinary bootstrap local-first. Phase 2 added native roles and path departments. Phase 3 added reusable procedures and a candidate learning loop. Phase 4 adds deterministic self-audit without duplicating the existing governance workflow:
 
-- `.github/skills/plan-feature/SKILL.md`
-- `.github/skills/review-pr/SKILL.md`
-- `.github/skills/verify-head/SKILL.md`
-- `.github/skills/harvest-lesson/SKILL.md`
-- `docs/agent-system/ROLE_AND_SKILL_PROFILE.md`
-- `docs/agent-system/review/REVIEW_RULES.md`
-- `docs/agent-system/lessons/README.md`
-- `docs/agent-system/lessons/CANDIDATES.md`
+- `.github/workflows/repo-governance.yml` remains the owning repository-governance workflow;
+- `scripts/agent_system_audit.py` validates the accepted organization contract;
+- `tests/test_agent_system_audit.py` exercises critical auditor failure modes;
+- `docs/agent-system/audit/AUDIT_CONTRACT.md` defines the audit obligation;
+- `docs/agent-system/context/governance-lock.yaml` makes freshness explicit and fail-closed after its `valid_through` date;
+- audit output is `outputs/agent-system-audit.json` and is uploaded as workflow evidence.
 
-`prepare-release` is deferred because no distinct release workflow/Release Steward is established. `sync-governance` remains Phase 5.
+The workflow binds its own checkout/evidence to the exact candidate SHA. This does not silently promote the broader repository exact-head lesson into law.
 
 ## Phase 2 departments
 
@@ -56,7 +55,11 @@ Role identity and skill invocation do not grant merge, release, deploy, capabili
 
 `review/incident/verification finding -> harvest-lesson -> candidate memory -> human/governance adjudication -> smallest promoted rule/test/contract surface OR rejection`
 
-Candidate lessons are not enforceable until explicitly promoted. Phase 3 seeds `LESSON-AIOS-TOOLS-001` from the Phase 0 exact-head evidence-binding risk with promotion state `NONE`.
+Candidate lessons are not enforceable until explicitly promoted. `LESSON-AIOS-TOOLS-001` remains `promotion_state: NONE`; Phase 4 audits its provenance/promotion semantics but does not promote or enforce its proposed repository-wide exact-head invariant.
+
+## Governance freshness
+
+`docs/agent-system/context/governance-lock.yaml` is valid through `2026-10-04`. After that date, Repository Governance fails closed until the local governance snapshot is explicitly refreshed. Phase 5 will define the bounded upstream-sync source set and receipt-bound renewal procedure.
 
 ## External-fetch triggers
 
@@ -64,22 +67,22 @@ Consult upstream Notion/Drive only when:
 
 1. a requested change would alter global/cross-repository AIOS architecture, memory doctrine, governance, or authority;
 2. checked-in authority/context sources conflict or are materially insufficient;
-3. a future governance lock declares the local bundle stale or incomplete;
+3. the governance lock is expired/stale or later declares the local bundle incomplete;
 4. the owner explicitly requests upstream synchronization or evidence retrieval.
 
 External retrieval does not itself authorize mutation.
 
 ## Direct-main staging
 
-The owner explicitly authorized continuation on `main` for this Phase 3 staging episode. This is a bounded, non-reusable exception; normal branch/PR delivery remains the default unless separately authorized.
+The owner explicitly authorized continued implementation on `main` for this staging sequence. This remains a bounded staging exception and does not erase the repository's normal branch/PR rule for ordinary future work.
 
 ## Independent risks carried forward
 
-- existing CI checkouts are not yet mechanically bound to an immutable PR candidate head; preserved as `LESSON-AIOS-TOOLS-001`, not yet promoted law;
+- broader repository CI checkouts are not yet uniformly bound to immutable PR candidate heads; preserved as unpromoted `LESSON-AIOS-TOOLS-001`;
 - branch protection is currently not enabled on `main`;
-- repository self-audit and governance freshness mechanics are not yet installed;
+- Phase 5 upstream governance synchronization is not installed;
 - capability/network/write authority remains governed independently.
 
 ## Next gate
 
-`PHASE_3_VALIDATE_ON_MAIN / PHASE_4_NOT_YET_AUTHORIZED`.
+`PHASE_4_VALIDATE_ON_MAIN / PHASE_5_NOT_YET_AUTHORIZED`.
