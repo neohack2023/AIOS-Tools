@@ -4,6 +4,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  AIOS_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 permissions:
   contents: read
 
@@ -17,7 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          persist-credentials: false
+      - name: Verify checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$AIOS_CANDIDATE_SHA"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

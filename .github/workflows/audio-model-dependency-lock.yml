@@ -12,6 +12,9 @@ on:
       - "tests/test_audio_model_lock.py"
   workflow_dispatch:
 
+env:
+  AIOS_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 permissions:
   contents: read
 
@@ -20,7 +23,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          persist-credentials: false
+      - name: Verify checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$AIOS_CANDIDATE_SHA"
 
       - uses: actions/setup-python@v5
         with:
@@ -79,6 +92,7 @@ jobs:
               "authority_transfer": False,
               "runtime_admission": False,
               "pilot_authorized": False,
+              "candidate_sha": "${{ env.AIOS_CANDIDATE_SHA }}",
               "items": items,
           }
           Path("audio-model-lock-artifacts/quarantine-inventory.json").write_text(
@@ -91,7 +105,7 @@ jobs:
       - name: Upload governed quarantine bundle
         uses: actions/upload-artifact@v4
         with:
-          name: audio-model-dependency-lock-${{ github.event.pull_request.head.sha || github.sha }}
+          name: audio-model-dependency-lock-${{ env.AIOS_CANDIDATE_SHA }}
           retention-days: 1
           compression-level: 0
           if-no-files-found: error

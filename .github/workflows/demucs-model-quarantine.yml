@@ -8,6 +8,9 @@ on:
       - .github/workflows/demucs-model-quarantine.yml
       - profiles/audio/demucs-htdemucs-native-cpu-v0.1.json
 
+env:
+  AIOS_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 permissions:
   contents: read
 
@@ -16,6 +19,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.AIOS_CANDIDATE_SHA }}
+          persist-credentials: false
+      - name: Verify checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$AIOS_CANDIDATE_SHA"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -74,12 +88,12 @@ jobs:
           test "$(quarantine/venv/bin/python -c 'import importlib.metadata as m; print(m.version("sphn"))')" = "0.1.12"
           quarantine/venv/bin/python -c 'import sphn'
           rm -rf quarantine/venv
-          printf '{\n  "model_filename": "955717e8-8726e21a.th",\n  "model_sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",\n  "model_byte_size": 84141911,\n  "demucs_wheel_filename": "demucs-4.1.0-py3-none-any.whl",\n  "demucs_wheel_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",\n  "sphn_wheel_filename": "sphn-0.1.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",\n  "sphn_wheel_sha256": "0b44b49017f6edd62a2977241fde54f096c92da2906ec6bd55f18faa6dee4c27",\n  "installed_demucs_version": "4.1.0",\n  "installed_sphn_version": "0.1.12",\n  "python_version": "3.13",\n  "quarantine_status": "VERIFIED"\n}\n' > quarantine/manifest.json
+          printf '{\n  "candidate_sha": "${{ env.AIOS_CANDIDATE_SHA }}",\n  "model_filename": "955717e8-8726e21a.th",\n  "model_sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",\n  "model_byte_size": 84141911,\n  "demucs_wheel_filename": "demucs-4.1.0-py3-none-any.whl",\n  "demucs_wheel_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",\n  "sphn_wheel_filename": "sphn-0.1.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",\n  "sphn_wheel_sha256": "0b44b49017f6edd62a2977241fde54f096c92da2906ec6bd55f18faa6dee4c27",\n  "installed_demucs_version": "4.1.0",\n  "installed_sphn_version": "0.1.12",\n  "python_version": "3.13",\n  "quarantine_status": "VERIFIED"\n}\n' > quarantine/manifest.json
 
       - name: Upload verified runtime quarantine
         uses: actions/upload-artifact@v4
         with:
-          name: demucs-4.1.0-sphn-0.1.12-htdemucs-runtime-quarantine
+          name: demucs-4.1.0-sphn-0.1.12-htdemucs-runtime-quarantine-${{ env.AIOS_CANDIDATE_SHA }}
           path: quarantine/
           if-no-files-found: error
           retention-days: 7
