@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
@@ -33,7 +33,7 @@ jobs:
           actual="$(git rev-parse HEAD)"
           test "$actual" = "$expected"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.13"
 
@@ -101,7 +101,7 @@ jobs:
           python -m compileall -q scripts tests
 
       - name: Upload governed quarantine bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: audio-model-dependency-lock-${{ github.event.pull_request.head.sha || github.sha }}
           retention-days: 1
