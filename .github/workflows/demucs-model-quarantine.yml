@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
@@ -28,7 +28,7 @@ jobs:
           expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
           test "$actual" = "$expected"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.13'
 
@@ -89,7 +89,7 @@ jobs:
           printf '{\n  "candidate_sha": "${{ github.event.pull_request.head.sha || github.sha }}",\n  "model_filename": "955717e8-8726e21a.th",\n  "model_sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",\n  "model_byte_size": 84141911,\n  "demucs_wheel_filename": "demucs-4.1.0-py3-none-any.whl",\n  "demucs_wheel_sha256": "4916a804702033ce934a6cdfa7e38dde03f7a7a6e85f41d0120eefe9e2966758",\n  "sphn_wheel_filename": "sphn-0.1.12-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",\n  "sphn_wheel_sha256": "0b44b49017f6edd62a2977241fde54f096c92da2906ec6bd55f18faa6dee4c27",\n  "installed_demucs_version": "4.1.0",\n  "installed_sphn_version": "0.1.12",\n  "python_version": "3.13",\n  "quarantine_status": "VERIFIED"\n}\n' > quarantine/manifest.json
 
       - name: Upload verified runtime quarantine
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: demucs-4.1.0-sphn-0.1.12-htdemucs-runtime-quarantine-${{ github.event.pull_request.head.sha || github.sha }}
           path: quarantine/
