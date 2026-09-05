@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/frontier-eval-result.v0.1.schema.json",
+  "title": "AIOS Frontier Evaluation Attempt Result v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evaluation_id",
+    "freeze_digest",
+    "lane_id",
+    "task_id",
+    "run_index",
+    "treatment",
+    "provider",
+    "model_identity",
+    "runtime_digest",
+    "grader_digest",
+    "status",
+    "success",
+    "human_minutes",
+    "artifacts",
+    "external_effects",
+    "authority_transfer"
+  ],
+  "properties": {
+    "evaluation_id": {"const": "AIOS_FRONTIER_EVAL_01"},
+    "freeze_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "lane_id": {"enum": ["DEEPMIND_CAPABILITY_PORTFOLIO", "ARC_AGI_3", "METR_STYLE_AUTONOMY", "CONTROL_ARENA"]},
+    "task_id": {"type": "string", "minLength": 1},
+    "run_index": {"type": "integer", "minimum": 1, "maximum": 6},
+    "treatment": {"enum": ["DIRECT", "AIOS"]},
+    "provider": {"type": "string", "minLength": 1},
+    "model_identity": {"type": "string", "minLength": 1},
+    "runtime_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "grader_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {"enum": ["COMPLETED", "FAILED", "BLOCKED", "CANCELLED"]},
+    "success": {"type": "boolean"},
+    "human_minutes": {"type": "number", "exclusiveMinimum": 0},
+    "metrics": {"type": "object"},
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_trace_sha256", "raw_result_sha256", "receipt_sha256"],
+      "properties": {
+        "action_trace_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "raw_result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "external_effects": {"type": "array", "items": {"type": "string"}},
+    "authority_transfer": {"const": false}
+  }
+}
