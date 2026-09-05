@@ -1,6 +1,6 @@
 # AIOS-Tools Upstream Governance Sync Profile
 
-State: `PHASE_5_ACTIVE / TARGET_SPECIFIC_SOURCE_SET / DELTA_ONLY`
+State: `PHASE_5_COMPLETE / TARGET_SPECIFIC_SOURCE_SET / DELTA_ONLY / SELF_SUFFICIENT_REPO_ACTIVE`
 
 ## Purpose
 
@@ -26,6 +26,8 @@ Use `.github/skills/sync-governance/SKILL.md` only for:
 - unresolved local authority conflict or material incompleteness;
 - explicit owner-requested synchronization.
 
+Ordinary repository work is external-fetch-free.
+
 ## Freshness contract
 
 `sync_freshness_days = 30`.
@@ -33,6 +35,20 @@ Use `.github/skills/sync-governance/SKILL.md` only for:
 A valid synchronization receipt may extend freshness only when its overall disposition is `NO_MATERIAL_DELTA` or `MATERIAL_DELTA_RECONCILED`.
 
 `MATERIAL_DELTA_PENDING` never extends freshness. The repository may remain usable through the already-valid local window, but the unresolved delta must be separately adjudicated before renewal.
+
+The receipt ledger is append-only. `GSYNC-AIOS-TOOLS-20260904-001` permanently records the first pending comparison. `GSYNC-AIOS-TOOLS-20260904-002` records the post-repair `MATERIAL_DELTA_RECONCILED` comparison and permitted freshness renewal.
+
+## Verification responsibility split
+
+For GitHub Actions repositories, generic platform semantics and security should be delegated to mature platform-aware validators before adding custom AIOS checks:
+
+`actionlint -> generic Actions syntax/semantics`
+
+`zizmor -> generic workflow security and supply-chain evidence`
+
+`AIOS policy verifier -> exact-head identity + self-trigger observability + verifier execution context + evidence binding + target-specific authority invariants`
+
+This is a target-specific implementation of a broader rule: use mature platform-native validators for generic platform behavior and keep AIOS custom verification focused on AIOS-owned trust obligations.
 
 ## Authority boundary
 
@@ -44,3 +60,7 @@ Synchronization is comparison and provenance, not authority transfer. It cannot 
 - approve, merge, release, or deploy.
 
 GitHub remains live implementation truth. Notion remains upstream architecture/governance authority. Drive remains evidence/control-plane projection where declared.
+
+## Terminal Phase 5 state
+
+`SELF_SUFFICIENT_REPO_ACTIVE / UPSTREAM_SYNC_ACTIVE / MATERIAL_DELTA_RECONCILED / FRESHNESS_RENEWED / NORMAL_REPO_WORK_EXTERNAL_FETCH_REQUIRED_FALSE / GOVERNANCE_VALID_THROUGH_2026-10-04`

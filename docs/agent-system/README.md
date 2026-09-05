@@ -1,6 +1,6 @@
 # AIOS-Tools Agent System
 
-State: `PHASE_5_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_ACTIVE / ORGANIZATION_AUDIT_ACTIVE / GOVERNANCE_SYNC_ACTIVE`
+State: `PHASE_5_ACTIVE / PHASE_5_COMPLETE / SELF_SUFFICIENT_REPO_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_ACTIVE / ORGANIZATION_AUDIT_ACTIVE / GOVERNANCE_SYNC_ACTIVE`
 
 This directory is the repository-local routing, procedural, self-audit, and bounded-governance-sync layer for agent context. It does not replace the repository's existing architecture, authority, development, validation, policy, contract, or security documents.
 
@@ -40,16 +40,17 @@ Canonical project skills live under `.github/skills/`:
 
 No skill pre-approves shell/bash execution. `prepare-release` remains deferred because no distinct release lane is established.
 
-## Phase 4 organization audit
+## Phase 4/5 verification architecture
 
-- `audit/AUDIT_CONTRACT.md` defines accepted audit obligations.
-- `scripts/agent_system_audit.py` is the Phase 4 audit foundation.
-- `scripts/agent_system_audit_phase5.py` composes the Phase 4 auditor with Phase 5 skill/lock/handoff expectations.
-- `tests/test_agent_system_audit.py` tests critical audit failure modes.
-- `.github/workflows/repo-governance.yml` remains the owning workflow and uploads the JSON audit receipt.
-- `context/governance-lock.yaml` makes local governance freshness executable and fail-closed after `valid_through`.
+- `audit/AUDIT_CONTRACT.md` defines accepted target-specific audit obligations.
+- `scripts/agent_system_audit.py` is the organization-audit foundation.
+- `scripts/agent_system_audit_phase5.py` composes Phase 5 skill/lock/handoff/sync expectations.
+- `scripts/ci_exact_head_audit.py` owns only AIOS-specific Actions trust-binding policy.
+- actionlint owns generic GitHub Actions syntax/semantics.
+- blocking zizmor owns generic GitHub Actions security/supply-chain evidence.
+- `.github/workflows/repo-governance.yml` remains the mechanical owner and uploads exact-head receipts.
 
-The audit checks accepted organization law only. Candidate lessons with `promotion_state: NONE` remain non-binding.
+The audit checks accepted organization law only. Candidate lessons remain non-binding until promoted through governance.
 
 ## Phase 5 governance synchronization
 
@@ -57,9 +58,9 @@ The audit checks accepted organization law only. Candidate lessons with `promoti
 - `.github/skills/sync-governance/SKILL.md` is the Knowledge Steward procedure.
 - `governance-sync/receipts/*.json` preserves immutable source identities, observed versions, deltas, and freshness decisions.
 - `scripts/governance_sync.py` validates receipt digest/source-set/freshness/authority semantics.
-- `tests/test_governance_sync.py` exercises failure cases.
+- `tests/test_governance_sync.py` exercises fail-closed behavior.
 
-Current first-sync disposition: `MATERIAL_DELTA_PENDING`. It does not renew `valid_through`; the pending exact-head acceptance delta must be separately adjudicated rather than silently promoted by synchronization.
+Receipt `GSYNC-AIOS-TOOLS-20260904-001` remains historical `MATERIAL_DELTA_PENDING` evidence. Receipt `GSYNC-AIOS-TOOLS-20260904-002` is the terminal post-repair comparison with `MATERIAL_DELTA_RECONCILED` and freshness renewal applied. `valid_through` remains `2026-10-04` because both syncs occur on the same local date and the freshness window is 30 days.
 
 ## Authority boundary
 
@@ -68,8 +69,10 @@ GitHub remains authoritative for live implementation, branch, pull-request, comm
 ## Phase map
 
 - Phase 0: adaptation profile complete.
-- Phase 1: local context bundle and semantic handoff live on main.
-- Phase 2: tool/agent adapters and scoped departments live on main.
-- Phase 3: adaptive repository-native skills and candidate learning loop live on main.
-- Phase 4: adaptive organization audit and governance freshness active on main.
-- Phase 5: bounded upstream governance synchronization active on main; first sync has a pending material delta and freshness is not renewed.
+- Phase 1: local context bundle and semantic handoff live.
+- Phase 2: tool/agent adapters and scoped departments live.
+- Phase 3: adaptive repository-native skills and candidate learning loop live.
+- Phase 4: adaptive organization audit and governance freshness live.
+- Phase 5: **complete**. Bounded upstream synchronization is active, the exact-head material delta is reconciled, freshness renewal is mechanically permitted/applied, and ordinary repository work remains external-fetch-free.
+
+Terminal state: `AIOS_TOOLS_PHASE_5 / SELF_SUFFICIENT_REPO_ACTIVE / UPSTREAM_SYNC_ACTIVE / MATERIAL_DELTA_RECONCILED / FRESHNESS_RENEWED / NORMAL_REPO_WORK_EXTERNAL_FETCH_REQUIRED_FALSE / GOVERNANCE_VALID_THROUGH_2026-10-04`.

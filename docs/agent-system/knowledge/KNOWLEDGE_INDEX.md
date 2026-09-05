@@ -1,6 +1,6 @@
 # AIOS-Tools Knowledge Index
 
-State: `PHASE_5_ACTIVE`
+State: `PHASE_5_ACTIVE / PHASE_5_COMPLETE / SELF_SUFFICIENT_REPO_ACTIVE`
 
 Use this index to route questions to the smallest authoritative repository surface.
 
@@ -22,27 +22,30 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `.github/skills/harvest-lesson/SKILL.md`
 - `.github/skills/sync-governance/SKILL.md`
 - Review router: `docs/agent-system/review/REVIEW_RULES.md`.
-- Candidate institutional memory: `docs/agent-system/lessons/README.md` and `docs/agent-system/lessons/CANDIDATES.md`.
+- Institutional-memory lane: `docs/agent-system/lessons/README.md` and `docs/agent-system/lessons/CANDIDATES.md`.
 
-## Organization audit
+## Organization and CI verification
 - Audit contract: `docs/agent-system/audit/AUDIT_CONTRACT.md`.
-- Phase 4 auditor foundation: `scripts/agent_system_audit.py`.
+- Organization auditor foundation: `scripts/agent_system_audit.py`.
 - Phase 5 audit composition: `scripts/agent_system_audit_phase5.py`.
-- Auditor tests: `tests/test_agent_system_audit.py`.
+- AIOS-specific exact-head policy: `scripts/ci_exact_head_audit.py`.
+- Generic GitHub Actions syntax/semantics: actionlint in `.github/workflows/repo-governance.yml`.
+- Generic GitHub Actions security/supply-chain evidence: blocking zizmor in `.github/workflows/repo-governance.yml`.
+- Auditor tests: `tests/test_agent_system_audit.py` and `tests/test_ci_exact_head_audit.py`.
 - Owning workflow: `.github/workflows/repo-governance.yml`.
-- Receipt: `outputs/agent-system-audit.json` in workflow evidence.
 
-The audit enforces accepted repository-organization law. Unpromoted candidate lessons remain memory rather than audit obligations.
+AIOS custom policy does not reimplement the whole GitHub Actions language. Mature platform-aware validators own generic platform behavior; AIOS owns target-specific trust bindings.
 
 ## Governance synchronization
 - Target-specific source set: `docs/agent-system/governance-sync/UPSTREAM_SYNC_PROFILE.md`.
 - Sync router: `docs/agent-system/governance-sync/README.md`.
-- First receipt: `docs/agent-system/governance-sync/receipts/GSYNC-AIOS-TOOLS-20260904-001.json`.
+- Historical pending receipt: `docs/agent-system/governance-sync/receipts/GSYNC-AIOS-TOOLS-20260904-001.json`.
+- Terminal reconciliation receipt: `docs/agent-system/governance-sync/receipts/GSYNC-AIOS-TOOLS-20260904-002.json`.
 - Validator: `scripts/governance_sync.py`.
 - Validator tests: `tests/test_governance_sync.py`.
 - Validation output: `outputs/governance-sync-validation.json` in workflow evidence.
 
-Current receipt disposition is `MATERIAL_DELTA_PENDING`; `valid_through` was not renewed.
+Current disposition: `MATERIAL_DELTA_RECONCILED`. Freshness renewal is applied and `valid_through` is `2026-10-04`. Ordinary repository work remains external-fetch-free.
 
 ## Shared capability and execution core
 - `src/aios_tools/` — live Python implementation.
@@ -74,18 +77,6 @@ Current receipt disposition is `MATERIAL_DELTA_PENDING`; `valid_through` was not
 - `apps/cartography-web/` and `src/aios_tools/cartography/`.
 - cartography-web CI lane and renderer CLI.
 - Path packet: `.github/instructions/cartography-web.instructions.md`.
-
-## Repository governance and contribution
-- `.github/workflows/repo-governance.yml`.
-- `.github/pull_request_template.md`.
-- `CONTRIBUTING.md`, `SECURITY.md`, `docs/DEVELOPMENT.md`, `docs/VALIDATION.md`.
-
-## Native agent roles
-- `.github/agents/aios-tools-coordinator.agent.md`
-- `.github/agents/aios-tools-implementer.agent.md`
-- `.github/agents/aios-tools-reviewer.agent.md`
-- `.github/agents/aios-tools-verifier.agent.md`
-- `.github/agents/aios-tools-knowledge-steward.agent.md`
 
 ## Retrieval law
 1. Start with handoff + governance lock + authority + this index.

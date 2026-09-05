@@ -16,6 +16,7 @@ base.REQUIRED_AGENT_SYSTEM_PATHS = set(base.REQUIRED_AGENT_SYSTEM_PATHS) | {
     "docs/agent-system/governance-sync/README.md",
     "docs/agent-system/governance-sync/UPSTREAM_SYNC_PROFILE.md",
     "docs/agent-system/governance-sync/receipts/GSYNC-AIOS-TOOLS-20260904-001.json",
+    "docs/agent-system/governance-sync/receipts/GSYNC-AIOS-TOOLS-20260904-002.json",
 }
 
 
