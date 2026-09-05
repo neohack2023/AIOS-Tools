@@ -20,3 +20,8 @@ last_sync_receipt_sha256: 6f00e1ff9be9fadf4023d3964c98c09443ba49e491485f022e6bdf
 last_sync_disposition: MATERIAL_DELTA_PENDING
 last_sync_performed_on: 2026-09-04
 freshness_renewed_by_last_sync: false
+pending_delta_resolution_state: REPAIR_CANDIDATE_ACTIVE
+pending_delta_resolution_branch: aios/exact-head-ci-binding-01
+pending_delta_resolution_pr: 59
+pending_delta_resolution_lesson: LESSON-AIOS-TOOLS-001
+post_merge_resync_required: true

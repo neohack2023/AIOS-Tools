@@ -16,6 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.3,<9",
+  "PyYAML==6.0.2",
 ]
 browser = [
   "playwright==1.62.0",

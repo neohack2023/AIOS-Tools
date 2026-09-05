@@ -11,24 +11,23 @@ permissions:
 jobs:
   governance:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     env:
       AIOS_AUDIT_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: ${{ env.AIOS_AUDIT_CANDIDATE_SHA }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify audit checkout identity
         shell: bash
         run: |
           set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
           actual="$(git rev-parse HEAD)"
-          test "$actual" = "$AIOS_AUDIT_CANDIDATE_SHA" || {
-            echo "Audit checkout mismatch: expected $AIOS_AUDIT_CANDIDATE_SHA, got $actual"
-            exit 1
-          }
+          test "$actual" = "$expected"
+          test "$expected" = "$AIOS_AUDIT_CANDIDATE_SHA"
       - name: Verify required repository surfaces
         shell: bash
         run: |
@@ -56,12 +55,44 @@ jobs:
           grep -q "Google Drive" docs/AUTHORITY_BOUNDARIES.md
           grep -q "live source code" docs/AUTHORITY_BOUNDARIES.md
           grep -q "authority_transfer" README.md
+      - name: Install workflow policy dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "PyYAML==6.0.2"
+          archive="/tmp/actionlint_1.7.12_linux_amd64.tar.gz"
+          curl --fail --location --retry 3 \
+            --output "$archive" \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $archive" | sha256sum -c -
+          tar -xzf "$archive" -C /tmp actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+          actionlint -version
+      - name: Validate GitHub Actions syntax with actionlint
+        run: actionlint
+      - name: Analyze GitHub Actions security with zizmor
+        continue-on-error: true
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054
+        with:
+          version: 1.29.0
+          inputs: ./.github
+          collect: workflows
+          online-audits: false
+          advanced-security: false
+          annotations: true
+          persona: auditor
+          min-severity: medium
+          min-confidence: high
       - name: Compile Python sources
-        run: python -m compileall -q src tests scripts/agent_system_audit.py scripts/agent_system_audit_phase5.py scripts/governance_sync.py
+        run: python -m compileall -q src tests scripts/agent_system_audit.py scripts/agent_system_audit_phase5.py scripts/governance_sync.py scripts/ci_exact_head_audit.py
       - name: Test organization auditor
         run: python -m unittest discover -s tests -p 'test_agent_system_audit.py'
       - name: Test governance synchronization
         run: python -m unittest discover -s tests -p 'test_governance_sync.py'
+      - name: Test exact-head CI policy
+        run: python -m unittest discover -s tests -p 'test_ci_exact_head_audit.py'
+      - name: Audit exact-head CI policy
+        run: python scripts/ci_exact_head_audit.py --output outputs/ci-exact-head-audit.json
       - name: Audit repository organization
         run: python scripts/agent_system_audit_phase5.py --output outputs/agent-system-audit.json
       - name: Validate governance synchronization
@@ -70,8 +101,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: aios-tools-governance-audit-${{ github.run_id }}
+          name: aios-tools-governance-audit-${{ github.run_id }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             outputs/agent-system-audit.json
             outputs/governance-sync-validation.json
+            outputs/ci-exact-head-audit.json
           if-no-files-found: error

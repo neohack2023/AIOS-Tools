@@ -1,6 +1,6 @@
 # AIOS-Tools Repository Handoff
 
-State: `PHASE_5_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_ACTIVE / ORGANIZATION_AUDIT_ACTIVE / GOVERNANCE_SYNC_ACTIVE / MATERIAL_DELTA_PENDING`
+State: `PHASE_5_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE / NATIVE_SKILLS_ACTIVE / LEARNING_LOOP_ACTIVE / ORGANIZATION_AUDIT_ACTIVE / GOVERNANCE_SYNC_ACTIVE / EXACT_HEAD_REPAIR_CANDIDATE_ACTIVE`
 
 ## Repository identity
 
@@ -12,6 +12,7 @@ State: `PHASE_5_ACTIVE / LOCAL_CONTEXT_LIVE / NATIVE_AGENT_ADAPTERS_ACTIVE / NAT
 - Phase 2 staged head: `6c5228d49c297b8268eb761e1e0f250245b57c52`
 - Phase 3 staged head: `0c339033368b4d26c448041ad03900142d05ba73`
 - Phase 4 validated head: `535c64226a4f4938941707b4e700273e85260846`
+- Phase 5 installed head: `758680ac0eb33e0ac82a3d099c7282b086bf0c04`
 
 Resolve current mutable branch/head/PR/CI facts live from GitHub. Historical SHAs above are provenance anchors, not timeless claims about current `main`.
 
@@ -21,7 +22,7 @@ AIOS-Tools is the governed capability and execution layer for AIOS. It provides 
 
 ## Current operating model
 
-Phase 1 made ordinary bootstrap local-first. Phase 2 added native roles and path departments. Phase 3 added reusable procedures and a candidate learning loop. Phase 4 added deterministic self-audit. Phase 5 adds a bounded resupply path without restoring ambient Notion/Drive dependence.
+Phase 1 made ordinary bootstrap local-first. Phase 2 added native roles and path departments. Phase 3 added reusable procedures and a candidate learning loop. Phase 4 added deterministic self-audit. Phase 5 added a bounded resupply path without restoring ambient Notion/Drive dependence.
 
 Phase 5 surfaces:
 - `.github/skills/sync-governance/SKILL.md` — Knowledge Steward procedure;
@@ -65,24 +66,26 @@ Related plans, receipts, research, and runtime feature contracts are evidence/hi
 
 Receipt: `GSYNC-AIOS-TOOLS-20260904-001`.
 
-Overall disposition: `MATERIAL_DELTA_PENDING`.
+Historical receipt disposition: `MATERIAL_DELTA_PENDING`.
 
-- Reconciled: the upstream branch/PR default versus the explicit owner-authorized direct-main staging episodes. Local repository law still makes branch/PR delivery the default; staging exceptions are bounded and non-reusable.
-- Pending: verifier-owned acceptance requires exact artifact/head identity for acceptance-owning evidence, while broader AIOS-Tools CI checkout semantics remain preserved as unpromoted `LESSON-AIOS-TOOLS-001` rather than mechanically proven exact candidate-head binding.
+- Reconciled in the receipt: upstream branch/PR default versus explicit owner-authorized direct-main staging episodes. Local repository law still makes branch/PR delivery the default; staging exceptions are bounded and non-reusable.
+- Material delta identified by the receipt: verifier-owned acceptance requires exact artifact/head identity for acceptance-owning evidence.
 
-Phase 5 does not silently adjudicate that lesson or modify CI acceptance semantics.
+That delta has now been explicitly adjudicated. `LESSON-AIOS-TOOLS-001` is promoted on PR #59 and the repair candidate binds acceptance-relevant PR workflows to the exact candidate head, verifies checkout identity, audits the binding structurally, and fails closed on unsupported trigger syntax or non-enforcing identity checks.
+
+The original sync receipt remains historically `MATERIAL_DELTA_PENDING` because receipts are immutable. Until PR #59 is promoted to `main` and a new governance-sync receipt reclassifies the comparison, the governance lock remains pending and freshness remains unrenewed.
 
 ## Governance freshness
 
 `docs/agent-system/context/governance-lock.yaml` remains valid through `2026-10-04`.
 
-Because the first sync disposition is `MATERIAL_DELTA_PENDING`, freshness was **not renewed**. The repository remains within the existing local-validity window, but a later renewal requires the pending material delta to be separately adjudicated/reconciled or otherwise resolved through governing authority.
+The first sync did not renew freshness. PR #59 is a repair candidate, not a freshness receipt. A later renewal requires promotion of the repair and a new mechanically valid governance-sync receipt with an allowed disposition.
 
 ## Learning loop
 
 `review/incident/verification finding -> harvest-lesson -> candidate memory -> human/governance adjudication -> smallest promoted rule/test/contract surface OR rejection`
 
-`LESSON-AIOS-TOOLS-001` remains `promotion_state: NONE`. Synchronization can surface its importance but cannot promote it.
+`LESSON-AIOS-TOOLS-001` is now `promotion_state: PROMOTED` on the repair branch after explicit owner/governance adjudication. Its promotion target is the exact-head workflow/audit contract. Promotion remains obligation-scoped and grants no merge/release/deploy/capability authority.
 
 ## External-fetch triggers
 
@@ -96,14 +99,15 @@ External retrieval does not itself authorize mutation.
 
 ## Direct-main staging
 
-The owner explicitly authorized continued implementation on `main` for this staging sequence. This remains a bounded staging exception and does not erase the repository's normal branch/PR rule for ordinary future work.
+The earlier owner-authorized direct-main staging sequence is complete. Normal future work follows branch/PR delivery unless a new explicit bounded exception is granted.
 
 ## Independent risks carried forward
 
-- `LESSON-AIOS-TOOLS-001`: broader CI exact-candidate binding remains a pending governance delta awaiting separate adjudication;
+- PR #59 exact-head repair must be reviewed and verified on its current head before merge authorization can be exercised;
+- the historical first sync receipt remains `MATERIAL_DELTA_PENDING` until a post-promotion resynchronization reclassifies it;
 - branch protection is currently not enabled on `main`;
 - capability/network/write authority remains governed independently.
 
 ## Next gate
 
-`PHASE_5_VALIDATE_ON_MAIN / MATERIAL_DELTA_PENDING / EXACT_HEAD_LESSON_ADJUDICATION_REQUIRED_BEFORE_FRESHNESS_RENEWAL`.
+`PR_59_CURRENT_HEAD_FULL_REVIEW / EXACT_HEAD_CI / OWNER_EXACT_HEAD_MERGE_AUTHORIZATION / POST_MERGE_GOVERNANCE_RESYNC`

@@ -36,15 +36,15 @@ Installed skills:
 
 `prepare-release` remains deferred because no distinct release workflow/Release Steward is established.
 
-Role identity and skill invocation do not grant authority. Reviewer is advisory; Verifier PASS is obligation-local; candidate lessons are not promoted law; governance synchronization does not grant mutation authority.
+Role identity and skill invocation do not grant authority. Reviewer is advisory; Verifier PASS is obligation-local; candidate lessons are not repository law unless explicitly adjudicated and promoted; governance synchronization does not grant mutation authority.
 
 ## Phase 4 organization audit
 
 `docs/agent-system/audit/AUDIT_CONTRACT.md` defines the repository-organization obligations enforced by `.github/workflows/repo-governance.yml`. Phase 5 composes the Phase 4 auditor with `scripts/agent_system_audit_phase5.py` and validates governance receipts separately with `scripts/governance_sync.py`.
 
-The audit checks accepted organization law only: skill/frontmatter integrity, role→skill bindings, department instruction packets, governance freshness, lesson provenance/promotion semantics, public-repo leakage, handoff phase state, and exact audit candidate identity.
+The audit checks accepted organization law only: skill/frontmatter integrity, role→skill bindings, department instruction packets, governance freshness, lesson provenance/promotion semantics, public-repo leakage, handoff phase state, exact audit candidate identity, and promoted exact-head CI binding.
 
-Unpromoted lesson candidates do not become audit obligations automatically. `LESSON-AIOS-TOOLS-001` remains candidate memory rather than repository-wide exact-head CI law.
+`LESSON-AIOS-TOOLS-001` has been explicitly adjudicated and promoted on repair PR #59. Its promoted invariant requires acceptance-relevant PR workflows to bind checkout and evidence to the exact candidate head and requires the structural auditor to fail closed on unsupported trigger syntax or non-enforcing identity checks. Promotion does not authorize merge, release, deploy, capability widening, or authority transfer.
 
 ## Phase 5 bounded governance synchronization
 
@@ -56,7 +56,7 @@ Synchronization law:
 
 A successful fetch is not a successful sync. Only `NO_MATERIAL_DELTA` or `MATERIAL_DELTA_RECONCILED` may renew `valid_through`. `MATERIAL_DELTA_PENDING` leaves the existing freshness window unchanged or expiring.
 
-The current first sync is `MATERIAL_DELTA_PENDING` because upstream verifier-owned acceptance requires exact artifact/head identity while `LESSON-AIOS-TOOLS-001` still records the ordinary-CI exact-head binding gap as unpromoted candidate knowledge. Phase 5 does not silently adjudicate that lesson.
+The first sync receipt remains historically `MATERIAL_DELTA_PENDING`. PR #59 is the governed repair candidate for that exact-head delta. Until the repair is promoted to `main` and a new governance-sync receipt reclassifies the upstream comparison, the governance lock correctly remains pending and freshness remains unrenewed.
 
 ## Change rules
 

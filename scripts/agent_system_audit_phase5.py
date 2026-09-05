@@ -7,6 +7,7 @@ from datetime import date
 from pathlib import Path
 
 import agent_system_audit as base
+import ci_exact_head_audit
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -83,6 +84,8 @@ def audit(root: Path = ROOT):
         steward = steward_path.read_text(encoding="utf-8")
         if ".github/skills/sync-governance/SKILL.md" not in steward:
             errors.append(base.error("AOS-ROLE-SKILL-BINDING", "Knowledge Steward does not bind to sync-governance", str(steward_path.relative_to(root))))
+
+    errors.extend(ci_exact_head_audit.validate_repository_workflows(root))
 
     report["repository_autonomy_phase"] = 5
     report["result"] = "PASS" if not errors else "FAIL"

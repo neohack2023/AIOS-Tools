@@ -20,7 +20,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$expected"
 
       - uses: actions/setup-python@v5
         with:
@@ -79,6 +90,7 @@ jobs:
               "authority_transfer": False,
               "runtime_admission": False,
               "pilot_authorized": False,
+              "candidate_sha": "${{ github.event.pull_request.head.sha || github.sha }}",
               "items": items,
           }
           Path("audio-model-lock-artifacts/quarantine-inventory.json").write_text(
