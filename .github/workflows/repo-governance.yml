@@ -16,7 +16,7 @@ jobs:
       AIOS_AUDIT_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
@@ -70,8 +70,7 @@ jobs:
           actionlint -version
       - name: Validate GitHub Actions syntax with actionlint
         run: actionlint
-      - name: Analyze GitHub Actions security with zizmor
-        continue-on-error: true
+      - name: Enforce GitHub Actions security with zizmor
         uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054
         with:
           version: 1.29.0
@@ -99,7 +98,7 @@ jobs:
         run: python scripts/governance_sync.py --output outputs/governance-sync-validation.json
       - name: Upload organization and sync receipts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: aios-tools-governance-audit-${{ github.run_id }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
