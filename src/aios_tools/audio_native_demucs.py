@@ -188,16 +188,27 @@ def validate_output_wavs(outputs: dict[str, Path]) -> dict[str, dict[str, int]]:
     return formats
 
 
-def _read_audio_sphn(path: Path) -> tuple[Any, int]:
+def _read_audio_demucs(path: Path) -> tuple[Any, int, int]:
+    """Decode through the pinned Demucs audio path and normalize to the model domain."""
     try:
-        sphn = importlib.import_module("sphn")
+        demucs_audio = importlib.import_module("demucs.audio")
     except ModuleNotFoundError as exc:
-        raise NativeDemucsError("METRICS_DEPENDENCY_MISSING", "sphn is required for normalized audio metrics") from exc
+        raise NativeDemucsError(
+            "METRICS_DEPENDENCY_MISSING",
+            "the pinned Demucs runtime is required for normalized audio metrics",
+        ) from exc
     try:
-        data, sample_rate = sphn.read(str(path))
+        audio_file = demucs_audio.AudioFile(path)
+        original_sample_rate = int(audio_file.samplerate())
+        tensor = audio_file.read(
+            streams=0,
+            samplerate=EXPECTED_SAMPLE_RATE,
+            channels=EXPECTED_CHANNELS,
+        )
+        data = tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else tensor
     except Exception as exc:
         raise NativeDemucsError("METRICS_DECODE_FAILED", f"failed to decode {path.name}: {exc}") from exc
-    return data, int(sample_rate)
+    return data, EXPECTED_SAMPLE_RATE, original_sample_rate
 
 
 def _compute_metrics_from_arrays(
@@ -207,6 +218,7 @@ def _compute_metrics_from_arrays(
     stem_sample_rates: dict[str, int],
     *,
     frame_samples: int = METRIC_FRAME_SAMPLES,
+    source_original_sample_rate: int | None = None,
 ) -> dict[str, Any]:
     try:
         np = importlib.import_module("numpy")
@@ -289,6 +301,13 @@ def _compute_metrics_from_arrays(
         "residual_to_mix_energy_ratio": residual_energy_ratio,
         "stem_activity": activities,
         "sample_rate_hz": EXPECTED_SAMPLE_RATE,
+        "source_sample_rate_hz_original": (
+            source_sample_rate if source_original_sample_rate is None else source_original_sample_rate
+        ),
+        "source_resampled": (
+            source_original_sample_rate is not None
+            and source_original_sample_rate != EXPECTED_SAMPLE_RATE
+        ),
         "channels": EXPECTED_CHANNELS,
         "samples": total_samples,
         "frame_samples": frame_samples,
@@ -301,14 +320,14 @@ def compute_native_stem_metrics(
     source: Path,
     outputs: dict[str, Path],
     *,
-    reader: Callable[[Path], tuple[Any, int]] | None = None,
+    reader: Callable[[Path], tuple[Any, int, int]] | None = None,
 ) -> dict[str, Any]:
-    read_audio = reader or _read_audio_sphn
-    source_audio, source_sample_rate = read_audio(source)
+    read_audio = reader or _read_audio_demucs
+    source_audio, source_sample_rate, source_original_sample_rate = read_audio(source)
     stem_audio: dict[str, Any] = {}
     stem_sample_rates: dict[str, int] = {}
     for stem in EXPECTED_STEMS:
-        audio, sample_rate = read_audio(outputs[stem])
+        audio, sample_rate, _ = read_audio(outputs[stem])
         stem_audio[stem] = audio
         stem_sample_rates[stem] = sample_rate
     return _compute_metrics_from_arrays(
@@ -316,6 +335,7 @@ def compute_native_stem_metrics(
         source_sample_rate,
         stem_audio,
         stem_sample_rates,
+        source_original_sample_rate=source_original_sample_rate,
     )
 
 
@@ -323,7 +343,7 @@ def build_native_output_evidence(
     source: Path,
     outputs: dict[str, Path],
     *,
-    reader: Callable[[Path], tuple[Any, int]] | None = None,
+    reader: Callable[[Path], tuple[Any, int, int]] | None = None,
 ) -> tuple[dict[str, dict[str, int]], dict[str, Any]]:
     wav_formats = validate_output_wavs(outputs)
     metrics = compute_native_stem_metrics(source, outputs, reader=reader)
@@ -466,6 +486,8 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
             "reconstruction_rms_error": metrics["reconstruction_rms_error"],
             "residual_to_mix_energy_ratio": metrics["residual_to_mix_energy_ratio"],
             "sample_rate_hz": metrics["sample_rate_hz"],
+            "source_sample_rate_hz_original": metrics["source_sample_rate_hz_original"],
+            "source_resampled": metrics["source_resampled"],
             "channels": metrics["channels"],
             "samples": metrics["samples"],
             "evidence_class": metrics["evidence_class"],
