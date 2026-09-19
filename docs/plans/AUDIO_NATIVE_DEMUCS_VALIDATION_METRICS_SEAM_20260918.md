@@ -65,14 +65,14 @@ Verifier obligations:
 
 ### Slice B — Normalized quality metrics
 
-Decode the source and verified stems through the pinned Demucs 4.1.0 `AudioFile` path, normalizing to stereo 44.1 kHz exactly as the engine domain expects, then compute:
+Decode the source and verified stems with the exact Demucs 4.1.0 loader order used by separation: `sphn.read()` first, then `AudioFile`/ffmpeg fallback, normalizing to stereo 44.1 kHz, then compute:
 
 - reconstruction RMS error;
 - residual-to-mix energy ratio;
 - per-stem one-second RMS/peak activity windows;
 - exact sample rate/channel/sample-count facts.
 
-The helper dynamically loads the pinned Demucs audio runtime and NumPy, records the source's original sample rate, normalizes the evidence stream to stereo 44.1 kHz, and fails closed when dependencies are unavailable or decoded shapes/rates/durations disagree.
+The helper mirrors the pinned Demucs loader backend order, records the source's original sample rate, normalizes the evidence stream to stereo 44.1 kHz, and fails closed when dependencies are unavailable or decoded shapes/rates/durations disagree. This prevents metrics from comparing a differently decoded MP3 timeline than the one Demucs actually separated.
 
 Verifier obligations:
 - deterministic synthetic arrays prove energy-ratio semantics;
