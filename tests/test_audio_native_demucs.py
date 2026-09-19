@@ -16,6 +16,7 @@ from aios_tools.audio_native_demucs import (
     _read_audio_demucs,
     build_command,
     build_native_output_evidence,
+    recover_abandoned_stage,
     require_float32_stereo_wav,
     validate_output_wavs,
 )
@@ -296,3 +297,67 @@ def test_output_evidence_binds_wav_headers_and_decoded_metrics(tmp_path: Path) -
     assert metrics["residual_to_mix_energy_ratio"] == pytest.approx(0.0)
     assert metrics["source_sample_rate_hz_original"] == 48000
     assert metrics["source_resampled"] is True
+
+
+def test_recovery_reports_noop_without_abandoned_stage(tmp_path: Path) -> None:
+    output_dir = tmp_path / "run-output"
+
+    event = recover_abandoned_stage(output_dir)
+
+    assert event["status"] == "NOT_REQUIRED"
+    assert event["removed"] is False
+    assert event["stage_name"] == ".run-output.stage"
+    assert event["authority_transfer"] is False
+
+
+def test_recovery_removes_exact_abandoned_stage_directory_only(tmp_path: Path) -> None:
+    output_dir = tmp_path / "run-output"
+    promoted = tmp_path / "other-promoted-output"
+    promoted.mkdir()
+    (promoted / "keep.txt").write_text("keep", encoding="utf-8")
+    stage = tmp_path / ".run-output.stage"
+    stage.mkdir()
+    (stage / "partial.wav").write_bytes(b"partial")
+
+    event = recover_abandoned_stage(output_dir)
+
+    assert event["status"] == "RECOVERED"
+    assert event["entry_type"] == "directory"
+    assert event["removed"] is True
+    assert not stage.exists()
+    assert (promoted / "keep.txt").read_text(encoding="utf-8") == "keep"
+
+
+def test_recovery_unlinks_stage_symlink_without_following_target(tmp_path: Path) -> None:
+    output_dir = tmp_path / "run-output"
+    external = tmp_path / "external"
+    external.mkdir()
+    marker = external / "keep.txt"
+    marker.write_text("keep", encoding="utf-8")
+    stage = tmp_path / ".run-output.stage"
+    try:
+        stage.symlink_to(external, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks are unavailable in this environment")
+
+    event = recover_abandoned_stage(output_dir)
+
+    assert event["status"] == "RECOVERED"
+    assert event["entry_type"] == "symlink"
+    assert not stage.exists()
+    assert marker.read_text(encoding="utf-8") == "keep"
+
+
+def test_recovery_never_deletes_promoted_output(tmp_path: Path) -> None:
+    output_dir = tmp_path / "run-output"
+    output_dir.mkdir()
+    marker = output_dir / "complete.txt"
+    marker.write_text("complete", encoding="utf-8")
+    stage = tmp_path / ".run-output.stage"
+    stage.mkdir()
+
+    event = recover_abandoned_stage(output_dir)
+
+    assert event["status"] == "RECOVERED"
+    assert marker.read_text(encoding="utf-8") == "complete"
+    assert output_dir.exists()
