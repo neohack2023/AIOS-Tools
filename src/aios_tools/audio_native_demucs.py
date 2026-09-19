@@ -1,17 +1,26 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
+import math
 import os
 import shutil
 import signal
+import struct
 import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 EXPECTED_STEMS = ("drums", "bass", "other", "vocals")
+EXPECTED_SAMPLE_RATE = 44100
+EXPECTED_CHANNELS = 2
+EXPECTED_FORMAT_CODE = 3
+EXPECTED_BITS_PER_SAMPLE = 32
+EXPECTED_BLOCK_ALIGN = 8
+METRIC_FRAME_SAMPLES = EXPECTED_SAMPLE_RATE
 
 
 class NativeDemucsError(RuntimeError):
@@ -84,6 +93,261 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _write_json(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def inspect_wav_format(path: Path) -> dict[str, int]:
+    file_size = path.stat().st_size
+    with path.open("rb") as handle:
+        header = handle.read(12)
+        if len(header) != 12 or header[:4] != b"RIFF" or header[8:12] != b"WAVE":
+            raise NativeDemucsError("OUTPUT_FORMAT_INVALID", f"not a RIFF/WAVE file: {path}")
+        fmt: dict[str, int] | None = None
+        data_bytes: int | None = None
+        while handle.tell() + 8 <= file_size:
+            chunk_header = handle.read(8)
+            if len(chunk_header) != 8:
+                break
+            chunk_id, chunk_size = struct.unpack("<4sI", chunk_header)
+            payload_start = handle.tell()
+            payload_end = payload_start + chunk_size
+            if payload_end > file_size:
+                raise NativeDemucsError("OUTPUT_FORMAT_INVALID", f"truncated WAV chunk in {path}")
+            if chunk_id == b"fmt ":
+                if chunk_size < 16:
+                    raise NativeDemucsError("OUTPUT_FORMAT_INVALID", f"invalid fmt chunk in {path}")
+                payload = handle.read(16)
+                code, channels, sample_rate, byte_rate, block_align, bits = struct.unpack("<HHIIHH", payload)
+                fmt = {
+                    "format_code": code,
+                    "channels": channels,
+                    "sample_rate_hz": sample_rate,
+                    "byte_rate": byte_rate,
+                    "block_align": block_align,
+                    "bits_per_sample": bits,
+                }
+                handle.seek(payload_end)
+            else:
+                if chunk_id == b"data":
+                    data_bytes = chunk_size
+                handle.seek(payload_end)
+            if chunk_size % 2:
+                if handle.tell() >= file_size:
+                    raise NativeDemucsError("OUTPUT_FORMAT_INVALID", f"missing WAV pad byte in {path}")
+                handle.seek(1, os.SEEK_CUR)
+        if fmt is None or data_bytes is None:
+            raise NativeDemucsError("OUTPUT_FORMAT_INVALID", f"WAV fmt or data chunk missing: {path}")
+    block_align = fmt["block_align"]
+    if block_align <= 0 or data_bytes % block_align != 0:
+        raise NativeDemucsError("OUTPUT_FORMAT_INVALID", f"invalid WAV data alignment: {path}")
+    fmt["data_bytes"] = data_bytes
+    fmt["frames"] = data_bytes // block_align
+    return fmt
+
+
+def require_float32_stereo_wav(path: Path, *, expected_frames: int | None = None) -> dict[str, int]:
+    info = inspect_wav_format(path)
+    expected = {
+        "format_code": EXPECTED_FORMAT_CODE,
+        "channels": EXPECTED_CHANNELS,
+        "sample_rate_hz": EXPECTED_SAMPLE_RATE,
+        "bits_per_sample": EXPECTED_BITS_PER_SAMPLE,
+        "block_align": EXPECTED_BLOCK_ALIGN,
+    }
+    for key, value in expected.items():
+        if info.get(key) != value:
+            raise NativeDemucsError(
+                "OUTPUT_FORMAT_INVALID",
+                f"{path.name} {key}: expected {value}, got {info.get(key)}",
+            )
+    expected_byte_rate = EXPECTED_SAMPLE_RATE * EXPECTED_BLOCK_ALIGN
+    if info["byte_rate"] != expected_byte_rate:
+        raise NativeDemucsError(
+            "OUTPUT_FORMAT_INVALID",
+            f"{path.name} byte_rate: expected {expected_byte_rate}, got {info['byte_rate']}",
+        )
+    if expected_frames is not None and info["frames"] != expected_frames:
+        raise NativeDemucsError(
+            "OUTPUT_DURATION_MISMATCH",
+            f"{path.name} frames: expected {expected_frames}, got {info['frames']}",
+        )
+    return info
+
+
+def validate_output_wavs(outputs: dict[str, Path]) -> dict[str, dict[str, int]]:
+    formats: dict[str, dict[str, int]] = {}
+    expected_frames: int | None = None
+    for stem in EXPECTED_STEMS:
+        path = outputs[stem]
+        info = require_float32_stereo_wav(path, expected_frames=expected_frames)
+        if expected_frames is None:
+            expected_frames = info["frames"]
+        formats[stem] = info
+    return formats
+
+
+def _read_audio_sphn(path: Path) -> tuple[Any, int]:
+    try:
+        sphn = importlib.import_module("sphn")
+    except ModuleNotFoundError as exc:
+        raise NativeDemucsError("METRICS_DEPENDENCY_MISSING", "sphn is required for normalized audio metrics") from exc
+    try:
+        data, sample_rate = sphn.read(str(path))
+    except Exception as exc:
+        raise NativeDemucsError("METRICS_DECODE_FAILED", f"failed to decode {path.name}: {exc}") from exc
+    return data, int(sample_rate)
+
+
+def _compute_metrics_from_arrays(
+    source_audio: Any,
+    source_sample_rate: int,
+    stem_audio: dict[str, Any],
+    stem_sample_rates: dict[str, int],
+    *,
+    frame_samples: int = METRIC_FRAME_SAMPLES,
+) -> dict[str, Any]:
+    try:
+        np = importlib.import_module("numpy")
+    except ModuleNotFoundError as exc:
+        raise NativeDemucsError("METRICS_DEPENDENCY_MISSING", "NumPy is required for normalized audio metrics") from exc
+    if frame_samples <= 0:
+        raise NativeDemucsError("METRICS_INVALID", "frame_samples must be positive")
+
+    source = np.asarray(source_audio, dtype=np.float32)
+    if source.ndim == 1:
+        source = source[np.newaxis, :]
+    if source.ndim != 2:
+        raise NativeDemucsError("METRICS_SOURCE_SHAPE_INVALID", f"unexpected source shape: {source.shape}")
+    if source.shape[0] == 1:
+        source = np.repeat(source, 2, axis=0)
+    elif source.shape[0] != EXPECTED_CHANNELS:
+        raise NativeDemucsError("METRICS_SOURCE_SHAPE_INVALID", f"source channels: {source.shape[0]}")
+    if source_sample_rate != EXPECTED_SAMPLE_RATE:
+        raise NativeDemucsError(
+            "METRICS_SAMPLE_RATE_MISMATCH",
+            f"source sample rate: expected {EXPECTED_SAMPLE_RATE}, got {source_sample_rate}",
+        )
+    if source.shape[1] <= 0 or not np.isfinite(source).all():
+        raise NativeDemucsError("METRICS_INVALID", "source is empty or non-finite")
+
+    stems: list[Any] = []
+    normalized_by_target: dict[str, Any] = {}
+    for stem in EXPECTED_STEMS:
+        sample_rate = stem_sample_rates[stem]
+        if sample_rate != EXPECTED_SAMPLE_RATE:
+            raise NativeDemucsError(
+                "METRICS_SAMPLE_RATE_MISMATCH",
+                f"{stem} sample rate: expected {EXPECTED_SAMPLE_RATE}, got {sample_rate}",
+            )
+        array = np.asarray(stem_audio[stem], dtype=np.float32)
+        if array.ndim != 2 or array.shape[0] != EXPECTED_CHANNELS:
+            raise NativeDemucsError("METRICS_STEM_SHAPE_INVALID", f"{stem} shape: {array.shape}")
+        if array.shape[1] != source.shape[1]:
+            raise NativeDemucsError(
+                "METRICS_DURATION_MISMATCH",
+                f"{stem} samples: expected {source.shape[1]}, got {array.shape[1]}",
+            )
+        if not np.isfinite(array).all():
+            raise NativeDemucsError("METRICS_INVALID", f"{stem} contains NaN or Inf")
+        normalized_by_target[stem] = array
+        stems.append(array)
+
+    source64 = source.astype(np.float64, copy=False)
+    stacked = np.stack(stems, axis=0).astype(np.float64, copy=False)
+    reconstruction = np.sum(stacked, axis=0)
+    residual = source64 - reconstruction
+    source_energy = float(np.mean(source64 * source64))
+    residual_energy = float(np.mean(residual * residual))
+    reconstruction_rms_error = math.sqrt(residual_energy)
+    residual_energy_ratio = residual_energy / max(source_energy, 1e-24)
+
+    activities: list[dict[str, Any]] = []
+    total_samples = int(source.shape[1])
+    for stem in EXPECTED_STEMS:
+        array64 = normalized_by_target[stem].astype(np.float64, copy=False)
+        frames: list[dict[str, Any]] = []
+        for start in range(0, total_samples, frame_samples):
+            end = min(total_samples, start + frame_samples)
+            window = array64[:, start:end]
+            rms = math.sqrt(float(np.mean(window * window)))
+            peak = float(np.max(np.abs(window)))
+            frames.append(
+                {
+                    "start_sample": start,
+                    "end_sample": end,
+                    "rms": rms,
+                    "peak_abs": peak,
+                    "evidence_class": "MEASURED",
+                }
+            )
+        activities.append({"target": stem, "frames": frames, "evidence_class": "QUALITY_PROXY"})
+
+    return {
+        "reconstruction_rms_error": reconstruction_rms_error,
+        "residual_to_mix_energy_ratio": residual_energy_ratio,
+        "stem_activity": activities,
+        "sample_rate_hz": EXPECTED_SAMPLE_RATE,
+        "channels": EXPECTED_CHANNELS,
+        "samples": total_samples,
+        "frame_samples": frame_samples,
+        "evidence_class": "QUALITY_PROXY",
+        "authority_transfer": False,
+    }
+
+
+def compute_native_stem_metrics(
+    source: Path,
+    outputs: dict[str, Path],
+    *,
+    reader: Callable[[Path], tuple[Any, int]] | None = None,
+) -> dict[str, Any]:
+    read_audio = reader or _read_audio_sphn
+    source_audio, source_sample_rate = read_audio(source)
+    stem_audio: dict[str, Any] = {}
+    stem_sample_rates: dict[str, int] = {}
+    for stem in EXPECTED_STEMS:
+        audio, sample_rate = read_audio(outputs[stem])
+        stem_audio[stem] = audio
+        stem_sample_rates[stem] = sample_rate
+    return _compute_metrics_from_arrays(
+        source_audio,
+        source_sample_rate,
+        stem_audio,
+        stem_sample_rates,
+    )
+
+
+def build_native_output_evidence(
+    source: Path,
+    outputs: dict[str, Path],
+    *,
+    reader: Callable[[Path], tuple[Any, int]] | None = None,
+) -> tuple[dict[str, dict[str, int]], dict[str, Any]]:
+    wav_formats = validate_output_wavs(outputs)
+    metrics = compute_native_stem_metrics(source, outputs, reader=reader)
+    expected_frames = next(iter(wav_formats.values()))["frames"]
+    if metrics["samples"] != expected_frames:
+        raise NativeDemucsError(
+            "METRICS_DURATION_MISMATCH",
+            f"decoded samples: expected {expected_frames}, got {metrics['samples']}",
+        )
+    return wav_formats, metrics
+
+
+def _artifact_manifest(entries: list[tuple[Path, str]], root: Path) -> list[dict[str, Any]]:
+    return [
+        {
+            "relative_path": path.relative_to(root).as_posix(),
+            "sha256": sha256_file(path),
+            "byte_size": path.stat().st_size,
+            "evidence_class": evidence_class,
+        }
+        for path, evidence_class in sorted(entries, key=lambda item: item[0].relative_to(root).as_posix())
+    ]
+
+
 def build_command(profile: NativeDemucsProfile, source: Path, output_root: Path) -> list[str]:
     profile.validate()
     command = [
@@ -117,7 +381,8 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
     profile.validate()
     source = source.resolve(strict=True)
     output_dir = output_dir.resolve()
-    if profile.source_sha256 and sha256_file(source) != profile.source_sha256:
+    source_hash = sha256_file(source)
+    if profile.source_sha256 and source_hash != profile.source_sha256:
         raise NativeDemucsError("SOURCE_HASH_MISMATCH", "source SHA-256 does not match frozen profile")
     executable = shutil.which(profile.entrypoint[0])
     if executable is None:
@@ -161,11 +426,68 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
             f"Demucs exited with {proc.returncode}",
             details={"stdout": stdout, "stderr": stderr, "elapsed_seconds": elapsed},
         )
+
     outputs = _find_outputs(stage)
-    manifest = {
-        stem: {"path": str(path.relative_to(stage)), "sha256": sha256_file(path), "bytes": path.stat().st_size}
+    wav_formats, metrics = build_native_output_evidence(source, outputs)
+
+    analysis_path = stage / "analysis" / "stem-metrics.json"
+    _write_json(analysis_path, metrics)
+    stdout_path = stage / "stdout.log"
+    stderr_path = stage / "stderr.log"
+    stdout_path.write_text(stdout, encoding="utf-8")
+    stderr_path.write_text(stderr, encoding="utf-8")
+
+    stems = {
+        stem: {
+            "path": str(path.relative_to(stage)),
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+            "wav_format": wav_formats[stem],
+            "evidence_class": "MODEL_ESTIMATE",
+        }
         for stem, path in outputs.items()
     }
+    receipt = {
+        "schema_version": "0.2.0",
+        "status": "COMPLETE",
+        "profile_id": profile.profile_id,
+        "source": {
+            "path": str(source),
+            "sha256": source_hash,
+            "byte_size": source.stat().st_size,
+        },
+        "command": command,
+        "elapsed_seconds": elapsed,
+        "stdout": "stdout.log",
+        "stderr": "stderr.log",
+        "stems": stems,
+        "metrics": {
+            "relative_path": "analysis/stem-metrics.json",
+            "reconstruction_rms_error": metrics["reconstruction_rms_error"],
+            "residual_to_mix_energy_ratio": metrics["residual_to_mix_energy_ratio"],
+            "sample_rate_hz": metrics["sample_rate_hz"],
+            "channels": metrics["channels"],
+            "samples": metrics["samples"],
+            "evidence_class": metrics["evidence_class"],
+        },
+        "output_encoding": "WAV_FLOAT32",
+        "runtime_admission": False,
+        "pilot_authorized": False,
+        "authority_transfer": False,
+    }
+    receipt_path = stage / "run-receipt.json"
+    _write_json(receipt_path, receipt)
+
+    artifact_manifest = _artifact_manifest(
+        [
+            *((path, "MODEL_ESTIMATE") for path in outputs.values()),
+            (analysis_path, "QUALITY_PROXY"),
+            (stdout_path, "EXECUTION_LOG"),
+            (stderr_path, "EXECUTION_LOG"),
+            (receipt_path, "EXECUTION_RECEIPT"),
+        ],
+        stage,
+    )
     stage.replace(output_dir)
     return {
         "status": "COMPLETE",
@@ -173,5 +495,17 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
         "elapsed_seconds": elapsed,
         "stdout": stdout,
         "stderr": stderr,
-        "artifacts": manifest,
+        "artifacts": stems,
+        "wav_validation": wav_formats,
+        "metrics": metrics,
+        "evidence_files": {
+            "metrics": "analysis/stem-metrics.json",
+            "receipt": "run-receipt.json",
+            "stdout": "stdout.log",
+            "stderr": "stderr.log",
+        },
+        "artifact_manifest": artifact_manifest,
+        "runtime_admission": False,
+        "pilot_authorized": False,
+        "authority_transfer": False,
     }
