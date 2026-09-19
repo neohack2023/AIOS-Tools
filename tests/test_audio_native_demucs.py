@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import importlib
 import struct
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,6 +13,7 @@ from aios_tools.audio_native_demucs import (
     NativeDemucsError,
     NativeDemucsProfile,
     _compute_metrics_from_arrays,
+    _read_audio_demucs,
     build_command,
     build_native_output_evidence,
     require_float32_stereo_wav,
@@ -145,13 +148,57 @@ def test_metrics_use_mean_square_energy_ratio() -> None:
     assert metrics["stem_activity"][0]["frames"][0]["rms"] == pytest.approx(0.5)
 
 
-def test_metrics_reject_source_sample_rate_drift() -> None:
+def test_metrics_reject_non_normalized_source_sample_rate() -> None:
     source = np.zeros((2, 8), dtype=np.float32)
     stem_audio = {stem: np.zeros((2, 8), dtype=np.float32) for stem in EXPECTED_STEMS}
     stem_sample_rates = {stem: 44100 for stem in EXPECTED_STEMS}
     with pytest.raises(NativeDemucsError) as error:
         _compute_metrics_from_arrays(source, 48000, stem_audio, stem_sample_rates)
     assert error.value.code == "METRICS_SAMPLE_RATE_MISMATCH"
+
+
+def test_pinned_demucs_reader_normalizes_48k_source(monkeypatch, tmp_path: Path) -> None:
+    calls: dict[str, object] = {}
+    source = tmp_path / "source.mp3"
+    source.write_bytes(b"source")
+
+    class FakeTensor:
+        def detach(self):
+            return self
+
+        def cpu(self):
+            return self
+
+        def numpy(self):
+            return np.ones((2, 8), dtype=np.float32)
+
+    class FakeAudioFile:
+        def __init__(self, path):
+            calls["path"] = Path(path)
+
+        def samplerate(self):
+            return 48000
+
+        def read(self, **kwargs):
+            calls["read"] = kwargs
+            return FakeTensor()
+
+    original_import = importlib.import_module
+
+    def fake_import(name: str):
+        if name == "demucs.audio":
+            return SimpleNamespace(AudioFile=FakeAudioFile)
+        return original_import(name)
+
+    monkeypatch.setattr("aios_tools.audio_native_demucs.importlib.import_module", fake_import)
+
+    audio, normalized_rate, original_rate = _read_audio_demucs(source)
+
+    assert audio.shape == (2, 8)
+    assert normalized_rate == 44100
+    assert original_rate == 48000
+    assert calls["path"] == source
+    assert calls["read"] == {"streams": 0, "samplerate": 44100, "channels": 2}
 
 
 def test_output_evidence_binds_wav_headers_and_decoded_metrics(tmp_path: Path) -> None:
@@ -169,11 +216,13 @@ def test_output_evidence_binds_wav_headers_and_decoded_metrics(tmp_path: Path) -
 
     def reader(path: Path):
         if path == source_path:
-            return source_audio, 44100
-        return decoded[path.stem], 44100
+            return source_audio, 44100, 48000
+        return decoded[path.stem], 44100, 44100
 
     formats, metrics = build_native_output_evidence(source_path, outputs, reader=reader)
 
     assert {formats[stem]["frames"] for stem in EXPECTED_STEMS} == {8}
     assert metrics["reconstruction_rms_error"] == pytest.approx(0.0)
     assert metrics["residual_to_mix_energy_ratio"] == pytest.approx(0.0)
+    assert metrics["source_sample_rate_hz_original"] == 48000
+    assert metrics["source_resampled"] is True
