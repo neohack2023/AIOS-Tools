@@ -73,8 +73,11 @@ class NativeDemucsProfile:
             raise NativeDemucsError("PROFILE_INVALID", "reference profile requires cpu and jobs=1")
         if not self.split:
             raise NativeDemucsError("PROFILE_INVALID", "upstream split mode must remain enabled")
-        if not (0 < self.segment_seconds <= 7.8):
-            raise NativeDemucsError("PROFILE_INVALID", "segment_seconds must be in (0, 7.8]")
+        if not (0 < self.segment_seconds <= 7.8) or not float(self.segment_seconds).is_integer():
+            raise NativeDemucsError(
+                "PROFILE_INVALID",
+                "Demucs 4.1.0 CLI requires segment_seconds to be a positive integer no greater than 7",
+            )
         if not (0 <= self.overlap < 1):
             raise NativeDemucsError("PROFILE_INVALID", "overlap must be in [0,1)")
         if self.shifts != 0:
@@ -375,7 +378,7 @@ def build_command(profile: NativeDemucsProfile, source: Path, output_root: Path)
         "--name", profile.model,
         "--device", profile.device,
         "--jobs", str(profile.jobs),
-        "--segment", str(profile.segment_seconds),
+        "--segment", str(int(profile.segment_seconds)),
         "--overlap", str(profile.overlap),
         "--shifts", str(profile.shifts),
         "--out", str(output_root),
