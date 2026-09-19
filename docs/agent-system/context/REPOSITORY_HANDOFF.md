@@ -78,15 +78,17 @@ That delta was then explicitly adjudicated and repaired. `LESSON-AIOS-TOOLS-001`
 
 Receipt `GSYNC-AIOS-TOOLS-20260904-002` rechecks the same three upstream authorities, classifies both material deltas `RECONCILED`, records `MATERIAL_DELTA_RECONCILED`, and applies the permitted 30-day freshness renewal. Because the resync occurs on the same local date as the first receipt, `valid_through` remains `2026-10-04` while the renewal state changes from withheld to applied.
 
-Receipt `GSYNC-AIOS-TOOLS-20260918-003` records the owner-directed Drive cutover projection delta as `MATERIAL_DELTA_PENDING` on PR #63. It does not renew freshness. Merge plus a post-merge resync is required before this delta may be classified `RECONCILED`.
+Receipt `GSYNC-AIOS-TOOLS-20260918-003` records the owner-directed Drive cutover projection delta as `MATERIAL_DELTA_PENDING` on PR #63 and correctly withholds freshness renewal.
+
+PR #63 merged at `7ec073b7c2a3b63ebfae454595b5921038102b3d`. Receipt `GSYNC-AIOS-TOOLS-20260918-004` performs the required post-merge resync, reclassifies that exact delta `RECONCILED`, and renews governance freshness through `2026-10-18`.
 
 ## Governance freshness
 
-On this candidate branch, `docs/agent-system/context/governance-lock.yaml` is bundle version `0.7-candidate`, `sync_state: ACTIVE_PENDING_DELTA`, and remains valid through `2026-10-04`.
+`docs/agent-system/context/governance-lock.yaml` is bundle version `0.7`, `sync_state: ACTIVE`, and valid through `2026-10-18`.
 
 `NORMAL_REPO_WORK_EXTERNAL_FETCH_REQUIRED = FALSE`.
 
-The Drive cutover delta is intentionally pending until PR #63 merges and a post-merge resync proves reconciliation. Successful fetch alone never renews freshness.
+The Drive cutover projection is reconciled on main. Future synchronization is triggered only by stale/expiring governance, suspected cross-repository governance drift, unresolved authority conflict/material incompleteness, or explicit owner direction. Successful fetch alone never renews freshness.
 
 ## Learning loop
 
@@ -102,4 +104,4 @@ The Drive cutover delta is intentionally pending until PR #63 merges and a post-
 
 ## Terminal gate
 
-`AIOS_TOOLS_PHASE_5 / SELF_SUFFICIENT_REPO_ACTIVE / UPSTREAM_SYNC_ACTIVE / DRIVE_AUTHORITY_PROJECTION_CANDIDATE / MATERIAL_DELTA_PENDING / FRESHNESS_NOT_RENEWED / POST_MERGE_RESYNC_REQUIRED / GOVERNANCE_VALID_THROUGH_2026-10-04`
+`AIOS_TOOLS_PHASE_5 / SELF_SUFFICIENT_REPO_ACTIVE / UPSTREAM_SYNC_ACTIVE / DRIVE_AUTHORITY_PROJECTION_RECONCILED / MATERIAL_DELTA_RECONCILED / FRESHNESS_RENEWED / GOVERNANCE_VALID_THROUGH_2026-10-18`
