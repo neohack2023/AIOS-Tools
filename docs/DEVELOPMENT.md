@@ -1,7 +1,7 @@
 # Development
 
 1. Freeze the target base commit and inspect current open pull requests.
-2. Resolve the governing Notion contract and Drive package or receipt surfaces.
+2. Resolve the governing Drive object/contract first when its state is `DRIVE_CURRENT` or `DRIVE_VERIFIED`; if the required object is absent or unverified, retrieve the exact Notion `LEGACY_SOURCE` fallback and preserve its identity.
 3. Write a bounded plan in `docs/plans/` with scope, non-goals, files, validation, risks, and rollback.
 4. Create one `agent/<concern>` branch from the verified base.
 5. Implement one coherent concern.

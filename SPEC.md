@@ -16,7 +16,7 @@ Provide a standalone, governed execution layer that an LLM or automation can cal
 
 AIOS-Tools executes bounded capabilities. It is not architectural authority, durable-memory authority, or portable-runtime truth.
 
-Notion remains architecture and governance authority. Google Drive remains evidence, source-artifact, and shadow storage. GitHub stores executable implementation. Tool results are evidence and receipts until promoted by the governed STONE → MASON process.
+Authority is resolved per truth domain and object state. GitHub owns live repository implementation/execution facts. Google Drive `AI_KNOWLEDGE_SYSTEM` is the primary durable external knowledge destination and authority for `DRIVE_VERIFIED` / `DRIVE_CURRENT` objects and is the default destination for new durable AIOS writes. Notion is retained as `LEGACY_SOURCE` fallback for exact objects that remain absent or unverified in Drive; universal Notion retirement is not claimed. Tool results are evidence and receipts until promoted by the governed STONE → MASON process.
 
 ## Execution contract
 

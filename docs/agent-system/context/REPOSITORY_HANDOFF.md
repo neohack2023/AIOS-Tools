@@ -59,10 +59,14 @@ Role identity and skill invocation do not grant merge, release, deploy, capabili
 
 ## Upstream governance source set
 
-Routine governance synchronization is limited to:
+Routine repository-governance synchronization remains limited to:
 1. `AIOS_TOOLS_EXECUTION_LAYER_CONTRACT` — repository architectural role and authority split.
 2. `AIOS_GITHUB_GOVERNED_EXECUTION_CONTRACT_v0.1` — repository delivery/governance law.
 3. `VERIFIER_OWNED_ACCEPTANCE_01` — verifier/acceptance law.
+
+Separately, `DRIVE_PRIMARY_AUTHORITY_OVERLAY — v0.3-object-aware — 2026-09-15` governs durable AIOS knowledge cutover and retrieval/write routing. It does not silently replace the stable repository-governance sync source set.
+
+Current durable-knowledge projection: GitHub owns live repository facts; Drive owns declared `DRIVE_CURRENT` / `DRIVE_VERIFIED` durable knowledge; Notion is exact-object `LEGACY_SOURCE` fallback when Drive parity is absent or unverified.
 
 Related plans, receipts, research, and runtime feature contracts are evidence/history, not recurring authority merely because they are nearby.
 
@@ -74,13 +78,15 @@ That delta was then explicitly adjudicated and repaired. `LESSON-AIOS-TOOLS-001`
 
 Receipt `GSYNC-AIOS-TOOLS-20260904-002` rechecks the same three upstream authorities, classifies both material deltas `RECONCILED`, records `MATERIAL_DELTA_RECONCILED`, and applies the permitted 30-day freshness renewal. Because the resync occurs on the same local date as the first receipt, `valid_through` remains `2026-10-04` while the renewal state changes from withheld to applied.
 
+Receipt `GSYNC-AIOS-TOOLS-20260918-003` records the owner-directed Drive cutover projection delta as `MATERIAL_DELTA_PENDING` on PR #63. It does not renew freshness. Merge plus a post-merge resync is required before this delta may be classified `RECONCILED`.
+
 ## Governance freshness
 
-`docs/agent-system/context/governance-lock.yaml` is bundle version `0.6`, `sync_state: ACTIVE`, and valid through `2026-10-04`.
+On this candidate branch, `docs/agent-system/context/governance-lock.yaml` is bundle version `0.7-candidate`, `sync_state: ACTIVE_PENDING_DELTA`, and remains valid through `2026-10-04`.
 
 `NORMAL_REPO_WORK_EXTERNAL_FETCH_REQUIRED = FALSE`.
 
-A future synchronization is triggered only by stale/expiring governance, suspected cross-repository governance drift, unresolved authority conflict/material incompleteness, or explicit owner direction. Successful fetch alone never renews freshness.
+The Drive cutover delta is intentionally pending until PR #63 merges and a post-merge resync proves reconciliation. Successful fetch alone never renews freshness.
 
 ## Learning loop
 
@@ -96,4 +102,4 @@ A future synchronization is triggered only by stale/expiring governance, suspect
 
 ## Terminal gate
 
-`AIOS_TOOLS_PHASE_5 / SELF_SUFFICIENT_REPO_ACTIVE / UPSTREAM_SYNC_ACTIVE / MATERIAL_DELTA_RECONCILED / FRESHNESS_RENEWED / NORMAL_REPO_WORK_EXTERNAL_FETCH_REQUIRED_FALSE / GOVERNANCE_VALID_THROUGH_2026-10-04`
+`AIOS_TOOLS_PHASE_5 / SELF_SUFFICIENT_REPO_ACTIVE / UPSTREAM_SYNC_ACTIVE / DRIVE_AUTHORITY_PROJECTION_CANDIDATE / MATERIAL_DELTA_PENDING / FRESHNESS_NOT_RENEWED / POST_MERGE_RESYNC_REQUIRED / GOVERNANCE_VALID_THROUGH_2026-10-04`

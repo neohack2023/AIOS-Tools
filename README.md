@@ -6,11 +6,17 @@ AIOS-Tools exposes bounded, versioned tools that can be invoked by LLMs, Notion/
 
 ## Authority boundary
 
-- **Notion** owns architecture and governance authority.
-- **Google Drive** owns evidence, source-artifact, execution-package, and shadow surfaces according to the registered authority model.
-- **This repository** owns live executable implementation and tool-version facts.
+Current authority projection follows the object-aware Drive cutover effective 2026-09-15:
+
+- **This repository / GitHub** owns live repository implementation and execution facts: source code, repository configuration, tool versions, executable policies, tests, branches, pull requests, and CI outcomes.
+- **Google Drive `AI_KNOWLEDGE_SYSTEM`** is the primary durable external knowledge destination and authority for objects/scopes explicitly marked `DRIVE_VERIFIED` or `DRIVE_CURRENT`; new durable AIOS writes route to Drive by truth class.
+- **Notion** is `LEGACY_SOURCE` fallback for exact objects that are absent from Drive or not yet parity-verified. A Notion source does not automatically outrank a verified/current Drive successor.
+- Research/source systems retain authority only for their source domain and do not self-promote into canon.
+- Chat/LLM context is transient evidence and routing context only.
 - A passing tool, test, or validation never transfers architectural or memory authority.
 - Durable external writes require a separately authorized STONE → MASON path.
+
+Universal Notion retirement is not claimed; cutover is object- and scope-aware.
 
 See [Authority Boundaries](docs/AUTHORITY_BOUNDARIES.md) and [Architecture](docs/ARCHITECTURE.md).
 

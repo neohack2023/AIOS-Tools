@@ -9,7 +9,7 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `SPEC.md` — implementation scope and constraints.
 - `AGENTS.md` — repository agent instructions.
 - `.github/copilot-instructions.md` — thin Copilot adapter into canonical local context.
-- `docs/AUTHORITY_BOUNDARIES.md` — GitHub vs upstream Notion/Drive authority.
+- `docs/AUTHORITY_BOUNDARIES.md` — object-aware authority map: GitHub live repository truth, Drive current/verified durable knowledge, and exact-object Notion legacy fallback.
 - `docs/REPO_ADAPTATION_PROFILE.md` — Phase 0 repository-specific rollout decisions.
 - `docs/agent-system/context/governance-lock.yaml` — local governance freshness, Phase 5 state, source-set binding, and last sync receipt digest.
 - `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` — role and department routing.
@@ -83,7 +83,7 @@ Current disposition: `MATERIAL_DELTA_RECONCILED`. Freshness renewal is applied a
 2. Load the smallest matching path-specific packet and domain evidence.
 3. Load a skill only when the task matches its stable procedure.
 4. Candidate lessons are memory, not enforceable law until explicitly promoted.
-5. Use external Notion/Drive only when explicit escalation/freshness triggers apply; when syncing, use only the pinned source set.
+5. Use Drive first for verified/current durable AIOS objects when external retrieval is required. Use exact Notion `LEGACY_SOURCE` fallback only when the required Drive object is absent or unverified. Routine governance synchronization still uses only its pinned source set.
 6. Source does not imply authority; historical documents and receipts are evidence, not automatically current law.
 7. A successful fetch is not a successful sync, and a successful sync is not mutation authority.
 8. Roles, skills, review output, audit output, sync output, and CI evidence do not grant acceptance, merge, release, deploy, capability, mutation, or global-governance authority.
