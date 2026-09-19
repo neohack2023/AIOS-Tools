@@ -192,26 +192,55 @@ def validate_output_wavs(outputs: dict[str, Path]) -> dict[str, dict[str, int]]:
 
 
 def _read_audio_demucs(path: Path) -> tuple[Any, int, int]:
-    """Decode through the pinned Demucs audio path and normalize to the model domain."""
+    """Decode with the same backend order used by Demucs 4.1.0 separation."""
     try:
+        torch = importlib.import_module("torch")
         demucs_audio = importlib.import_module("demucs.audio")
     except ModuleNotFoundError as exc:
         raise NativeDemucsError(
             "METRICS_DEPENDENCY_MISSING",
             "the pinned Demucs runtime is required for normalized audio metrics",
         ) from exc
+
+    sphn_error: Exception | None = None
     try:
-        audio_file = demucs_audio.AudioFile(path)
-        original_sample_rate = int(audio_file.samplerate())
-        tensor = audio_file.read(
-            streams=0,
-            samplerate=EXPECTED_SAMPLE_RATE,
-            channels=EXPECTED_CHANNELS,
+        sphn = importlib.import_module("sphn")
+        data, sample_rate = sphn.read(str(path))
+        original_sample_rate = int(sample_rate)
+        tensor = demucs_audio.convert_audio(
+            torch.from_numpy(data),
+            original_sample_rate,
+            EXPECTED_SAMPLE_RATE,
+            EXPECTED_CHANNELS,
         )
-        data = tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else tensor
     except Exception as exc:
-        raise NativeDemucsError("METRICS_DECODE_FAILED", f"failed to decode {path.name}: {exc}") from exc
-    return data, EXPECTED_SAMPLE_RATE, original_sample_rate
+        sphn_error = exc
+        try:
+            audio_file = demucs_audio.AudioFile(path)
+            original_sample_rate = int(audio_file.samplerate())
+            tensor = audio_file.read(
+                streams=0,
+                samplerate=EXPECTED_SAMPLE_RATE,
+                channels=EXPECTED_CHANNELS,
+            )
+        except Exception as ffmpeg_exc:
+            raise NativeDemucsError(
+                "METRICS_DECODE_FAILED",
+                f"failed to decode {path.name} with sphn and ffmpeg fallback",
+                details={
+                    "sphn_error": str(sphn_error),
+                    "ffmpeg_error": str(ffmpeg_exc),
+                },
+            ) from ffmpeg_exc
+
+    try:
+        normalized = tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else tensor
+    except Exception as exc:
+        raise NativeDemucsError(
+            "METRICS_DECODE_FAILED",
+            f"failed to materialize normalized audio for {path.name}: {exc}",
+        ) from exc
+    return normalized, EXPECTED_SAMPLE_RATE, original_sample_rate
 
 
 def _compute_metrics_from_arrays(
