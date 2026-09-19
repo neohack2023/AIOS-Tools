@@ -29,7 +29,7 @@ def profile() -> NativeDemucsProfile:
         device="cpu",
         jobs=1,
         split=True,
-        segment_seconds=7.8,
+        segment_seconds=7.0,
         overlap=0.1,
         shifts=0,
         output_format="wav",
