@@ -84,14 +84,14 @@ A format or frame mismatch raises a governed \`NativeDemucsError\` before promot
 
 ## Normalized metrics gate
 
-The adapter decodes the source and verified stems through Demucs 4.1.0's own `AudioFile` path. The source is normalized to stereo 44.1 kHz for comparison while its original sample rate is retained as evidence. It then computes:
+The adapter mirrors Demucs 4.1.0's own loader order: `sphn.read()` first, then `AudioFile`/ffmpeg fallback. The source is normalized to stereo 44.1 kHz for comparison while its original sample rate is retained as evidence. It then computes:
 
 - reconstruction RMS error;
 - residual-to-mix mean-square energy ratio;
 - one-second RMS and peak activity windows for each stem;
 - sample rate, channel count, and exact decoded sample count.
 
-The metrics step fails closed if the pinned Demucs audio runtime or NumPy is unavailable, or if normalized stem rate, shape, or duration facts disagree. A 48 kHz input therefore remains admissible as source evidence while the comparison domain stays 44.1 kHz.
+The metrics step fails closed if the pinned Demucs loader stack or NumPy is unavailable, or if normalized stem rate, shape, or duration facts disagree. A 48 kHz input remains admissible while the comparison domain stays 44.1 kHz, and the same decoder backend that fed separation is preferred for metrics so MP3 padding/timeline differences do not create false duration failures.
 
 ## Durable evidence freeze
 
