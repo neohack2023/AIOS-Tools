@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/frontier-eval-manifest.v0.1.schema.json",
+  "title": "AIOS Frontier Evaluation Manifest v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evaluation_id",
+    "contract_version",
+    "scope_key",
+    "authority_model",
+    "state",
+    "score_status",
+    "official_claim_allowed",
+    "freeze",
+    "pair_contract",
+    "lanes",
+    "result_boundary",
+    "sources"
+  ],
+  "properties": {
+    "evaluation_id": {"const": "AIOS_FRONTIER_EVAL_01"},
+    "contract_version": {"const": "0.1.0"},
+    "scope_key": {"const": "global-working-memory"},
+    "authority_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["architecture_and_governance", "runtime_evidence_and_shadow", "execution_truth"],
+      "properties": {
+        "architecture_and_governance": {"const": "NOTION"},
+        "runtime_evidence_and_shadow": {"const": "GOOGLE_DRIVE"},
+        "execution_truth": {"const": "GITHUB"}
+      }
+    },
+    "state": {"enum": ["NOT_EXECUTED", "READY_TO_EXECUTE", "EXECUTED", "BLOCKED"]},
+    "score_status": {"enum": ["NO_SCORES", "SCORED"]},
+    "official_claim_allowed": {"const": false},
+    "freeze": {
+      "type": "object",
+      "required": ["contract_state", "task_set_state", "model_binding_state", "frozen_base_commit", "hash_algorithm", "required_before_execution"],
+      "properties": {
+        "contract_state": {"const": "CONTRACT_FROZEN"},
+        "task_set_state": {"enum": ["UNRESOLVED", "FROZEN"]},
+        "model_binding_state": {"enum": ["UNRESOLVED", "FROZEN"]},
+        "frozen_base_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "hash_algorithm": {"const": "sha256"},
+        "required_before_execution": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "pair_contract": {
+      "type": "object",
+      "required": ["treatments", "same_model_env", "same_provider_env", "same_fields", "allowed_difference", "randomized_pair_order", "blind_grading", "profiles"],
+      "properties": {
+        "treatments": {"const": ["DIRECT", "AIOS"]},
+        "same_model_env": {"type": "string", "minLength": 1},
+        "same_provider_env": {"type": "string", "minLength": 1},
+        "same_fields": {"type": "array", "minItems": 8, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "allowed_difference": {"const": "scaffold_profile_only"},
+        "randomized_pair_order": {"const": true},
+        "blind_grading": {"const": true},
+        "profiles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["DIRECT", "AIOS"],
+          "properties": {
+            "DIRECT": {"$ref": "#/$defs/profile"},
+            "AIOS": {"$ref": "#/$defs/profile"}
+          }
+        }
+      }
+    },
+    "lanes": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"type": "object", "required": ["id", "dimension"], "properties": {"id": {"type": "string"}, "dimension": {"type": "string"}}}
+    },
+    "result_boundary": {
+      "type": "object",
+      "required": ["raw_artifacts_authoritative", "normalized_results_are_projections", "paired_comparison_requires_matching_freeze_digest", "missing_or_mismatched_pair_outcome", "credentials_must_not_be_recorded", "reasoning_content_policy", "results_root"],
+      "properties": {
+        "raw_artifacts_authoritative": {"const": true},
+        "normalized_results_are_projections": {"const": true},
+        "paired_comparison_requires_matching_freeze_digest": {"const": true},
+        "missing_or_mismatched_pair_outcome": {"const": "BLOCKED"},
+        "credentials_must_not_be_recorded": {"const": true},
+        "reasoning_content_policy": {"type": "string", "minLength": 1},
+        "results_root": {"const": "benchmark-results/AIOS_FRONTIER_EVAL_01"}
+      }
+    },
+    "sources": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "format": "uri"}}
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^benchmarks/frontier_eval_01/profiles/"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}
