@@ -65,18 +65,19 @@ Verifier obligations:
 
 ### Slice B — Normalized quality metrics
 
-Decode the source and verified stems through the already pinned Demucs runtime dependency lane (sphn), then compute:
+Decode the source and verified stems through the pinned Demucs 4.1.0 `AudioFile` path, normalizing to stereo 44.1 kHz exactly as the engine domain expects, then compute:
 
 - reconstruction RMS error;
 - residual-to-mix energy ratio;
 - per-stem one-second RMS/peak activity windows;
 - exact sample rate/channel/sample-count facts.
 
-The helper dynamically loads NumPy/sphn at runtime and fails closed when evidence dependencies are unavailable or decoded shapes/rates disagree.
+The helper dynamically loads the pinned Demucs audio runtime and NumPy, records the source's original sample rate, normalizes the evidence stream to stereo 44.1 kHz, and fails closed when dependencies are unavailable or decoded shapes/rates/durations disagree.
 
 Verifier obligations:
 - deterministic synthetic arrays prove energy-ratio semantics;
-- wrong sample rate, shape, or duration fails closed;
+- non-normalized stem rate, invalid shape, or duration mismatch fails closed;
+- a 48 kHz source is normalized through the pinned Demucs audio reader and recorded as resampled;
 - tests do not depend on an actual model download.
 
 ### Slice C — Durable evidence freeze
