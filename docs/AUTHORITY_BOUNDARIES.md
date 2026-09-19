@@ -6,7 +6,7 @@ The authority model is object- and truth-domain-aware. Freshness alone does not 
 
 ## AIOS-Tools GitHub repository — GITHUB_CURRENT
 
-This repository is authoritative for live repository facts:
+This repository is authoritative for live source code and live repository facts:
 
 - source code and executable implementation;
 - repository configuration;
