@@ -9,7 +9,7 @@ Use this index to route questions to the smallest authoritative repository surfa
 - `SPEC.md` — implementation scope and constraints.
 - `AGENTS.md` — repository agent instructions.
 - `.github/copilot-instructions.md` — thin Copilot adapter into canonical local context.
-- `docs/AUTHORITY_BOUNDARIES.md` — GitHub vs upstream Notion/Drive authority.
+- `docs/AUTHORITY_BOUNDARIES.md` — object-aware authority map: GitHub live repository truth, Drive current/verified durable knowledge, and exact-object Notion legacy fallback.
 - `docs/REPO_ADAPTATION_PROFILE.md` — Phase 0 repository-specific rollout decisions.
 - `docs/agent-system/context/governance-lock.yaml` — local governance freshness, Phase 5 state, source-set binding, and last sync receipt digest.
 - `docs/agent-system/adapters/AGENT_ADAPTER_MAP.md` — role and department routing.
