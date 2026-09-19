@@ -164,7 +164,60 @@ def test_metrics_reject_non_normalized_source_sample_rate() -> None:
     assert error.value.code == "METRICS_SAMPLE_RATE_MISMATCH"
 
 
-def test_pinned_demucs_reader_normalizes_48k_source(monkeypatch, tmp_path: Path) -> None:
+def test_pinned_demucs_reader_prefers_sphn_and_normalizes_48k_source(monkeypatch, tmp_path: Path) -> None:
+    calls: dict[str, object] = {}
+    source = tmp_path / "source.mp3"
+    source.write_bytes(b"source")
+
+    class FakeTensor:
+        def detach(self):
+            return self
+
+        def cpu(self):
+            return self
+
+        def numpy(self):
+            return np.ones((2, 8), dtype=np.float32)
+
+    fake_sphn = SimpleNamespace(
+        read=lambda path: (np.ones((2, 9), dtype=np.float32), 48000)
+    )
+    fake_torch = SimpleNamespace(from_numpy=lambda data: data)
+
+    def convert_audio(value, from_rate, to_rate, channels):
+        calls["convert"] = (value.shape, from_rate, to_rate, channels)
+        return FakeTensor()
+
+    class UnexpectedAudioFile:
+        def __init__(self, path):
+            raise AssertionError("ffmpeg fallback should not run when sphn succeeds")
+
+    fake_demucs_audio = SimpleNamespace(
+        convert_audio=convert_audio,
+        AudioFile=UnexpectedAudioFile,
+    )
+    original_import = importlib.import_module
+
+    def fake_import(name: str):
+        if name == "sphn":
+            return fake_sphn
+        if name == "torch":
+            return fake_torch
+        if name == "demucs.audio":
+            return fake_demucs_audio
+        return original_import(name)
+
+    monkeypatch.setattr("aios_tools.audio_native_demucs.importlib.import_module", fake_import)
+
+    audio, normalized_rate, original_rate = _read_audio_demucs(source)
+
+    assert audio.shape == (2, 8)
+    assert normalized_rate == 44100
+    assert original_rate == 48000
+    assert calls["convert"] == ((2, 9), 48000, 44100, 2)
+
+
+def test_pinned_demucs_reader_falls_back_to_audiofile_when_sphn_fails(monkeypatch, tmp_path: Path) -> None:
     calls: dict[str, object] = {}
     source = tmp_path / "source.mp3"
     source.write_bytes(b"source")
@@ -190,11 +243,21 @@ def test_pinned_demucs_reader_normalizes_48k_source(monkeypatch, tmp_path: Path)
             calls["read"] = kwargs
             return FakeTensor()
 
+    fake_sphn = SimpleNamespace(read=lambda path: (_ for _ in ()).throw(ValueError("sphn failed")))
+    fake_torch = SimpleNamespace(from_numpy=lambda data: data)
+    fake_demucs_audio = SimpleNamespace(
+        convert_audio=lambda *args: (_ for _ in ()).throw(AssertionError("convert should not run")),
+        AudioFile=FakeAudioFile,
+    )
     original_import = importlib.import_module
 
     def fake_import(name: str):
+        if name == "sphn":
+            return fake_sphn
+        if name == "torch":
+            return fake_torch
         if name == "demucs.audio":
-            return SimpleNamespace(AudioFile=FakeAudioFile)
+            return fake_demucs_audio
         return original_import(name)
 
     monkeypatch.setattr("aios_tools.audio_native_demucs.importlib.import_module", fake_import)
