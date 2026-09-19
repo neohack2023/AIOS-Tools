@@ -76,6 +76,24 @@ Reason:
 
 These are conditional or path/feature-specific lanes and may legitimately skip for unrelated pull requests. Making them globally required would create false merge blocks.
 
+## GitHub mechanism verification
+
+Current GitHub documentation was checked while preparing this package.
+
+Verified platform facts:
+
+- GitHub can require that all changes to a protected target branch be associated with a pull request without requiring an approving review.
+- The branch-protection REST contract accepts `required_approving_review_count = 0` to require no reviewers.
+- Required status checks can be strict or loose; strict status checks require the topic branch to be up to date with the base branch before merge.
+- Conversation resolution can be required independently.
+- Signed commits, linear history, deployment gates, merge queue, and push restrictions are separate optional controls and are not implied by requiring PRs/status checks.
+
+References:
+
+- https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches
+- https://docs.github.com/en/rest/branches/branch-protection
+- https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets
+
 ## Profile A — enforce the repository's declared review-first law
 
 This is the smallest protection profile that matches current repository procedure without changing merge style or requiring a second human reviewer.
