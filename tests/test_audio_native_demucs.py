@@ -77,11 +77,18 @@ def test_build_command_freezes_upstream_segmentation() -> None:
     command = build_command(profile(), source, Path("/tmp/out"))
     assert command[:3] == ["python", "-m", "demucs"]
     assert command[command.index("--name") + 1] == "htdemucs"
-    assert command[command.index("--segment") + 1] == "7.8"
+    assert command[command.index("--segment") + 1] == "7"
     assert command[command.index("--overlap") + 1] == "0.1"
     assert command[command.index("--shifts") + 1] == "0"
     assert "--float32" in command
     assert command[-1] == str(source)
+
+
+def test_profile_rejects_fractional_segment_for_demucs_410_cli() -> None:
+    invalid = profile().__class__(**{**profile().__dict__, "segment_seconds": 7.8})
+    with pytest.raises(NativeDemucsError) as error:
+        invalid.validate()
+    assert error.value.code == "PROFILE_INVALID"
 
 
 def test_profile_rejects_custom_non_upstream_split_path() -> None:
