@@ -125,6 +125,20 @@ A completed invocation returns the standard AIOS execution receipt plus:
 
 The adapter uses an isolated staging directory and only promotes the complete four-stem set after output validation and metrics evidence generation. Existing destination directories are rejected rather than overwritten.
 
+## Restart recovery
+
+Before creating a new staging root, the adapter checks only the exact sibling staging entry `.<output-name>.stage`.
+
+If residue from an interrupted prior invocation exists:
+
+- an ordinary staging directory is removed recursively;
+- a staging symlink is unlinked without following its target;
+- a regular staging entry is unlinked;
+- the promoted output directory is never removed by recovery;
+- the recovery event is recorded as `RECOVERY_EVENT` evidence in the completed run receipt and returned result.
+
+This is bounded restart recovery, not a background watchdog. An uncatchable hard kill may still leave the current invocation's staging root behind; the next invocation for that exact output identity performs the recovery.
+
 ## Authority boundary
 
 A successful separation, CI run, or same-track pilot produces evidence only. It does not grant runtime admission, pilot authorization, merge authority, or any broader AIOS authority.

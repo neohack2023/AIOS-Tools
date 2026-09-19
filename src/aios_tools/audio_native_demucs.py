@@ -429,6 +429,53 @@ def _find_outputs(root: Path) -> dict[str, Path]:
     return found
 
 
+def recover_abandoned_stage(output_dir: Path) -> dict[str, Any]:
+    """Remove only the exact sibling staging entry for this output root.
+
+    This is restart recovery for an interrupted prior invocation. Symlinks are
+    unlinked rather than traversed, and the promoted output path is never
+    touched by this function.
+    """
+    output_dir = output_dir.resolve()
+    stage = output_dir.parent / f".{output_dir.name}.stage"
+    expected_name = f".{output_dir.name}.stage"
+    if stage.parent != output_dir.parent or stage.name != expected_name:
+        raise NativeDemucsError(
+            "RECOVERY_PATH_INVALID",
+            "derived staging path escaped the approved output parent",
+        )
+
+    event: dict[str, Any] = {
+        "status": "NOT_REQUIRED",
+        "removed": False,
+        "entry_type": None,
+        "stage_name": stage.name,
+        "evidence_class": "RECOVERY_EVENT",
+        "authority_transfer": False,
+    }
+    if not os.path.lexists(stage):
+        return event
+
+    if stage.is_symlink():
+        entry_type = "symlink"
+        stage.unlink()
+    elif stage.is_dir():
+        entry_type = "directory"
+        shutil.rmtree(stage)
+    else:
+        entry_type = "file"
+        stage.unlink()
+
+    event.update(
+        {
+            "status": "RECOVERED",
+            "removed": True,
+            "entry_type": entry_type,
+        }
+    )
+    return event
+
+
 def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Path) -> dict[str, Any]:
     profile.validate()
     source = source.resolve(strict=True)
@@ -442,9 +489,8 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
     if output_dir.exists():
         raise NativeDemucsError("OUTPUT_EXISTS", str(output_dir))
 
+    recovery = recover_abandoned_stage(output_dir)
     stage = output_dir.with_name(f".{output_dir.name}.stage")
-    if stage.exists():
-        shutil.rmtree(stage)
     stage.mkdir(parents=True)
     command = build_command(profile, source, stage)
     started = time.monotonic()
@@ -468,7 +514,12 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
         raise NativeDemucsError(
             "NATIVE_PROCESS_TIMEOUT",
             "Demucs exceeded the frozen timeout",
-            details={"stdout": stdout, "stderr": stderr, "elapsed_seconds": time.monotonic() - started},
+            details={
+                "stdout": stdout,
+                "stderr": stderr,
+                "elapsed_seconds": time.monotonic() - started,
+                "recovery": recovery,
+            },
         )
 
     elapsed = time.monotonic() - started
@@ -476,7 +527,12 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
         raise NativeDemucsError(
             "NATIVE_PROCESS_FAILED",
             f"Demucs exited with {proc.returncode}",
-            details={"stdout": stdout, "stderr": stderr, "elapsed_seconds": elapsed},
+            details={
+                "stdout": stdout,
+                "stderr": stderr,
+                "elapsed_seconds": elapsed,
+                "recovery": recovery,
+            },
         )
 
     outputs = _find_outputs(stage)
@@ -525,6 +581,7 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
             "evidence_class": metrics["evidence_class"],
         },
         "output_encoding": "WAV_FLOAT32",
+        "recovery": recovery,
         "runtime_admission": False,
         "pilot_authorized": False,
         "authority_transfer": False,
@@ -559,6 +616,7 @@ def run_native_demucs(profile: NativeDemucsProfile, source: Path, output_dir: Pa
             "stderr": "stderr.log",
         },
         "artifact_manifest": artifact_manifest,
+        "recovery": recovery,
         "runtime_admission": False,
         "pilot_authorized": False,
         "authority_transfer": False,
