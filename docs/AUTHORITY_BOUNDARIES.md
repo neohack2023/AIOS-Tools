@@ -1,5 +1,7 @@
 # Authority Boundaries
 
+<!-- AIOS_AUTHORITY_MODEL: DRIVE_PRIMARY_AUTHORITY_OVERLAY_v0.3-object-aware_2026-09-15 -->
+
 Current cutover basis: `DRIVE_PRIMARY_AUTHORITY_OVERLAY — v0.3-object-aware — 2026-09-15`.
 
 The authority model is object- and truth-domain-aware. Freshness alone does not transfer authority.
