@@ -59,7 +59,9 @@ Synchronization is comparison and provenance, not authority transfer. It cannot 
 - widen capability/network/write authority;
 - approve, merge, release, or deploy.
 
-GitHub remains live implementation truth. Notion remains upstream architecture/governance authority. Drive remains evidence/control-plane projection where declared.
+GitHub remains live repository implementation/execution truth.
+
+The stable three-source governance sync set above remains the recurring source set for repository-governance comparison. Separately, the object-aware Drive cutover effective 2026-09-15 governs durable AIOS knowledge retrieval and write routing: `DRIVE_CURRENT` / `DRIVE_VERIFIED` objects are preferred authority for their declared domain, while Notion is `LEGACY_SOURCE` fallback for exact objects that remain absent or unverified in Drive. Universal Notion retirement is not claimed.
 
 ## Terminal Phase 5 state
 
