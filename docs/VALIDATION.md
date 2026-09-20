@@ -30,6 +30,10 @@ The test suite must prove:
 - browser origin, redirect, subresource, WebSocket, Service Worker, budget, cancellation, path, and context-isolation fixtures fail visibly
 - browser page text is returned as untrusted data rather than execution authority
 - HTTP transport completion does not substitute for semantic success
+- portable-package eval capsules bind package and fixture SHA-256 identities
+- `PACKAGE_OFF` and `PACKAGE_ON` preserve all declared paired invariants except package attachment/entry instruction
+- deterministic package graders fail visibly on missing/forbidden/order/regex/length violations
+- product-surface acceptance remains `NOT_EXECUTED` until a real Temporary Chat/product run exists
 
 ## Browser 02B integration
 

@@ -48,6 +48,7 @@ The runtime loads its tool metadata from `registry/tools.v0.1.json` and its glob
 - `src/aios_tools/envelope.py` — execution result and receipt envelope
 - `src/aios_tools/cli.py` — JSON CLI adapter
 - `src/aios_tools/mcp_server.py` — MCP Streamable HTTP and stdio adapter
+- `src/aios_tools/package_eval/` — portable-package clean-room A/B capsule, deterministic grading, and product-surface acceptance contracts
 - `registry/` — executable tool registry facts
 - `contracts/` — request and result schemas
 - `policies/` — executable eligibility policy
@@ -60,6 +61,7 @@ python -m pip install -e ".[dev]"
 aios-tools list
 aios-tools invoke system.health --input '{}'
 aios-tools invoke canonical.hash_json --input '{"value":{"b":2,"a":1}}'
+aios-package-eval --help
 ```
 
 ## MCP server

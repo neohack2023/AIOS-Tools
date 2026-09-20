@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/portable-package-eval-fixture.v0.1.schema.json",
+  "title": "AIOS Portable Package Evaluation Fixture v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_version",
+    "fixture_id",
+    "task_prompt",
+    "allowed_tools",
+    "semantic_dimensions",
+    "deterministic_assertions",
+    "product_surface"
+  ],
+  "properties": {
+    "fixture_version": {
+      "const": "0.1"
+    },
+    "fixture_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "package_entry_instruction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "allowed_tools": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "semantic_dimensions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "deterministic_assertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required_markers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden_markers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ordered_markers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_regex": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "max_total_chars": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "product_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "lane",
+        "human_takeover_allowed"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "lane": {
+          "enum": [
+            "NONE",
+            "CHATGPT_TEMPORARY_UNPERSONALIZED"
+          ]
+        },
+        "human_takeover_allowed": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
