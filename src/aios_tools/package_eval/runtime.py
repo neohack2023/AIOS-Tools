@@ -83,6 +83,16 @@ def load_fixture(path: Path) -> dict[str, Any]:
         raise PortablePackageEvalError("fixture root must be an object")
     if payload.get("fixture_version") != "0.1":
         raise PortablePackageEvalError("fixture_version must be 0.1")
+    allowed_top = {
+        "fixture_version", "fixture_id", "task_prompt", "package_entry_instruction",
+        "allowed_tools", "semantic_dimensions", "deterministic_assertions",
+        "product_surface",
+    }
+    unknown_top = sorted(set(payload) - allowed_top)
+    if unknown_top:
+        raise PortablePackageEvalError(
+            "unknown fixture fields: " + ", ".join(unknown_top)
+        )
     _require_text(payload, "fixture_id")
     _require_text(payload, "task_prompt")
     _text_list(payload, "allowed_tools")
@@ -91,13 +101,30 @@ def load_fixture(path: Path) -> dict[str, Any]:
     assertions = payload.get("deterministic_assertions", {})
     if not isinstance(assertions, dict):
         raise PortablePackageEvalError("deterministic_assertions must be an object")
+    allowed_assertions = {
+        "required_markers", "forbidden_markers", "ordered_markers",
+        "required_regex", "max_total_chars",
+    }
+    unknown_assertions = sorted(set(assertions) - allowed_assertions)
+    if unknown_assertions:
+        raise PortablePackageEvalError(
+            "unknown deterministic assertions: " + ", ".join(unknown_assertions)
+        )
     for key in (
         "required_markers",
         "forbidden_markers",
         "ordered_markers",
         "required_regex",
     ):
-        _text_list(assertions, key)
+        values = _text_list(assertions, key)
+        if key == "required_regex":
+            for pattern in values:
+                try:
+                    re.compile(pattern)
+                except re.error as exc:
+                    raise PortablePackageEvalError(
+                        f"invalid required_regex pattern: {pattern}: {exc}"
+                    ) from exc
     max_chars = assertions.get("max_total_chars")
     if max_chars is not None and (
         not isinstance(max_chars, int) or isinstance(max_chars, bool) or max_chars < 1
@@ -107,6 +134,12 @@ def load_fixture(path: Path) -> dict[str, Any]:
     product = payload.get("product_surface", {})
     if not isinstance(product, dict):
         raise PortablePackageEvalError("product_surface must be an object")
+    allowed_product = {"required", "lane", "human_takeover_allowed"}
+    unknown_product = sorted(set(product) - allowed_product)
+    if unknown_product:
+        raise PortablePackageEvalError(
+            "unknown product_surface fields: " + ", ".join(unknown_product)
+        )
     required = product.get("required", False)
     if not isinstance(required, bool):
         raise PortablePackageEvalError("product_surface.required must be boolean")
@@ -235,6 +268,7 @@ def build_eval_capsule(
         "provider",
         "model",
         "store",
+        "clean_room",
     )
     if any(on_request[field] != off_request[field] for field in invariant_fields):
         raise PortablePackageEvalError("paired treatment invariants drifted")

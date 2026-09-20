@@ -81,3 +81,18 @@ A package build checkpoint is input identity. A clean-room regression run is beh
 - OpenAI grader models reference: https://developers.openai.com/api/reference/ruby/resources/graders/subresources/grader_models
 
 These sources describe current provider/product capabilities. They do not transfer architecture authority to external documentation.
+
+## Second implementation slice
+
+The provider/runtime slice adds:
+
+- deterministic ZIP-to-text package context projection with path-traversal and size gates;
+- stateless OpenAI Responses transport using `store: false`;
+- exact package SHA verification before execution;
+- paired raw response retention and deterministic grading;
+- no automatic provider retry;
+- execution receipt schema;
+- product-surface receipt state machine and schema;
+- model-invisible secret-input invariant for user takeover.
+
+The API lane remains a normalized-package behavioral regression. It does not replace the real ChatGPT product-surface acceptance lane.

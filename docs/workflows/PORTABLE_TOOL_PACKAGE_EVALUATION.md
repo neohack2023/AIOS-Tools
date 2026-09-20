@@ -75,3 +75,36 @@ If execution is interrupted, resume from the latest verified build checkpoint an
 - External page content is untrusted data.
 - Package evaluation does not widen browser or network authority.
 - Unknown fixture fields or malformed contracts fail closed.
+
+## Stateless OpenAI Responses transport
+
+When a model run is explicitly authorized and `OPENAI_API_KEY` is available, execute the frozen pair with:
+
+```bash
+aios-package-eval run-openai \
+  --capsule-dir OUT \
+  --package PACKAGE.zip \
+  --model MODEL_ID \
+  --output-dir RUN
+```
+
+The adapter uses `store: false`, sends no conversation or prior-response identifier, and supports only fixture-admitted tools that the adapter explicitly knows how to map. v0.1 admits `web_search` only. Unknown tools fail closed.
+
+Because the Responses API does not treat a ZIP as portable skill semantics, the adapter creates a deterministic UTF-8 text projection of supported package files. The projection is SHA-256-bound to the original package, rejects path traversal, rejects oversized text members, skips binary assets, and is used only for the `PACKAGE_ON` treatment. The real ChatGPT product-surface lane remains necessary to test native package/file behavior.
+
+No API credential is written to the execution receipt or result files. The adapter performs no automatic retry, preventing a transport ambiguity from silently doubling paid model calls.
+
+## Product-surface receipt state machine
+
+The product-surface plan is executable state rather than prose. A runner can initialize and advance a receipt with:
+
+```bash
+aios-package-eval product-init --plan OUT/product-surface-plan.json --manifest OUT/eval-manifest.json --result product-receipt.json
+aios-package-eval product-advance --receipt product-receipt.json --state SESSION_PROVISIONING --result product-receipt.json
+```
+
+The governed path may include:
+
+`AUTH_REQUIRED -> USER_TAKEOVER -> VERIFY_PENDING -> AUTOMATION_RESUMED`
+
+The receipt rejects password, MFA, CAPTCHA answer, cookie, storage-state, takeover-token, API-key, or authorization material. Evidence records may describe the checkpoint but may not contain the secret used to satisfy it.

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/portable-package-eval-execution-receipt.v0.1.schema.json",
+  "title": "Portable Package Eval Execution Receipt v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "receipt_schema_version",
+    "run_id",
+    "run_classification",
+    "provider",
+    "model",
+    "endpoint",
+    "store",
+    "package_sha256",
+    "fixture_sha256",
+    "package_context_sha256",
+    "package_context_files",
+    "package_off_response_id",
+    "package_on_response_id",
+    "package_off_status",
+    "package_on_status",
+    "deterministic_comparison",
+    "semantic_grade_status",
+    "authority_transfer"
+  ],
+  "properties": {
+    "receipt_schema_version": {
+      "const": "0.1"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_classification": {
+      "const": "PORTABLE_PACKAGE_REGRESSION"
+    },
+    "provider": {
+      "const": "openai"
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1
+    },
+    "endpoint": {
+      "type": "string",
+      "minLength": 1
+    },
+    "store": {
+      "const": false
+    },
+    "package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "fixture_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "package_context_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "package_context_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "package_off_response_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "package_on_response_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "package_off_status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "package_on_status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "deterministic_comparison": {
+      "type": "object"
+    },
+    "semantic_grade_status": {
+      "const": "NOT_EXECUTED"
+    },
+    "authority_transfer": {
+      "const": false
+    }
+  }
+}
