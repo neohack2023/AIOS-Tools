@@ -48,6 +48,62 @@ def _load_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def _validate_capsule_artifact_digests(
+    *, capsule_dir: Path, manifest: dict[str, Any]
+) -> None:
+    artifact_digests = manifest.get("artifact_digests")
+    if not isinstance(artifact_digests, dict) or not artifact_digests:
+        raise PortablePackageEvalError(
+            "capsule manifest must bind non-empty artifact_digests"
+        )
+
+    for name, expected_sha in artifact_digests.items():
+        if (
+            not isinstance(name, str)
+            or not name
+            or Path(name).name != name
+            or "/" in name
+            or "\\" in name
+        ):
+            raise PortablePackageEvalError(
+                "capsule artifact digest keys must be local filenames"
+            )
+        if (
+            not isinstance(expected_sha, str)
+            or len(expected_sha) != 64
+            or any(ch not in "0123456789abcdef" for ch in expected_sha)
+        ):
+            raise PortablePackageEvalError(
+                f"capsule artifact digest is invalid: {name}"
+            )
+        artifact_path = capsule_dir / name
+        if not artifact_path.is_file():
+            raise PortablePackageEvalError(
+                f"capsule artifact missing: {name}"
+            )
+        actual_sha = _sha256_file(artifact_path)
+        if actual_sha != expected_sha:
+            raise PortablePackageEvalError(
+                f"capsule artifact digest mismatch: {name}"
+            )
+
+
+def _validate_completed_response(
+    *, label: str, response: dict[str, Any]
+) -> str:
+    if not isinstance(response, dict):
+        raise PortablePackageEvalError(f"{label} response must be an object")
+    response_id = response.get("id")
+    if not isinstance(response_id, str) or not response_id.strip():
+        raise PortablePackageEvalError(f"{label} response id must be non-empty")
+    status = response.get("status")
+    if status != "completed":
+        raise PortablePackageEvalError(
+            f"{label} response status must be completed"
+        )
+    return response_id.strip()
+
+
 def build_responses_payload(
     *,
     request_contract: dict[str, Any],
@@ -172,6 +228,10 @@ def execute_openai_pair(
     output_dir = Path(output_dir)
     endpoint = _validate_openai_endpoint(endpoint)
     manifest = _load_json(capsule_dir / "eval-manifest.json")
+    _validate_capsule_artifact_digests(
+        capsule_dir=capsule_dir,
+        manifest=manifest,
+    )
     on_request = _load_json(capsule_dir / "package-on-request.json")
     off_request = _load_json(capsule_dir / "package-off-request.json")
     grader = _load_json(capsule_dir / "grader-contract.json")
@@ -206,12 +266,25 @@ def execute_openai_pair(
         payload=off_payload,
         timeout_seconds=timeout_seconds,
     )
+    off_response_id = _validate_completed_response(
+        label="PACKAGE_OFF",
+        response=off_response,
+    )
     on_response = post(
         endpoint=endpoint,
         api_key=api_key,
         payload=on_payload,
         timeout_seconds=timeout_seconds,
     )
+    on_response_id = _validate_completed_response(
+        label="PACKAGE_ON",
+        response=on_response,
+    )
+    if off_response_id == on_response_id:
+        raise PortablePackageEvalError(
+            "paired Responses run must produce distinct response ids"
+        )
+
     off_text = extract_output_text(off_response)
     on_text = extract_output_text(on_response)
     if not off_text or not on_text:
@@ -255,8 +328,8 @@ def execute_openai_pair(
         "fixture_sha256": manifest.get("fixture_sha256"),
         "package_context_sha256": projection.sha256,
         "package_context_files": list(projection.included_files),
-        "package_off_response_id": off_response.get("id"),
-        "package_on_response_id": on_response.get("id"),
+        "package_off_response_id": off_response_id,
+        "package_on_response_id": on_response_id,
         "package_off_status": off_response.get("status"),
         "package_on_status": on_response.get("status"),
         "deterministic_comparison": comparison,
