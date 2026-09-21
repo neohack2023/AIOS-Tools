@@ -6,6 +6,38 @@ from typing import Any
 from .runtime import PortablePackageEvalError
 
 TERMINAL_STATES = frozenset({"COMPLETED", "FAILED", "BLOCKED"})
+
+_FORBIDDEN_EVIDENCE_KEYS = frozenset({
+    "password",
+    "mfa_code",
+    "captcha_answer",
+    "cookie",
+    "cookies",
+    "storage_state",
+    "takeover_token",
+    "api_key",
+    "authorization",
+})
+
+
+def _normalized_key(value: object) -> str:
+    return str(value).strip().lower().replace("-", "_")
+
+
+def _find_forbidden_evidence_paths(value: object, path: str = "$") -> list[str]:
+    findings: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized = _normalized_key(key)
+            child_path = f"{path}.{key}"
+            if normalized in _FORBIDDEN_EVIDENCE_KEYS:
+                findings.append(child_path)
+            findings.extend(_find_forbidden_evidence_paths(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            findings.extend(_find_forbidden_evidence_paths(child, f"{path}[{index}]"))
+    return findings
+
 ALLOWED_TRANSITIONS = {
     "NOT_EXECUTED": {"SESSION_PROVISIONING", "BLOCKED"},
     "SESSION_PROVISIONING": {"PACKAGE_ATTACHED", "FAILED", "BLOCKED"},
@@ -63,22 +95,11 @@ def advance_product_surface_receipt(
     if next_state == "USER_TAKEOVER" and not receipt.get("human_takeover_allowed"):
         raise PortablePackageEvalError("human takeover is not allowed by the plan")
     event = dict(evidence or {})
-    forbidden_keys = {
-        "password",
-        "mfa_code",
-        "captcha_answer",
-        "cookie",
-        "cookies",
-        "storage_state",
-        "takeover_token",
-        "api_key",
-        "authorization",
-    }
-    overlap = forbidden_keys & {str(key).lower() for key in event}
-    if overlap:
+    forbidden_paths = _find_forbidden_evidence_paths(event)
+    if forbidden_paths:
         raise PortablePackageEvalError(
             "product-surface evidence contains forbidden secret material: "
-            + ", ".join(sorted(overlap))
+            + ", ".join(sorted(forbidden_paths))
         )
     updated = copy.deepcopy(receipt)
     updated["events"].append({
