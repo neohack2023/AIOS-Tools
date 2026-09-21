@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.1",
+  "scope_key": "global-working-memory",
+  "source": {
+    "drive_id": "1xOTAPPYTeTJ3Dxp7ObEaxxK0zQ2B_9a70KMRbULadmo",
+    "execution_receipt_drive_id": "1duGCyvbVVWAl-F8VdbdSqPgA5cOSvFkRxF0qJ7LB0zM",
+    "title": "AIOS Daily Research Brief — 2026-09-21 — Research Packet",
+    "date": "2026-09-21"
+  },
+  "repository": "neohack2023/AIOS-Tools",
+  "authority_transfer": false,
+  "candidates": [
+    {"id":"PORTABLE_INSTRUCTION_PRECEDENCE_GATE","delta_class":"EXTENSION","state":"IMPLEMENTATION_CANDIDATE","target_concern":"instruction precedence and provider compatibility"},
+    {"id":"MODEL_LIFECYCLE_STALENESS_GATE","delta_class":"REFINEMENT","state":"IMPLEMENTATION_CANDIDATE","target_concern":"verification staleness across model deprecation/substitution"},
+    {"id":"STAGED_ARTIFACT_AUTHORITY_FIXTURE_01","delta_class":"NOVEL","state":"IMPLEMENTATION_CANDIDATE","target_concern":"stage versus publish authority separation"},
+    {"id":"CI_MCP_AUTHORITY_GATE","delta_class":"EXTENSION","state":"IMPLEMENTATION_CANDIDATE","target_concern":"CI MCP principal/tool/action/effect receipt boundary"},
+    {"id":"RETRIEVAL_UPSTREAM_BENCHMARK_REFINEMENT","delta_class":"REFINEMENT","state":"IMPLEMENTATION_CANDIDATE","target_concern":"retrieval quality before downstream patch success"}
+  ]
+}
