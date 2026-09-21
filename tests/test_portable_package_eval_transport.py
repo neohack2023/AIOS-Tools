@@ -390,3 +390,29 @@ def test_product_surface_validation_rejects_tampered_nested_secret(tmp_path: Pat
     }
     with pytest.raises(PortablePackageEvalError, match="receipt contains forbidden secret material"):
         validate_product_surface_receipt(receipt)
+
+
+
+def test_anti_pattern_fixture_binds_existing_regressions() -> None:
+    mapping_path = (
+        ROOT
+        / "fixtures"
+        / "package-eval"
+        / "portable-package-eval-trust-boundaries-01.json"
+    )
+    payload = json.loads(mapping_path.read_text(encoding="utf-8"))
+    assert payload["anti_pattern_id"] == "PORTABLE_PACKAGE_EVAL_TRUST_BOUNDARIES_01"
+    assert payload["status"] == "CONFIRMED_ANTI_PATTERN"
+    assert payload["source_test_file"] == "tests/test_portable_package_eval_transport.py"
+
+    seen: set[str] = set()
+    for pattern in payload["patterns"]:
+        assert pattern["id"] not in seen
+        seen.add(pattern["id"])
+        assert pattern["regression_tests"]
+        for test_name in pattern["regression_tests"]:
+            candidate = globals().get(test_name)
+            assert callable(candidate), f"anti-pattern regression missing: {test_name}"
+
+    assert seen == {"AP-01", "AP-02", "AP-03", "AP-04"}
+    assert payload["acceptance_effect"]["authority_transfer"] is False
