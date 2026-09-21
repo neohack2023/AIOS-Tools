@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import zipfile
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ from aios_tools.package_eval import (
     initialize_product_surface_receipt,
     validate_product_surface_receipt,
 )
+from aios_tools.package_eval import provider as provider_module
 
 
 def _fixture(path: Path) -> Path:
@@ -240,4 +242,124 @@ def test_product_surface_takeover_chain_and_secret_blackout(tmp_path: Path) -> N
             receipt=blocked,
             next_state="USER_TAKEOVER",
             evidence={"password": "never-store-this"},
+        )
+
+
+
+def test_provider_transport_is_pinned_and_auth_is_unredirected(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return b'{"id":"resp-test","status":"completed","output":[]}'
+
+    class FakeOpener:
+        def open(self, request, timeout):
+            captured["request"] = request
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+    def fake_build_opener(*handlers):
+        captured["handlers"] = handlers
+        return FakeOpener()
+
+    monkeypatch.setattr(provider_module.urllib.request, "build_opener", fake_build_opener)
+    provider_module._post_json(
+        endpoint=provider_module.DEFAULT_RESPONSES_ENDPOINT,
+        api_key="secret-test-key",
+        payload={"model": "test-model", "store": False, "input": []},
+        timeout_seconds=1.0,
+    )
+    request = captured["request"]
+    assert isinstance(request, urllib.request.Request)
+    assert request.unredirected_hdrs["Authorization"] == "Bearer secret-test-key"
+    assert "Authorization" not in request.headers
+    assert any(
+        isinstance(handler, provider_module._NoRedirectHandler)
+        for handler in captured["handlers"]
+    )
+
+
+def test_pair_execution_rejects_non_official_credential_endpoint(tmp_path: Path) -> None:
+    package = _package(tmp_path / "tool.zip")
+    capsule = build_eval_capsule(
+        package_path=package,
+        fixture_path=_fixture(tmp_path / "fixture.json"),
+        output_dir=tmp_path / "capsule",
+    )
+
+    def transport(**kwargs):
+        raise AssertionError("transport must not run for an untrusted endpoint")
+
+    with pytest.raises(PortablePackageEvalError, match="pinned to the official Responses endpoint"):
+        execute_openai_pair(
+            capsule_dir=capsule.output_dir,
+            package_path=package,
+            model="test-model",
+            api_key="secret-test-key",
+            output_dir=tmp_path / "results",
+            endpoint="https://example.invalid/v1/responses",
+            transport=transport,
+        )
+
+
+def test_context_projection_rejects_total_zip_expansion_before_member_read(
+    tmp_path: Path, monkeypatch
+) -> None:
+    package = tmp_path / "oversized.zip"
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("a.txt", "a" * 10)
+        archive.writestr("b.txt", "b" * 10)
+
+    original_open = zipfile.ZipFile.open
+
+    def forbidden_open(self, *args, **kwargs):
+        raise AssertionError("member data should not be opened after preflight size failure")
+
+    monkeypatch.setattr(zipfile.ZipFile, "open", forbidden_open)
+    try:
+        with pytest.raises(PortablePackageEvalError, match="exceeds max_total_bytes"):
+            compile_package_context(
+                package_path=package,
+                output_path=tmp_path / "context.txt",
+                max_total_bytes=15,
+            )
+    finally:
+        monkeypatch.setattr(zipfile.ZipFile, "open", original_open)
+
+
+def test_product_surface_secret_blackout_is_recursive(tmp_path: Path) -> None:
+    package = _package(tmp_path / "tool.zip")
+    capsule = build_eval_capsule(
+        package_path=package,
+        fixture_path=_fixture(tmp_path / "fixture.json"),
+        output_dir=tmp_path / "capsule",
+    )
+    plan = json.loads(capsule.product_surface_plan_path.read_text())
+    manifest = json.loads(capsule.manifest_path.read_text())
+    receipt = initialize_product_surface_receipt(
+        plan=plan,
+        package_sha256=manifest["package"]["sha256"],
+        fixture_sha256=manifest["fixture_sha256"],
+    )
+    receipt = advance_product_surface_receipt(
+        receipt=receipt,
+        next_state="SESSION_PROVISIONING",
+    )
+    with pytest.raises(PortablePackageEvalError, match="forbidden secret material"):
+        advance_product_surface_receipt(
+            receipt=receipt,
+            next_state="PACKAGE_ATTACHED",
+            evidence={
+                "diagnostics": [
+                    {"safe": "value"},
+                    {"nested": {"api-key": "never-store-this"}},
+                ]
+            },
         )
