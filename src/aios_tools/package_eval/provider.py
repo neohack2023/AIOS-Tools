@@ -19,6 +19,21 @@ DEFAULT_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses"
 SUPPORTED_TOOLS = frozenset({"web_search"})
 
 
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Fail closed instead of forwarding bearer credentials across redirects."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _validate_openai_endpoint(endpoint: str) -> str:
+    if endpoint != DEFAULT_RESPONSES_ENDPOINT:
+        raise PortablePackageEvalError(
+            "package eval OpenAI transport is pinned to the official Responses endpoint"
+        )
+    return endpoint
+
+
 def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -100,17 +115,17 @@ def _post_json(
 ) -> dict[str, Any]:
     if not api_key:
         raise PortablePackageEvalError("OpenAI API key is required")
+    endpoint = _validate_openai_endpoint(endpoint)
     request = urllib.request.Request(
         endpoint,
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
+        headers={"Content-Type": "application/json"},
         method="POST",
     )
+    request.add_unredirected_header("Authorization", f"Bearer {api_key}")
+    opener = urllib.request.build_opener(_NoRedirectHandler())
     try:
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        with opener.open(request, timeout=timeout_seconds) as response:
             body = response.read()
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:2000]
@@ -155,6 +170,7 @@ def execute_openai_pair(
     capsule_dir = Path(capsule_dir)
     package_path = Path(package_path)
     output_dir = Path(output_dir)
+    endpoint = _validate_openai_endpoint(endpoint)
     manifest = _load_json(capsule_dir / "eval-manifest.json")
     on_request = _load_json(capsule_dir / "package-on-request.json")
     off_request = _load_json(capsule_dir / "package-off-request.json")
