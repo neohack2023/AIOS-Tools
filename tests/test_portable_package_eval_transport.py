@@ -363,3 +363,30 @@ def test_product_surface_secret_blackout_is_recursive(tmp_path: Path) -> None:
                 ]
             },
         )
+
+
+
+def test_product_surface_validation_rejects_tampered_nested_secret(tmp_path: Path) -> None:
+    package = _package(tmp_path / "tool.zip")
+    capsule = build_eval_capsule(
+        package_path=package,
+        fixture_path=_fixture(tmp_path / "fixture.json"),
+        output_dir=tmp_path / "capsule",
+    )
+    plan = json.loads(capsule.product_surface_plan_path.read_text())
+    manifest = json.loads(capsule.manifest_path.read_text())
+    receipt = initialize_product_surface_receipt(
+        plan=plan,
+        package_sha256=manifest["package"]["sha256"],
+        fixture_sha256=manifest["fixture_sha256"],
+    )
+    receipt = advance_product_surface_receipt(
+        receipt=receipt,
+        next_state="SESSION_PROVISIONING",
+        evidence={"note": "safe"},
+    )
+    receipt["events"][0]["evidence"] = {
+        "nested": {"authorization": "Bearer never-store-this"}
+    }
+    with pytest.raises(PortablePackageEvalError, match="receipt contains forbidden secret material"):
+        validate_product_surface_receipt(receipt)
