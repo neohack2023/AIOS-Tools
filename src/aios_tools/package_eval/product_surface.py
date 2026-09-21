@@ -133,6 +133,12 @@ def validate_product_surface_receipt(receipt: dict[str, Any]) -> dict[str, Any]:
             raise PortablePackageEvalError("product-surface event must be an object")
         if event.get("from") != cursor:
             raise PortablePackageEvalError("product-surface event chain is discontinuous")
+        forbidden_paths = _find_forbidden_evidence_paths(event.get("evidence", {}))
+        if forbidden_paths:
+            raise PortablePackageEvalError(
+                "product-surface receipt contains forbidden secret material: "
+                + ", ".join(sorted(forbidden_paths))
+            )
         target = event.get("to")
         if target not in ALLOWED_TRANSITIONS[cursor]:
             raise PortablePackageEvalError(
