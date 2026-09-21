@@ -47,14 +47,16 @@ jobs:
           for path in "${required[@]}"; do
             test -s "$path" || { echo "Missing or empty required file: $path"; exit 1; }
           done
-      - name: Verify authority boundary markers
+      - name: Verify authority contract identity
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "Notion" docs/AUTHORITY_BOUNDARIES.md
-          grep -q "Google Drive" docs/AUTHORITY_BOUNDARIES.md
-          grep -q "live source code" docs/AUTHORITY_BOUNDARIES.md
-          grep -q "authority_transfer" README.md
+          authority="docs/AUTHORITY_BOUNDARIES.md"
+          grep -Fxq '<!-- AIOS_AUTHORITY_MODEL: DRIVE_PRIMARY_AUTHORITY_OVERLAY_v0.3-object-aware_2026-09-15 -->' "$authority"
+          grep -Fq '## AIOS-Tools GitHub repository — GITHUB_CURRENT' "$authority"
+          grep -Fq '## Google Drive — DRIVE_VERIFIED / DRIVE_CURRENT' "$authority"
+          grep -Fq '## Notion — LEGACY_SOURCE' "$authority"
+          grep -Fq 'authority_transfer' README.md
       - name: Install workflow policy dependencies
         shell: bash
         run: |
