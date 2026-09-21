@@ -7,7 +7,7 @@
     "pull_request": 72,
     "discovered_on_head": "e65e7239ae842acce38d0ab042f9eb247e0d999e",
     "repair_branch": "agent/pr72-regression-antipatterns-staging",
-    "verification_state": "PENDING_EXACT_HEAD_CI"
+    "verification_requirement": "EXACT_HEAD_CI_REQUIRED"
   },
   "source_test_file": "tests/test_portable_package_eval_acceptance_integrity.py",
   "patterns": [
