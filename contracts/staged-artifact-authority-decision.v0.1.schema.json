@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/staged-artifact-authority-decision.v0.1.schema.json",
+  "title": "Staged Artifact Authority Decision v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_id",
+    "artifact_digest",
+    "operation",
+    "principal_stage",
+    "principal_publish",
+    "observed_digest",
+    "ack_state",
+    "decision",
+    "authority_transfer",
+    "external_effects"
+  ],
+  "properties": {
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "observed_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "operation": {
+      "enum": [
+        "STAGE",
+        "PUBLISH"
+      ]
+    },
+    "principal_stage": {
+      "type": "boolean"
+    },
+    "principal_publish": {
+      "type": "boolean"
+    },
+    "ack_state": {
+      "enum": [
+        "CLEAR",
+        "AMBIGUOUS"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "ALLOW_STAGE",
+        "DENY_PUBLISH",
+        "ALLOW_PUBLISH",
+        "STALE_DIGEST",
+        "READBACK_REQUIRED"
+      ]
+    },
+    "authority_transfer": {
+      "const": false
+    },
+    "external_effects": {
+      "type": "array",
+      "maxItems": 0
+    }
+  }
+}
