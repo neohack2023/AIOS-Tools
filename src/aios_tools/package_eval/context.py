@@ -14,6 +14,7 @@ TEXT_EXTENSIONS = frozenset({
 })
 DEFAULT_MAX_TOTAL_BYTES = 1_000_000
 DEFAULT_MAX_FILE_BYTES = 256_000
+DEFAULT_MAX_TEXT_FILES = 256
 
 
 @dataclass(frozen=True)
@@ -70,13 +71,14 @@ def compile_package_context(
     output_path: Path,
     max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
     max_file_bytes: int = DEFAULT_MAX_FILE_BYTES,
+    max_text_files: int = DEFAULT_MAX_TEXT_FILES,
 ) -> PackageContextProjection:
     package_path = Path(package_path)
     output_path = Path(output_path)
     if not package_path.is_file():
         raise PortablePackageEvalError("package context source must be a file")
-    if max_total_bytes < 1 or max_file_bytes < 1:
-        raise PortablePackageEvalError("package context byte limits must be positive")
+    if max_total_bytes < 1 or max_file_bytes < 1 or max_text_files < 1:
+        raise PortablePackageEvalError("package context limits must be positive")
 
     package_bytes = package_path.read_bytes()
     package_sha = _sha256(package_bytes)
@@ -84,6 +86,8 @@ def compile_package_context(
 
     if zipfile.is_zipfile(package_path):
         with zipfile.ZipFile(package_path) as archive:
+            selected: list[tuple[zipfile.ZipInfo, PurePosixPath]] = []
+            declared_total = 0
             for info in archive.infolist():
                 if info.is_dir():
                     continue
@@ -94,7 +98,30 @@ def compile_package_context(
                     raise PortablePackageEvalError(
                         f"package member exceeds max_file_bytes: {info.filename}"
                     )
-                data = archive.read(info)
+                selected.append((info, member))
+                if len(selected) > max_text_files:
+                    raise PortablePackageEvalError(
+                        "package contains too many supported text files"
+                    )
+                declared_total += info.file_size
+                if declared_total > max_total_bytes:
+                    raise PortablePackageEvalError(
+                        "portable package text context exceeds max_total_bytes"
+                    )
+
+            actual_total = 0
+            for info, member in selected:
+                with archive.open(info, "r") as source:
+                    data = source.read(max_file_bytes + 1)
+                if len(data) > max_file_bytes:
+                    raise PortablePackageEvalError(
+                        f"package member exceeds max_file_bytes: {info.filename}"
+                    )
+                actual_total += len(data)
+                if actual_total > max_total_bytes:
+                    raise PortablePackageEvalError(
+                        "portable package text context exceeds max_total_bytes"
+                    )
                 members.append((member, data))
     elif package_path.suffix.lower() in TEXT_EXTENSIONS:
         if len(package_bytes) > max_file_bytes:
