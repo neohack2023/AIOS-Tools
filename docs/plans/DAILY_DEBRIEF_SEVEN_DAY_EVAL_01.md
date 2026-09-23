@@ -10,7 +10,7 @@ Issue #80, finding 6 of 7: replay seven consecutive real Daily Debrief / STONE-M
 
 All seven source receipts are scoped to `global-working-memory`.
 
-The fixture stores only normalized evaluation facts plus source IDs/revisions. It does not copy the full Drive documents into the repository.
+The fixture stores only normalized evaluation facts plus source IDs/revisions. It does not copy the full Drive documents into the repository. Its `source_digest` field is an evaluation-fixture identity digest derived from the date and Drive source ID, not a claim to be a raw Google Docs byte/content digest. Production ingestion must continue to use its normal source-content digest semantics.
 
 ## Source receipts
 
