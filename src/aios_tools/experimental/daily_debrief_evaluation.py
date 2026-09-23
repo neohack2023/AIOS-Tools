@@ -101,6 +101,7 @@ def evaluate_seven_day_replay(
     accepted_total = 0
     duplicate_total = 0
     quarantine_total = 0
+    previous_candidate_states: dict[str, str] = {}
 
     for entry in entries:
         payload = entry["payload"]
@@ -128,6 +129,21 @@ def evaluate_seven_day_replay(
             item["state"] == "READY_FOR_IMPLEMENTATION_PLAN"
             for item in candidates
         )
+        current_candidate_states = {
+            item["lineage"]: item["state"]
+            for item in candidates
+        }
+        state_changes = [
+            {
+                "lineage": lineage,
+                "from": previous_candidate_states.get(lineage),
+                "to": current_candidate_states[lineage],
+            }
+            for lineage in sorted(current_candidate_states)
+            if previous_candidate_states.get(lineage)
+            != current_candidate_states[lineage]
+        ]
+        previous_candidate_states = current_candidate_states
 
         days.append(
             {
@@ -137,7 +153,9 @@ def evaluate_seven_day_replay(
                 "duplicate_noops": duplicates,
                 "quarantined": quarantined,
                 "projection_digest": projection_digest(state),
+                "lineage_count": len(state.lineages),
                 "candidate_count": len(candidates),
+                "candidate_state_changes": state_changes,
                 "candidates": candidates,
                 "expected_automatic_ready": expected["automatic_ready"],
                 "automatic_ready": automatic_ready,
