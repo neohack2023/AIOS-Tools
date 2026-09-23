@@ -26,6 +26,12 @@ caller
 
 Adapters must not implement divergent business logic. All callers receive the same policy, registry, execution, and receipt behavior.
 
+## Portable-package evaluation
+
+`src/aios_tools/package_eval/` is a separate evidence subsystem rather than a tool-authority surface. It compiles an exact package artifact plus frozen fixture into paired clean-room `PACKAGE_OFF` / `PACKAGE_ON` requests, deterministic grader contracts, and an optional ChatGPT product-surface acceptance plan. Capsule creation never implies that a model or product-surface evaluation executed.
+
+The package-eval subsystem may later use provider/API or browser adapters, but those adapters must preserve paired-treatment invariants and existing browser/authentication policy. Human takeover satisfies only the interactive authentication boundary and does not grant evaluator or release authority.
+
 ## Configuration surfaces
 
 - `registry/` defines admitted tool identities and versions.

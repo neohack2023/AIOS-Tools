@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/portable-package-eval-manifest.v0.1.schema.json",
+  "title": "AIOS Portable Package Evaluation Manifest v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_schema_version",
+    "fixture_id",
+    "fixture_sha256",
+    "package",
+    "run_classification",
+    "pairing",
+    "clean_room",
+    "score_status",
+    "product_surface_status",
+    "artifact_digests"
+  ],
+  "properties": {
+    "manifest_schema_version": {
+      "const": "0.1"
+    },
+    "fixture_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fixture_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "display_name",
+        "sha256"
+      ],
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "run_classification": {
+      "const": "PORTABLE_PACKAGE_REGRESSION"
+    },
+    "pairing": {
+      "type": "object"
+    },
+    "clean_room": {
+      "type": "object"
+    },
+    "score_status": {
+      "const": "NOT_EXECUTED"
+    },
+    "product_surface_status": {
+      "const": "NOT_EXECUTED"
+    },
+    "artifact_digests": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  }
+}

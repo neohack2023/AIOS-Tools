@@ -1,0 +1,45 @@
+{
+  "anti_pattern_id": "PORTABLE_PACKAGE_EVAL_ACCEPTANCE_INTEGRITY_01",
+  "version": "0.1",
+  "status": "CONFIRMED_ANTI_PATTERN",
+  "origin": {
+    "repository": "neohack2023/AIOS-Tools",
+    "pull_request": 72,
+    "discovered_on_head": "e65e7239ae842acce38d0ab042f9eb247e0d999e",
+    "repair_branch": "agent/pr72-regression-antipatterns-staging",
+    "verification_requirement": "EXACT_HEAD_CI_REQUIRED"
+  },
+  "source_test_file": "tests/test_portable_package_eval_acceptance_integrity.py",
+  "patterns": [
+    {
+      "id": "AP-05",
+      "mechanism": "manifest_digest_without_use_time_revalidation",
+      "invariant": "every manifest-bound capsule artifact is rehashed and matched before request loading or provider transport",
+      "regression_tests": [
+        "test_pair_execution_rejects_tampered_capsule_artifact_before_transport"
+      ]
+    },
+    {
+      "id": "AP-06",
+      "mechanism": "output_text_mistaken_for_provider_completion",
+      "invariant": "each provider treatment must have a non-empty response id and status=completed before grading; a failed PACKAGE_OFF stops before PACKAGE_ON",
+      "regression_tests": [
+        "test_pair_execution_rejects_non_completed_response_before_second_treatment"
+      ]
+    },
+    {
+      "id": "AP-07",
+      "mechanism": "paired_response_identity_replay",
+      "invariant": "PACKAGE_OFF and PACKAGE_ON must bind distinct completed provider response identities before comparison",
+      "regression_tests": [
+        "test_pair_execution_rejects_replayed_response_identity"
+      ]
+    }
+  ],
+  "acceptance_effect": {
+    "fixture_missing_or_skipped": "PARTIAL",
+    "all_bound_regressions_pass": "OBLIGATION_LOCAL_PASS",
+    "exact_head_ci_required": true,
+    "authority_transfer": false
+  }
+}

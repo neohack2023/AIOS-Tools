@@ -1,0 +1,59 @@
+{
+  "anti_pattern_id": "PORTABLE_PACKAGE_EVAL_TRUST_BOUNDARIES_01",
+  "version": "0.1",
+  "status": "CONFIRMED_ANTI_PATTERN",
+  "origin": {
+    "repository": "neohack2023/AIOS-Tools",
+    "pull_request": 72,
+    "defective_head": "5aedbb56723d4466f37eb4a589cd16006a0b1e4d",
+    "repaired_verified_head": "e5a67a362a8624ab58fdac971f27eb462b386781",
+    "evidence_runs": {
+      "repository_governance": 493,
+      "benchmark_registry": 166,
+      "aios_tools_ci": 495,
+      "browser_activation_replay": 95
+    }
+  },
+  "source_test_file": "tests/test_portable_package_eval_transport.py",
+  "patterns": [
+    {
+      "id": "AP-01",
+      "mechanism": "caller_controlled_credential_destination",
+      "invariant": "credential-bearing OpenAI package-eval traffic is pinned to the official Responses endpoint and redirect auth propagation fails closed",
+      "regression_tests": [
+        "test_provider_transport_is_pinned_and_auth_is_unredirected",
+        "test_pair_execution_rejects_non_official_credential_endpoint"
+      ]
+    },
+    {
+      "id": "AP-02",
+      "mechanism": "archive_limits_after_expansion",
+      "invariant": "selected archive text members are count/per-file/aggregate bounded before reads and actual reads remain bounded",
+      "regression_tests": [
+        "test_context_projection_rejects_total_zip_expansion_before_member_read"
+      ]
+    },
+    {
+      "id": "AP-03",
+      "mechanism": "shallow_secret_blackout",
+      "invariant": "secret evidence detection recursively traverses nested structured evidence and normalized key variants",
+      "regression_tests": [
+        "test_product_surface_takeover_chain_and_secret_blackout",
+        "test_product_surface_secret_blackout_is_recursive"
+      ]
+    },
+    {
+      "id": "AP-04",
+      "mechanism": "insert_time_only_receipt_validation",
+      "invariant": "receipt validation independently rescans stored evidence for forbidden secret material",
+      "regression_tests": [
+        "test_product_surface_validation_rejects_tampered_nested_secret"
+      ]
+    }
+  ],
+  "acceptance_effect": {
+    "fixture_missing_or_skipped": "PARTIAL",
+    "all_bound_regressions_pass": "OBLIGATION_LOCAL_PASS",
+    "authority_transfer": false
+  }
+}

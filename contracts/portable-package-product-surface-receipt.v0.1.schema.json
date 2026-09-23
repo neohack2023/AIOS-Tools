@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.local/contracts/portable-package-product-surface-receipt.v0.1.schema.json",
+  "title": "Portable Package Product Surface Receipt v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "receipt_schema_version",
+    "lane",
+    "state",
+    "package_sha256",
+    "fixture_sha256",
+    "human_takeover_allowed",
+    "secret_input_model_visible",
+    "events",
+    "authority_transfer"
+  ],
+  "properties": {
+    "receipt_schema_version": {
+      "const": "0.1"
+    },
+    "lane": {
+      "enum": [
+        "NONE",
+        "CHATGPT_TEMPORARY_UNPERSONALIZED"
+      ]
+    },
+    "state": {
+      "enum": [
+        "NOT_EXECUTED",
+        "SESSION_PROVISIONING",
+        "PACKAGE_ATTACHED",
+        "PROMPT_SUBMITTED",
+        "AUTH_REQUIRED",
+        "USER_TAKEOVER",
+        "VERIFY_PENDING",
+        "AUTOMATION_RESUMED",
+        "COMPLETED",
+        "FAILED",
+        "BLOCKED"
+      ]
+    },
+    "package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "fixture_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "human_takeover_allowed": {
+      "type": "boolean"
+    },
+    "secret_input_model_visible": {
+      "const": false
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "authority_transfer": {
+      "const": false
+    }
+  }
+}
