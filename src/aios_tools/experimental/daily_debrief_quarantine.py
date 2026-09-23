@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +12,10 @@ from aios_tools.canonical import canonical_json_bytes, canonical_sha256
 
 QUARANTINE_SCHEMA = "daily-debrief-quarantine-receipt/v1"
 QUARANTINE_STORE_SCHEMA = "daily-debrief-quarantine-store/v1"
+
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_REJECTION_ID_RE = re.compile(r"^ddq_[0-9a-f]{64}$")
+_MAX_METADATA_LENGTH = 512
 
 KNOWN_REJECTION_CODES = {
     "UNKNOWN_SCHEMA",
@@ -119,26 +124,18 @@ def build_rejection_receipt(
     return receipt
 
 
+def _validate_optional_metadata(value: Any, code: str) -> None:
+    if value is None:
+        return
+    if not isinstance(value, str):
+        raise QuarantineError(code)
+    if len(value) > _MAX_METADATA_LENGTH:
+        raise QuarantineError(code)
+
+
 def validate_rejection_receipt(receipt: dict[str, Any]) -> None:
     if not isinstance(receipt, dict):
         raise QuarantineError("quarantine_receipt_not_object")
-    if receipt.get("schema") != QUARANTINE_SCHEMA:
-        raise QuarantineError("unsupported_quarantine_schema")
-    if receipt.get("rejection_code") not in KNOWN_REJECTION_CODES:
-        raise QuarantineError("unsupported_rejection_code")
-
-    rejection_id = receipt.get("rejection_id")
-    if not isinstance(rejection_id, str) or not rejection_id.startswith("ddq_"):
-        raise QuarantineError("rejection_id_invalid")
-
-    unsigned = {
-        key: value
-        for key, value in receipt.items()
-        if key != "rejection_id"
-    }
-    expected = "ddq_" + canonical_sha256(unsigned)
-    if rejection_id != expected:
-        raise QuarantineError("rejection_digest_mismatch")
 
     allowed = {
         "schema",
@@ -154,6 +151,47 @@ def validate_rejection_receipt(receipt: dict[str, Any]) -> None:
     }
     if set(receipt) - allowed:
         raise QuarantineError("quarantine_receipt_contains_source_content")
+
+    if receipt.get("schema") != QUARANTINE_SCHEMA:
+        raise QuarantineError("unsupported_quarantine_schema")
+    if receipt.get("rejection_code") not in KNOWN_REJECTION_CODES:
+        raise QuarantineError("unsupported_rejection_code")
+
+    rejection_id = receipt.get("rejection_id")
+    if not isinstance(rejection_id, str) or not _REJECTION_ID_RE.fullmatch(
+        rejection_id
+    ):
+        raise QuarantineError("rejection_id_invalid")
+
+    for key in (
+        "source_provider",
+        "source_id",
+        "source_revision",
+        "scope_key",
+        "schema_observed",
+        "event_id_observed",
+    ):
+        _validate_optional_metadata(
+            receipt.get(key),
+            f"{key}_invalid",
+        )
+
+    payload_digest = receipt.get("payload_digest")
+    if payload_digest is not None:
+        if (
+            not isinstance(payload_digest, str)
+            or not _SHA256_RE.fullmatch(payload_digest)
+        ):
+            raise QuarantineError("payload_digest_invalid")
+
+    unsigned = {
+        key: value
+        for key, value in receipt.items()
+        if key != "rejection_id"
+    }
+    expected = "ddq_" + canonical_sha256(unsigned)
+    if rejection_id != expected:
+        raise QuarantineError("rejection_digest_mismatch")
 
 
 class SqliteDailyDebriefQuarantineStore:
