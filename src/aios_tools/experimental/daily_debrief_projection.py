@@ -143,6 +143,16 @@ def projection_envelope(state: DailyDebriefProjectionState) -> dict:
 
 
 def projection_from_dict(payload: dict) -> DailyDebriefProjectionState:
+    supplied = payload.get("projection_digest")
+    if supplied is not None:
+        unsigned = {
+            key: value
+            for key, value in payload.items()
+            if key != "projection_digest"
+        }
+        if supplied != canonical_sha256(unsigned):
+            raise ProjectionError("projection_digest_mismatch")
+
     if payload.get("schema") != PROJECTION_SCHEMA:
         raise ProjectionError("unsupported_projection_schema")
 
@@ -169,7 +179,4 @@ def projection_from_dict(payload: dict) -> DailyDebriefProjectionState:
             raise ProjectionError("projection_lineage_key_mismatch")
         state.lineages[key] = lineage
 
-    supplied = payload.get("projection_digest")
-    if supplied is not None and supplied != projection_digest(state):
-        raise ProjectionError("projection_digest_mismatch")
     return state
