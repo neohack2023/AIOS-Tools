@@ -132,3 +132,26 @@ def test_nonconsecutive_window_fails_closed(tmp_path: Path):
             assert str(exc) == "evaluation_window_not_consecutive"
         else:
             raise AssertionError("expected nonconsecutive window rejection")
+
+
+def test_candidate_transition_counts_match_frozen_replay(tmp_path: Path):
+    fixture = _load()
+    with SqliteDailyDebriefEventStore(
+        tmp_path / "events.sqlite"
+    ) as events, SqliteDailyDebriefQuarantineStore(
+        tmp_path / "quarantine.sqlite"
+    ) as quarantine:
+        report = evaluate_seven_day_replay(
+            fixture["entries"],
+            event_store=events,
+            quarantine_store=quarantine,
+        )
+
+    assert [day["candidate_count"] for day in report["days"]] == [
+        0, 1, 2, 4, 6, 6, 7
+    ]
+    assert report["days"][-1]["lineage_count"] == 20
+    assert [
+        change["lineage"]
+        for change in report["days"][-1]["candidate_state_changes"]
+    ] == ["model-lifecycle"]
