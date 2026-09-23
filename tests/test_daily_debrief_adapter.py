@@ -121,3 +121,12 @@ def test_additive_unknown_non_authority_fields_do_not_change_event_contract():
 
     baseline = adapt_structured_debrief(_payload())[0]
     assert event == baseline
+
+
+def test_adapter_rejects_nested_authority_claim():
+    payload = _payload()
+    payload["metadata"] = {"routing": {"authority": "CANON"}}
+    with pytest.raises(
+        DailyDebriefAdapterError, match="unsupported_authority_claim"
+    ):
+        adapt_structured_debrief(payload)
