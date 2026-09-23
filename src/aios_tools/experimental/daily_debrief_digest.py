@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from hashlib import sha256
 from typing import Iterable
 
@@ -20,6 +20,7 @@ class DebriefFinding:
     implementation_consequence: str
     validation_state: str
     remaining_test: str | None = None
+    resolved_tests: tuple[str, ...] = ()
     evidence_digest: str | None = None
 
     def stable_evidence_digest(self) -> str:
@@ -36,6 +37,7 @@ class DebriefFinding:
                 self.implementation_consequence,
                 self.validation_state,
                 self.remaining_test or "",
+                ",".join(sorted(self.resolved_tests)),
             ]
         )
         return digest_text(payload)
@@ -51,6 +53,7 @@ class LineageDigest:
     dispositions: list[str] = field(default_factory=list)
     implementation_consequences: list[str] = field(default_factory=list)
     remaining_tests: list[str] = field(default_factory=list)
+    resolved_tests: list[str] = field(default_factory=list)
     simulation_pass_count: int = 0
     live_verified_count: int = 0
 
@@ -109,12 +112,39 @@ def ingest_findings(
         _append_unique(lineage.implementation_consequences, finding.implementation_consequence)
         _append_unique(lineage.remaining_tests, finding.remaining_test)
 
+        for resolved_test in finding.resolved_tests:
+            _append_unique(lineage.resolved_tests, resolved_test)
+            if resolved_test in lineage.remaining_tests:
+                lineage.remaining_tests.remove(resolved_test)
+
         validation = finding.validation_state.upper()
         if "LIVE" in validation and "PASS" in validation:
             lineage.live_verified_count += 1
         elif "PASS" in validation:
             lineage.simulation_pass_count += 1
 
+    return state
+
+
+def state_to_dict(state: DailyDebriefDigestState) -> dict:
+    return {
+        "schema": "daily-debrief-digest-state/v1",
+        "processed_evidence_digests": sorted(state.processed_evidence_digests),
+        "lineages": {
+            key: asdict(value)
+            for key, value in sorted(state.lineages.items())
+        },
+    }
+
+
+def state_from_dict(payload: dict) -> DailyDebriefDigestState:
+    if payload.get("schema") != "daily-debrief-digest-state/v1":
+        raise ValueError("unsupported_digest_state_schema")
+    state = DailyDebriefDigestState(
+        processed_evidence_digests=set(payload.get("processed_evidence_digests", []))
+    )
+    for key, raw in payload.get("lineages", {}).items():
+        state.lineages[key] = LineageDigest(**raw)
     return state
 
 
