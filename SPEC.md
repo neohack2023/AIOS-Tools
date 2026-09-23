@@ -39,9 +39,18 @@ Every receipt includes request and receipt identifiers, tool name and version, s
 - Connector credentials and direct Notion/Drive mutations
 - Durable write tools
 - approval workflows
-- hosted deployment and OAuth
+- hosted activation, OAuth, and public directory submission
 - AIOS portable runtime integration
 - Tier 1 control-envelope fixture migration
+
+## Browser-only MCP attachment
+
+The runtime attachment slice may expose only `browser.session.open`,
+`browser.session.observe`, `browser.session.act`, and
+`browser.session.close` through a dedicated MCP adapter. The adapter must
+retain the shared-core registry, policy, contracts, and receipt path; advertise
+accurate read-only/open-world annotations; and exclude all write-capable tools.
+Deployment packaging is implementation evidence, not proof of a live endpoint.
 
 ## Completion criteria
 
