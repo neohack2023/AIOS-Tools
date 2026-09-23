@@ -93,12 +93,16 @@ def evaluate_ci_mcp_authority(
     verified_schema_revision: str,
     observed_schema_revision: str,
 ) -> GateDecision:
+    if not verified_schema_revision or not observed_schema_revision:
+        return GateDecision(GateVerdict.UNRESOLVED, "schema_revision_unverified")
     if verified_schema_revision != observed_schema_revision:
         return GateDecision(GateVerdict.STALE, "schema_revision_drift")
+    if capability_class not in {"investigate", "manage"}:
+        return GateDecision(GateVerdict.UNRESOLVED, "unknown_capability_class")
+    if principal_class not in {"read_only", "scoped_write"}:
+        return GateDecision(GateVerdict.UNRESOLVED, "unknown_principal_class")
     if capability_class == "manage" and principal_class == "read_only":
         return GateDecision(GateVerdict.DENY, "management_denied_for_read_only_principal")
     if mutation_expected and not effect_receipt_present:
         return GateDecision(GateVerdict.DENY, "missing_effect_receipt")
-    if capability_class not in {"investigate", "manage"}:
-        return GateDecision(GateVerdict.UNRESOLVED, "unknown_capability_class")
     return GateDecision(GateVerdict.ALLOW, "ci_mcp_authorized")
