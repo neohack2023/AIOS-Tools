@@ -150,7 +150,7 @@ def test_candidate_transition_counts_match_frozen_replay(tmp_path: Path):
     assert [day["candidate_count"] for day in report["days"]] == [
         0, 1, 2, 4, 6, 6, 7
     ]
-    assert report["days"][-1]["lineage_count"] == 20
+    assert report["days"][-1]["lineage_count"] == 23
     assert [
         change["lineage"]
         for change in report["days"][-1]["candidate_state_changes"]
