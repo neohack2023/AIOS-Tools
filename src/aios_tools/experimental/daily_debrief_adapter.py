@@ -67,12 +67,18 @@ def _require_identifier_list(value: Any, code: str) -> tuple[str, ...]:
     return tuple(sorted(normalized))
 
 
-def _reject_authority_claims(mapping: dict[str, Any]) -> None:
-    bad = sorted(FORBIDDEN_AUTHORITY_KEYS.intersection(mapping))
-    if bad:
-        raise DailyDebriefAdapterError(
-            "unsupported_authority_claim:" + ",".join(bad)
-        )
+def _reject_authority_claims(value: Any) -> None:
+    if isinstance(value, dict):
+        bad = sorted(FORBIDDEN_AUTHORITY_KEYS.intersection(value))
+        if bad:
+            raise DailyDebriefAdapterError(
+                "unsupported_authority_claim:" + ",".join(bad)
+            )
+        for nested in value.values():
+            _reject_authority_claims(nested)
+    elif isinstance(value, list):
+        for nested in value:
+            _reject_authority_claims(nested)
 
 
 def validate_structured_debrief(payload: dict[str, Any]) -> None:
