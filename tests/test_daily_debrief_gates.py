@@ -141,3 +141,29 @@ def test_schema_revision_drift_is_stale():
         observed_schema_revision="2",
     )
     assert decision.verdict == GateVerdict.STALE
+
+
+def test_unknown_principal_fails_closed():
+    decision = evaluate_ci_mcp_authority(
+        capability_class="manage",
+        principal_class="mystery",
+        mutation_expected=False,
+        effect_receipt_present=False,
+        verified_schema_revision="1",
+        observed_schema_revision="1",
+    )
+    assert decision.verdict == GateVerdict.UNRESOLVED
+    assert decision.reason == "unknown_principal_class"
+
+
+def test_blank_schema_revision_fails_closed():
+    decision = evaluate_ci_mcp_authority(
+        capability_class="investigate",
+        principal_class="read_only",
+        mutation_expected=False,
+        effect_receipt_present=False,
+        verified_schema_revision="",
+        observed_schema_revision="",
+    )
+    assert decision.verdict == GateVerdict.UNRESOLVED
+    assert decision.reason == "schema_revision_unverified"
