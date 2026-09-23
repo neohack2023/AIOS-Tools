@@ -110,3 +110,25 @@ def test_bounded_human_implementation_is_not_misread_as_auto_promotion(tmp_path:
     assert day["human_repo_action"] == "BOUNDED_IMPLEMENTATION_ADDENDUM"
     assert day["automatic_ready"] is False
     assert day["authority_decision_match"] is True
+
+
+def test_nonconsecutive_window_fails_closed(tmp_path: Path):
+    fixture = _load()
+    entries = fixture["entries"]
+    entries[3]["payload"]["debrief_date"] = "2026-09-25"
+
+    with SqliteDailyDebriefEventStore(
+        tmp_path / "events.sqlite"
+    ) as events, SqliteDailyDebriefQuarantineStore(
+        tmp_path / "quarantine.sqlite"
+    ) as quarantine:
+        try:
+            evaluate_seven_day_replay(
+                entries,
+                event_store=events,
+                quarantine_store=quarantine,
+            )
+        except ValueError as exc:
+            assert str(exc) == "evaluation_window_not_consecutive"
+        else:
+            raise AssertionError("expected nonconsecutive window rejection")
