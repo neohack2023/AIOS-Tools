@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, timedelta
 from typing import Any, Iterable
 
 from aios_tools.experimental.daily_debrief_event_store import DailyDebriefEventStore
@@ -61,6 +62,31 @@ def candidate_snapshot(
     return candidates
 
 
+def _validate_entries(entries: list[dict[str, Any]]) -> None:
+    if len(entries) != 7:
+        raise ValueError("evaluation_requires_exactly_seven_debriefs")
+
+    dates = [
+        date.fromisoformat(entry["payload"]["debrief_date"])
+        for entry in entries
+    ]
+    if len(set(dates)) != 7:
+        raise ValueError("evaluation_debrief_dates_not_unique")
+    if dates != sorted(dates):
+        raise ValueError("evaluation_debrief_dates_not_ordered")
+    for previous, current in zip(dates, dates[1:]):
+        if current != previous + timedelta(days=1):
+            raise ValueError("evaluation_window_not_consecutive")
+
+    source_ids = [entry["payload"]["source_id"] for entry in entries]
+    if len(set(source_ids)) != 7:
+        raise ValueError("evaluation_source_ids_not_unique")
+
+    scopes = {entry["payload"]["scope_key"] for entry in entries}
+    if len(scopes) != 1:
+        raise ValueError("evaluation_scope_drift")
+
+
 def evaluate_seven_day_replay(
     entries: Iterable[dict[str, Any]],
     *,
@@ -69,8 +95,7 @@ def evaluate_seven_day_replay(
     policy: FrozenCandidatePolicy = FrozenCandidatePolicy(),
 ) -> dict[str, Any]:
     entries = list(entries)
-    if len(entries) != 7:
-        raise ValueError("evaluation_requires_exactly_seven_debriefs")
+    _validate_entries(entries)
 
     days: list[dict[str, Any]] = []
     accepted_total = 0
