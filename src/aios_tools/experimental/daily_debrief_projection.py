@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Iterable
 
 from aios_tools.canonical import canonical_sha256
+from aios_tools.experimental.daily_debrief_adapter import validate_finding_event
 from aios_tools.experimental.daily_debrief_event_store import StoredEvent
 
 
@@ -74,13 +75,14 @@ def _project_event_payload(
     )
 
     for test_id in event.get("remaining_test_ids", []):
-        if test_id not in lineage.resolved_test_ids:
-            _append_unique(lineage.remaining_test_ids, test_id)
+        if test_id in lineage.resolved_test_ids:
+            lineage.resolved_test_ids.remove(test_id)
+        _append_unique(lineage.remaining_test_ids, test_id)
 
     for test_id in event.get("resolved_test_ids", []):
-        _append_unique(lineage.resolved_test_ids, test_id)
         if test_id in lineage.remaining_test_ids:
             lineage.remaining_test_ids.remove(test_id)
+        _append_unique(lineage.resolved_test_ids, test_id)
 
     validation = event["validation_state"].upper()
     if "LIVE" in validation and "PASS" in validation:
@@ -93,6 +95,7 @@ def project_event(
     state: DailyDebriefProjectionState,
     stored: StoredEvent,
 ) -> DailyDebriefProjectionState:
+    validate_finding_event(stored.event)
     expected = state.last_applied_sequence + 1
     if stored.sequence != expected:
         raise ProjectionSequenceError(
@@ -143,13 +146,28 @@ def projection_from_dict(payload: dict) -> DailyDebriefProjectionState:
     if payload.get("schema") != PROJECTION_SCHEMA:
         raise ProjectionError("unsupported_projection_schema")
 
+    revision = int(payload.get("projection_revision", 1))
+    if revision != 1:
+        raise ProjectionError("unsupported_projection_revision")
+    last_sequence = int(payload.get("last_applied_sequence", 0))
+    if last_sequence < 0:
+        raise ProjectionError("projection_sequence_invalid")
+    processed_event_ids = list(payload.get("processed_event_ids", []))
+    if len(processed_event_ids) != len(set(processed_event_ids)):
+        raise ProjectionError("projection_event_ids_duplicate")
+    if len(processed_event_ids) != last_sequence:
+        raise ProjectionError("projection_sequence_event_count_mismatch")
+
     state = DailyDebriefProjectionState(
-        projection_revision=int(payload.get("projection_revision", 1)),
-        last_applied_sequence=int(payload.get("last_applied_sequence", 0)),
-        processed_event_ids=list(payload.get("processed_event_ids", [])),
+        projection_revision=revision,
+        last_applied_sequence=last_sequence,
+        processed_event_ids=processed_event_ids,
     )
     for key, raw in payload.get("lineages", {}).items():
-        state.lineages[key] = ProjectionLineage(**raw)
+        lineage = ProjectionLineage(**raw)
+        if lineage.lineage != key:
+            raise ProjectionError("projection_lineage_key_mismatch")
+        state.lineages[key] = lineage
 
     supplied = payload.get("projection_digest")
     if supplied is not None and supplied != projection_digest(state):
