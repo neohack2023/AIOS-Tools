@@ -54,7 +54,11 @@ The regression suite checks both payload equality and canonical digest equality.
 
 ## Gate law
 
-A resolved exact test gate cannot be re-opened merely because later evidence repeats it as unresolved. Re-opening a resolved gate would require a future explicit semantic event type; v1 projection treats resolution as monotonic.
+Gate state follows ordered explicit evidence.
+
+If an event marks a gate unresolved, the gate is placed in the unresolved set and removed from the resolved set. If a later event resolves that exact gate, the inverse occurs. A still-later explicit unresolved event may reopen it.
+
+Absence of a gate ID in an event does not change that gate's state.
 
 ## Projection identity
 
