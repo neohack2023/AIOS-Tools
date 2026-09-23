@@ -1,0 +1,573 @@
+{
+  "schema": "daily-debrief-seven-day-fixture/v1",
+  "window": [
+    "2026-09-16",
+    "2026-09-22"
+  ],
+  "threshold_policy": {
+    "min_distinct_debriefs": 2,
+    "min_evidence": 2,
+    "ready_requires_live_verified": true,
+    "ready_requires_no_remaining_tests": true,
+    "frozen_before_evaluation": true
+  },
+  "entries": [
+    {
+      "payload": {
+        "schema": "daily-debrief-structured/v1",
+        "source_provider": "google_drive",
+        "source_id": "1HTJkbIgasvjJRRt0NcBbPxakBZ_W_M8qqhKDAhGuUvs",
+        "source_revision": "2026-09-16T12:52:43.857Z",
+        "source_digest": "4b0c56aab68de15f32c77b719d0f78d0aa0015b4cec0c68cefef516758c1080d",
+        "debrief_date": "2026-09-16",
+        "scope_key": "global-working-memory",
+        "findings": [
+          {
+            "finding_id": "coding-harness.security-precedence",
+            "lineage": "coding-agent-harness",
+            "title": "Enterprise security configuration enforcement precedence",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Preserve security configuration precedence in coding-agent harness evaluation.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "coding-agent-harness.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "artifact-trust.sha1-cutoff",
+            "lineage": "agent-artifact-trust-chain",
+            "title": "HTTPS SHA-1 transport-policy cutoff semantics",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Bind artifact trust to transport-policy cutoff semantics.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-artifact-trust-chain.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "prompt-cache.isolation",
+            "lineage": "prompt-cache-isolation",
+            "title": "Prompt cache isolation fixture",
+            "disposition": "NOVEL",
+            "confidence": "high",
+            "implementation_consequence": "Test cache isolation across prompts and boundaries.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "prompt-cache-isolation.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "resource-fallback.equivalence",
+            "lineage": "resource-fallback-equivalence",
+            "title": "Resource fallback equivalence fixture",
+            "disposition": "NOVEL",
+            "confidence": "high",
+            "implementation_consequence": "Test whether fallback resources preserve declared behavior.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "resource-fallback-equivalence.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "daily.research-monitor",
+            "lineage": "daily-research-monitor",
+            "title": "Research-only monitor",
+            "disposition": "RESEARCH_ONLY",
+            "confidence": "medium",
+            "implementation_consequence": "Retain as research evidence without prototype promotion.",
+            "validation_state": "RESEARCH RETAINED",
+            "remaining_test_ids": [],
+            "resolved_test_ids": []
+          }
+        ]
+      },
+      "expected": {
+        "automatic_ready": false,
+        "repo_action": "NONE"
+      }
+    },
+    {
+      "payload": {
+        "schema": "daily-debrief-structured/v1",
+        "source_provider": "google_drive",
+        "source_id": "1YNck-IRZg-ehEgtWVIVf_TVyWKBnn9wCF2uWa6EToY8",
+        "source_revision": "2026-09-17T12:46:35.509Z",
+        "source_digest": "bcff63f152e260b9439bc9886121b036febebf037bf5e652092abaae9069a73b",
+        "debrief_date": "2026-09-17",
+        "scope_key": "global-working-memory",
+        "findings": [
+          {
+            "finding_id": "observability.prompt-optimization",
+            "lineage": "agent-observability",
+            "title": "AgentCore prompt optimization",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Extend trace-derived observability evaluation.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-observability.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "skill-lifecycle.hcls",
+            "lineage": "agent-skill-install-lifecycle",
+            "title": "HCLS open-source Skills",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Refine portable skill installation lifecycle checks.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-skill-install-lifecycle.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "skill-lifecycle.uipath",
+            "lineage": "agent-skill-install-lifecycle",
+            "title": "UiPath coding-agent authoring GA",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Extend the existing skill lifecycle owner instead of creating a new identity.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-skill-install-lifecycle.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "coding-harness.wso2",
+            "lineage": "coding-agent-harness",
+            "title": "WSO2 Agent Manager GA",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Refine open control-plane topology checks.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "coding-agent-harness.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "mcp-policy.salesforce",
+            "lineage": "mcp-tool-policy",
+            "title": "Salesforce AIforce",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Refine headless enterprise action policy checks.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "mcp-tool-policy.live-verification"
+            ],
+            "resolved_test_ids": []
+          }
+        ]
+      },
+      "expected": {
+        "automatic_ready": false,
+        "repo_action": "NONE"
+      }
+    },
+    {
+      "payload": {
+        "schema": "daily-debrief-structured/v1",
+        "source_provider": "google_drive",
+        "source_id": "1GiRM5QtpO-D8BC58yV89UGEO6MnQMxfVi8PSOAl98mc",
+        "source_revision": "2026-09-18T12:58:42.405Z",
+        "source_digest": "a294efe4d387a606f9a9b9071899071a5b47d33f72120a2dc2824fa4703aa8c8",
+        "debrief_date": "2026-09-18",
+        "scope_key": "global-working-memory",
+        "findings": [
+          {
+            "finding_id": "permission-policy.workflow-protection",
+            "lineage": "permission-policy",
+            "title": "Workflow execution protections",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Refine workflow actor, event, and path execution-protection semantics.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "permission-policy.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "observability.metrics",
+            "lineage": "agent-observability",
+            "title": "Customization and feature-engagement metrics",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Refine metric subset accounting and nullability.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-observability.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "runtime-migration.runner-label",
+            "lineage": "agent-runtime-migration",
+            "title": "Floating runner-label resolution",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Bind runtime migration evaluation to resolved environment identity.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-runtime-migration.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "coding-harness.egress",
+            "lineage": "coding-agent-harness",
+            "title": "Per-step local/cloud inference and consent-bound egress",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Track inference location and consent-bound egress in harness topology.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "coding-agent-harness.live-verification"
+            ],
+            "resolved_test_ids": []
+          }
+        ]
+      },
+      "expected": {
+        "automatic_ready": false,
+        "repo_action": "NONE"
+      }
+    },
+    {
+      "payload": {
+        "schema": "daily-debrief-structured/v1",
+        "source_provider": "google_drive",
+        "source_id": "1M_c1PxdCsMbj8hxrbFHaMWFaRxQNXVH_a-7Bw1XioMk",
+        "source_revision": "2026-09-19T12:45:02.846Z",
+        "source_digest": "fce48c2e8bc53bcc4eaf67b98d626c99ec9a1b610feda726e3fb9a47aa132db8",
+        "debrief_date": "2026-09-19",
+        "scope_key": "global-working-memory",
+        "findings": [
+          {
+            "finding_id": "runtime-migration.snapshot",
+            "lineage": "agent-runtime-migration",
+            "title": "AgentCore runtime resource and snapshot semantics",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Refine runtime equivalence around resources and snapshots.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-runtime-migration.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "runtime-migration.multimodel",
+            "lineage": "agent-runtime-migration",
+            "title": "Multi-model managed-runtime migration",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Merge managed-runtime migration evidence into existing runtime owner.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-runtime-migration.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "skill-lifecycle.deployment",
+            "lineage": "agent-skill-install-lifecycle",
+            "title": "Fresh deployment facts in coding-agent Skills",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Add deployment freshness to skill lifecycle checks.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "agent-skill-install-lifecycle.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "nonatomic-tool.workspace",
+            "lineage": "nonatomic-tool-verify-retry",
+            "title": "Composite MCP workspace creation",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Verify postconditions before retrying non-atomic tool operations.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "nonatomic-tool-verify-retry.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "rolling-context.quality",
+            "lineage": "rolling-processed-context",
+            "title": "Context-quality preflight research",
+            "disposition": "REFINEMENT",
+            "confidence": "medium",
+            "implementation_consequence": "Retain context-quality preflight as retrieval benchmark evidence.",
+            "validation_state": "RESEARCH RETAINED",
+            "remaining_test_ids": [],
+            "resolved_test_ids": []
+          }
+        ]
+      },
+      "expected": {
+        "automatic_ready": false,
+        "repo_action": "NONE"
+      }
+    },
+    {
+      "payload": {
+        "schema": "daily-debrief-structured/v1",
+        "source_provider": "google_drive",
+        "source_id": "1sIFiV5b9jRKZMUZDVC5VVw9SrZIgYW2_KGyV75wmmTs",
+        "source_revision": "2026-09-20T12:45:16.601Z",
+        "source_digest": "d4fda104278e09ab65f1c7d2b105a13ddae6b77a102af1e0438cea0f4bc7c582",
+        "debrief_date": "2026-09-20",
+        "scope_key": "global-working-memory",
+        "findings": [
+          {
+            "finding_id": "routing.subagent-origin",
+            "lineage": "routing-subagent-origin",
+            "title": "Routing and subagent origin gate",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Keep route resolution and subagent instruction origin explicit.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "routing-subagent-origin.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "permission-policy.temporal",
+            "lineage": "permission-policy",
+            "title": "Temporal policy gate",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Evaluate policy using prior action order and count history.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "permission-policy.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "observability.security-agents",
+            "lineage": "agent-observability",
+            "title": "Infrastructure-security agent benchmark evidence",
+            "disposition": "REFINEMENT",
+            "confidence": "medium",
+            "implementation_consequence": "Merge benchmark evidence into existing observability and failure-evidence lineage.",
+            "validation_state": "RESEARCH RETAINED",
+            "remaining_test_ids": [
+              "agent-observability.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "runtime-cutoff.node20",
+            "lineage": "runtime-cutoff-compatibility",
+            "title": "GitHub Node20 cutoff",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Invalidate historical runtime receipts when cutoff policy changes.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "runtime-cutoff-compatibility.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "mcp-policy.security-scc",
+            "lineage": "mcp-tool-policy",
+            "title": "Security MCP capability-class gate",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Separate investigate and manage capability classes with effect receipts.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "mcp-tool-policy.live-verification"
+            ],
+            "resolved_test_ids": []
+          }
+        ]
+      },
+      "expected": {
+        "automatic_ready": false,
+        "repo_action": "NONE"
+      }
+    },
+    {
+      "payload": {
+        "schema": "daily-debrief-structured/v1",
+        "source_provider": "google_drive",
+        "source_id": "1duGCyvbVVWAl-F8VdbdSqPgA5cOSvFkRxF0qJ7LB0zM",
+        "source_revision": "2026-09-21T19:20:35.316Z",
+        "source_digest": "de4b77899881e708672bf4d6161cd270c99de8fe5c37fa13596dc1b6a0e61d32",
+        "debrief_date": "2026-09-21",
+        "scope_key": "global-working-memory",
+        "findings": [
+          {
+            "finding_id": "instruction-precedence.portable",
+            "lineage": "portable-instruction-precedence",
+            "title": "Portable instruction precedence gate",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Bind instruction precedence to provider support and observed loaded source.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "portable-instruction-precedence.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "model-lifecycle.deprecation",
+            "lineage": "model-lifecycle",
+            "title": "Model lifecycle staleness gate",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Invalidate behavioral verification on model deprecation or substitution.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "model-lifecycle.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "staged-artifact.authority",
+            "lineage": "staged-artifact-authority",
+            "title": "Staged artifact authority fixture",
+            "disposition": "NOVEL",
+            "confidence": "high",
+            "implementation_consequence": "Separate stage authority from publish authority.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "staged-artifact-authority.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "ci-mcp.authority",
+            "lineage": "ci-mcp-authority",
+            "title": "CI MCP authority gate",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Bind CI MCP actions to principal scopes, schema revision, run identity, and effect receipts.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "ci-mcp-authority.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "retrieval.upstream",
+            "lineage": "retrieval-upstream-benchmark",
+            "title": "Retrieval-upstream benchmark refinement",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Evaluate retrieval quality before patch generation under fixed budgets.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "retrieval-upstream-benchmark.live-verification"
+            ],
+            "resolved_test_ids": []
+          }
+        ]
+      },
+      "expected": {
+        "automatic_ready": false,
+        "repo_action": "BOUNDED_IMPLEMENTATION_ADDENDUM"
+      }
+    },
+    {
+      "payload": {
+        "schema": "daily-debrief-structured/v1",
+        "source_provider": "google_drive",
+        "source_id": "1nZ140nmwSUpJHDc61yI4ekKJ-dTLU40UXPodWHOZC8k",
+        "source_revision": "2026-09-22T12:14:56.458Z",
+        "source_digest": "4320d977a6b0e938558bb0761af2aac8348d044e50f39ebe75914490fb723072",
+        "debrief_date": "2026-09-22",
+        "scope_key": "global-working-memory",
+        "findings": [
+          {
+            "finding_id": "memory.v7",
+            "lineage": "external-cognitive-memory",
+            "title": "OpenAI V7 institutional memory",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Benchmark source-linked external context without creating a new memory authority.",
+            "validation_state": "RESEARCH RETAINED",
+            "remaining_test_ids": [
+              "external-cognitive-memory.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "python-worker.binding-parity",
+            "lineage": "python-worker-binding-parity",
+            "title": "Python Worker binding parity fixture",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Compare Python and JS/TS Worker binding semantics on disposable fixtures.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "python-worker-binding-parity.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "credential-authority.inventory",
+            "lineage": "credential-authority-inventory",
+            "title": "Credential authority inventory diff",
+            "disposition": "EXTENSION",
+            "confidence": "high",
+            "implementation_consequence": "Classify credential inventory drift without persisting raw secrets.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "credential-authority-inventory.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "model-lifecycle.grok47",
+            "lineage": "model-lifecycle",
+            "title": "Grok 4.7 model-lifecycle refinement",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Retain new model availability only under existing lifecycle staleness gate.",
+            "validation_state": "RESEARCH RETAINED",
+            "remaining_test_ids": [
+              "model-lifecycle.live-verification"
+            ],
+            "resolved_test_ids": []
+          },
+          {
+            "finding_id": "incident.failure-episode",
+            "lineage": "incident-failure-episode-mapping",
+            "title": "Incident-to-failure-episode mapping",
+            "disposition": "REFINEMENT",
+            "confidence": "high",
+            "implementation_consequence": "Map disclosed incidents into failure-learning state packets and prevention replay.",
+            "validation_state": "SIMULATION PASS",
+            "remaining_test_ids": [
+              "incident-failure-episode-mapping.live-verification"
+            ],
+            "resolved_test_ids": []
+          }
+        ]
+      },
+      "expected": {
+        "automatic_ready": false,
+        "repo_action": "NONE"
+      }
+    }
+  ]
+}
