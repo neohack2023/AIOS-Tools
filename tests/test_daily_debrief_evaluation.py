@@ -115,7 +115,8 @@ def test_bounded_human_implementation_is_not_misread_as_auto_promotion(tmp_path:
 def test_nonconsecutive_window_fails_closed(tmp_path: Path):
     fixture = _load()
     entries = fixture["entries"]
-    entries[3]["payload"]["debrief_date"] = "2026-09-25"
+    for offset, index in enumerate(range(3, 7), start=20):
+        entries[index]["payload"]["debrief_date"] = f"2026-09-{offset:02d}"
 
     with SqliteDailyDebriefEventStore(
         tmp_path / "events.sqlite"
