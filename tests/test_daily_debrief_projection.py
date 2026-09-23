@@ -79,7 +79,7 @@ def test_projection_tracks_exact_gate_resolution(tmp_path: Path):
         assert lineage.resolved_test_ids == ["gate.a"]
 
 
-def test_resolved_gate_is_not_reopened_by_later_stale_evidence(tmp_path: Path):
+def test_later_explicit_unresolved_gate_reopens_it(tmp_path: Path):
     path = tmp_path / "events.sqlite"
     with SqliteDailyDebriefEventStore(path) as store:
         store.append(_event("2026-09-21", "a", remaining=("gate.a",)))
@@ -89,8 +89,8 @@ def test_resolved_gate_is_not_reopened_by_later_stale_evidence(tmp_path: Path):
         state = rebuild_projection(store.iter_events())
         lineage = state.lineages["model-lifecycle"]
 
-        assert "gate.a" not in lineage.remaining_test_ids
-        assert lineage.resolved_test_ids == ["gate.a"]
+        assert lineage.remaining_test_ids == ["gate.a"]
+        assert "gate.a" not in lineage.resolved_test_ids
 
 
 def test_projection_requires_contiguous_sequence():
@@ -144,3 +144,43 @@ def test_validation_counts_are_rebuildable(tmp_path: Path):
     lineage = state.lineages["model-lifecycle"]
     assert lineage.simulation_pass_count == 1
     assert lineage.live_verified_count == 1
+
+
+def test_projection_rejects_malformed_checkpoint_event_count():
+    payload = {
+        "schema": "daily-debrief-digest-projection/v1",
+        "projection_revision": 1,
+        "last_applied_sequence": 2,
+        "processed_event_ids": ["one"],
+        "lineages": {},
+    }
+    with pytest.raises(
+        ProjectionError, match="projection_sequence_event_count_mismatch"
+    ):
+        projection_from_dict(payload)
+
+
+def test_projection_rejects_lineage_key_mismatch():
+    payload = {
+        "schema": "daily-debrief-digest-projection/v1",
+        "projection_revision": 1,
+        "last_applied_sequence": 0,
+        "processed_event_ids": [],
+        "lineages": {
+            "a": {
+                "lineage": "b",
+                "first_seen": "2026-09-21",
+                "last_seen": "2026-09-21",
+                "event_ids": [],
+                "source_ids": [],
+                "dispositions": [],
+                "implementation_consequences": [],
+                "remaining_test_ids": [],
+                "resolved_test_ids": [],
+                "simulation_pass_count": 0,
+                "live_verified_count": 0,
+            }
+        },
+    }
+    with pytest.raises(ProjectionError, match="projection_lineage_key_mismatch"):
+        projection_from_dict(payload)
